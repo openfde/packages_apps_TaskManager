@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -26,7 +27,9 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -39,6 +42,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import kotlinx.serialization.Serializable
+import coil.compose.rememberAsyncImagePainter
 
 class MainActivity : ComponentActivity(), WebSocketListener {
     private val daemonClient = DaemonClient("192.168.126.159", 8080,this)
@@ -145,6 +149,19 @@ fun OuterBox() {
 }
 
 data class HeaderItem(val name: String, val weight: Float)
+data class ProcessInfo(
+    val icon: String, // ICON图标
+    val name: String, // 进程名称
+    val user: String, // 用户
+    var virtualMemory: Int, // 虚拟内存
+    var cpu: Float, // CPU
+    val pid: Int, // ID
+    var memory: Double, // 内存
+    var diskReadAll: Int, // 读盘总量
+    var diskWriteAll: Int, // 写入总量
+    var diskRead: Int, // 磁盘读取
+    var diskWrite: Int // 磁盘写入
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -203,6 +220,14 @@ fun ProcessView() {
         HeaderItem(name = "磁盘写入", weight = 0.1f)
     )
 
+    val processInfoList = remember {
+        mutableStateListOf<ProcessInfo>().apply {
+            add(ProcessInfo(
+                "https://media.geeksforgeeks.org/wp-content/uploads/20210101144014/gfglogo.png",
+                "Process1", "User1", 1024, 50.0f, 123, 512.0, 1024, 1024, 512, 512))
+        }
+    }
+
     val textFieldState = rememberTextFieldState(initialText = "Hello")
     val (query, onQueryChange) = rememberSaveable { mutableStateOf("") }
 
@@ -215,6 +240,8 @@ fun ProcessView() {
         }
 
         HorizontalDivider(modifier = Modifier.fillMaxWidth(), color = Color(0x0D000000))
+
+        // header
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -239,6 +266,55 @@ fun ProcessView() {
             }
         }
         HorizontalDivider(modifier = Modifier.fillMaxWidth(), color = Color(0x0D000000))
+
+        // item
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // item row
+            processInfoList.forEachIndexed { index, processInfo ->
+                Row(
+                    modifier = Modifier
+                        .weight(headers[0].weight)
+                        .padding(10.dp)
+                ) {
+                    Image(
+                        painter = rememberAsyncImagePainter(processInfo.icon),
+                        contentDescription = "gfg image",
+                        modifier = Modifier
+                            .size(width = 21.75.dp, height = 21.75.dp)
+                    )
+                    Text(text = processInfo.name, fontSize = 14.sp)
+                }
+
+                var itemValues = listOf(
+                    processInfo.user,
+                    processInfo.virtualMemory,
+                    processInfo.cpu,
+                    processInfo.pid,
+                    processInfo.memory,
+                    processInfo.diskReadAll,
+                    processInfo.diskWriteAll,
+                    processInfo.diskRead,
+                    processInfo.diskWrite
+                )
+
+                itemValues
+                    .forEachIndexed { index, itemValue ->
+                    Box(
+                        contentAlignment = Alignment.CenterStart,
+                        modifier = Modifier
+                            .weight(headers[index + 1].weight)
+                            .padding(10.dp)
+                    ) {
+                        Text(text = itemValue.toString(), fontSize = 14.sp)
+                    }
+                }
+            }
+        }
     }
 }
 
