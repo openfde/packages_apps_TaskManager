@@ -61,4 +61,10 @@ dependencies {
 
     implementation("androidx.navigation:navigation-compose:$versionNav")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$versionSer")
+
+    implementation("io.ktor:ktor-client-android:1.6.4")
+    implementation("io.ktor:ktor-client-websockets:1.6.4")
+
+    implementation("io.ktor:ktor-client-cio:1.6.4")
+
 }

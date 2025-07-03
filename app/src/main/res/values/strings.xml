@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">taskmanager</string>
+    <string name="daemon_url_base">127.0.0.1:8080</string>
 </resources>
