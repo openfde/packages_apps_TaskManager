@@ -67,4 +67,9 @@ dependencies {
 
     implementation("io.ktor:ktor-client-cio:1.6.4")
 
+    implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
+    implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4")
+
+    implementation("io.coil-kt:coil-compose:2.0.0-rc01")
+
 }
