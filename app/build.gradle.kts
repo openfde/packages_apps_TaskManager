@@ -37,6 +37,7 @@ android {
     }
     buildFeatures {
         compose = true
+        aidl = true
     }
 }
 
@@ -69,7 +70,9 @@ dependencies {
 
     implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
     implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4")
-
     implementation("io.coil-kt:coil-compose:2.0.0-rc01")
+    implementation ("org.lsposed.hiddenapibypass:hiddenapibypass:2.0")
+    implementation ("com.google.code.gson:gson:2.13.1")
+
 
 }
