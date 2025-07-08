@@ -3,8 +3,7 @@ package com.example.taskmanager
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 
-object Models {
-
+object Adapters {
     private val gson = Gson()
     private val intListType = object : TypeToken<List<Int>>() {}.type
     public fun TasksPidAdapt(tasksPidString: String): List<Int> = gson.fromJson(tasksPidString, intListType)
