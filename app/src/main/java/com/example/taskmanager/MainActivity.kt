@@ -1,5 +1,6 @@
 package com.example.taskmanager
 
+import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -44,46 +45,24 @@ import kotlinx.serialization.Serializable
 import coil.compose.rememberAsyncImagePainter
 import android.openfde.ITaskManager
 import android.os.IBinder
+import android.os.ParcelFileDescriptor
+import android.util.Base64
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
+
 
 class MainActivity : ComponentActivity() {
-
-    private val taskBinder: IBinder? = try {
-        Class.forName("android.os.ServiceManager")
-            .getMethod("getService", String::class.java)
-            .invoke(null, "openfdetaskmanager") as IBinder?
-    } catch (e: Exception) {
-        e.printStackTrace()
-        Log.d("COLD","error :$e")
-        null
-    }
-
-    private val taskManager = taskBinder?.let { ITaskManager.Stub.asInterface(it) }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         lifecycleScope.launch {
-            val tasksPidString = taskManager?.listTasksPid()
-            Log.d("COLD",tasksPidString.toString())
-            val tasksPid = Models.TasksPidAdapt(tasksPidString.toString())
-            for (pid in tasksPid) {
-                Log.d("COLD", "PID: $pid")
-            }
-            val taskInfoString = taskManager?.getTaskInfoByPid(123)
-            val taskInfo = Models.TaskInfoAdapt(taskInfoString.toString())
-            Log.d("COLD",taskInfo.pid.toString())
-            Log.d("COLD",taskInfo.name.toString())
-            Log.d("COLD",taskInfo.user.toString())
-            Log.d("COLD",taskInfo.vmsize.toString())
-            Log.d("COLD",taskInfo.readBytes.toString())
-            Log.d("COLD",taskInfo.writeBytes.toString())
-            Log.d("COLD",taskInfo.cpuUsage.toString())
-            Log.d("COLD",taskInfo.rss.toString())
-            Log.d("COLD",taskInfo.writeIssued.toString())
-            Log.d("COLD",taskInfo.readIssued.toString())
+
+            val taskInfo1 = TaskManagerBinder.getTaskInfoByPid(55316)
+            Log.d("COLD",taskInfo1.toString())
+
         }
         enableEdgeToEdge()
         setContent {
@@ -231,9 +210,17 @@ fun SearchBar(
     }
 }
 
-
 @Composable
 fun ProcessView() {
+
+    val coroutineScope = rememberCoroutineScope()
+
+    LaunchedEffect(Unit) {
+        coroutineScope.launch {
+
+        }
+    }
+
 
     val headers = listOf(
         HeaderItem(name = "进程名称", weight = 0.15f),
@@ -314,7 +301,9 @@ fun ProcessView() {
                 ) {
                     Image(
                         painter = rememberAsyncImagePainter(processInfo.icon),
-                        contentDescription = "gfg image",
+//                        bitmap = bitmap.asImageBitmap(),
+                        contentDescription = null,
+
                         modifier = Modifier
                             .size(width = 21.75.dp, height = 21.75.dp)
                     )
@@ -348,4 +337,5 @@ fun ProcessView() {
         }
     }
 }
+
 
