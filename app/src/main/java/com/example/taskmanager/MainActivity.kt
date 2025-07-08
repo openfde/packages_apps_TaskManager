@@ -37,34 +37,62 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import kotlinx.serialization.Serializable
 import coil.compose.rememberAsyncImagePainter
+import android.openfde.ITaskManager
+import android.os.IBinder
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 
-class MainActivity : ComponentActivity(), WebSocketListener {
-    private val daemonClient = DaemonClient("192.168.126.159", 8080,this)
+class MainActivity : ComponentActivity() {
+
+    private val taskBinder: IBinder? = try {
+        Class.forName("android.os.ServiceManager")
+            .getMethod("getService", String::class.java)
+            .invoke(null, "openfdetaskmanager") as IBinder?
+    } catch (e: Exception) {
+        e.printStackTrace()
+        Log.d("COLD","error :$e")
+        null
+    }
+
+    private val taskManager = taskBinder?.let { ITaskManager.Stub.asInterface(it) }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        lifecycleScope.launch {
+            val tasksPidString = taskManager?.listTasksPid()
+            Log.d("COLD",tasksPidString.toString())
+            val tasksPid = Models.TasksPidAdapt(tasksPidString.toString())
+            for (pid in tasksPid) {
+                Log.d("COLD", "PID: $pid")
+            }
+            val taskInfoString = taskManager?.getTaskInfoByPid(123)
+            val taskInfo = Models.TaskInfoAdapt(taskInfoString.toString())
+            Log.d("COLD",taskInfo.pid.toString())
+            Log.d("COLD",taskInfo.name.toString())
+            Log.d("COLD",taskInfo.user.toString())
+            Log.d("COLD",taskInfo.vmsize.toString())
+            Log.d("COLD",taskInfo.readBytes.toString())
+            Log.d("COLD",taskInfo.writeBytes.toString())
+            Log.d("COLD",taskInfo.cpuUsage.toString())
+            Log.d("COLD",taskInfo.rss.toString())
+            Log.d("COLD",taskInfo.writeIssued.toString())
+            Log.d("COLD",taskInfo.readIssued.toString())
+        }
         enableEdgeToEdge()
         setContent {
             MyApp()
         }
-        daemonClient.connectProcessInfoSocket(lifecycleScope)
     }
 
-    override fun onConnected() {
-        Log.d("WebSocket", "Connected")
-    }
-
-    override fun onMessage(message: String) {
-        Log.d("WebSocket", "Received message: $message")
-    }
-
-    override fun onDisconnected() {
-        Log.d("WebSocket", "Disconnected")
+    override fun onDestroy() {
+        super.onDestroy()
     }
 }
 
@@ -222,9 +250,12 @@ fun ProcessView() {
 
     val processInfoList = remember {
         mutableStateListOf<ProcessInfo>().apply {
-            add(ProcessInfo(
-                "https://media.geeksforgeeks.org/wp-content/uploads/20210101144014/gfglogo.png",
-                "Process1", "User1", 1024, 50.0f, 123, 512.0, 1024, 1024, 512, 512))
+            add(
+                ProcessInfo(
+                    "https://media.geeksforgeeks.org/wp-content/uploads/20210101144014/gfglogo.png",
+                    "Process1", "User1", 1024, 50.0f, 123, 512.0, 1024, 1024, 512, 512
+                )
+            )
         }
     }
 
@@ -304,15 +335,15 @@ fun ProcessView() {
 
                 itemValues
                     .forEachIndexed { index, itemValue ->
-                    Box(
-                        contentAlignment = Alignment.CenterStart,
-                        modifier = Modifier
-                            .weight(headers[index + 1].weight)
-                            .padding(10.dp)
-                    ) {
-                        Text(text = itemValue.toString(), fontSize = 14.sp)
+                        Box(
+                            contentAlignment = Alignment.CenterStart,
+                            modifier = Modifier
+                                .weight(headers[index + 1].weight)
+                                .padding(10.dp)
+                        ) {
+                            Text(text = itemValue.toString(), fontSize = 14.sp)
+                        }
                     }
-                }
             }
         }
     }
