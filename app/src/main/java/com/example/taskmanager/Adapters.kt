@@ -6,18 +6,20 @@ import com.google.gson.reflect.TypeToken
 object Adapters {
     private val gson = Gson()
     private val intListType = object : TypeToken<List<Int>>() {}.type
+    private val taskInfoListType = object : TypeToken<List<TaskInfo>>() {}.type
     public fun TasksPidAdapt(tasksPidString: String): List<Int> = gson.fromJson(tasksPidString, intListType)
     data class TaskInfo(
         var name: String? = null,
         var user: String? = null,
-        var vmsize: Int = 0,
-        var cpuUsage: Int = 0,
+        var vmsize: Long = 0,
+        var cpuUsage: Long = 0,
         var pid: Int = 0,
-        var rss: Int = 0,
-        var readBytes: Int = 0,
-        var writeBytes: Int = 0,
-        var readIssued: Int = 0,
-        var writeIssued: Int = 0
+        var rss: Long = 0,
+        var readBytes: Long = 0,
+        var writeBytes: Long = 0,
+        var readIssued: Long = 0,
+        var writeIssued: Long = 0
     )
     public fun TaskInfoAdapt(taskInfoString: String): TaskInfo = gson.fromJson(taskInfoString, TaskInfo::class.java)
+    public fun TaskInfoListAdapt(taskInfoListString: String): List<TaskInfo> = gson.fromJson(taskInfoListString, taskInfoListType)
 }
