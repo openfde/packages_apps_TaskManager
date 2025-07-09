@@ -21,20 +21,14 @@ object TaskManagerBinder {
 
     private val taskManager = taskBinder?.let { ITaskManager.Stub.asInterface(it) }
 
-    public fun listTasksPid(): List<Int> {
-        val tasksPidString = taskManager?.listTasksPid()
-        val tasksPid = Adapters.TasksPidAdapt(tasksPidString.toString())
-        return tasksPid
-    }
-
-    public fun getTaskInfoByPid(pid: Int): Adapters.TaskInfo {
-        val taskInfoString = taskManager?.getTaskInfoByPid(pid)
-        Log.d("COLD","taskInfoString: $taskInfoString")
-        if (taskInfoString == "null") {
-            return Adapters.TaskInfo()
+    public fun getTasks(): List<Adapters.TaskInfo> {
+        val tasksString = taskManager?.getTasks()
+        val items = tasksString.toString().split("}, {")
+        for (item in items) {
+            Log.d("COLD", item.toString())
         }
-        val taskInfo = Adapters.TaskInfoAdapt(taskInfoString.toString())
-        return taskInfo
+        val tasks = Adapters.TaskInfoListAdapt(tasksString.toString())
+        return tasks
     }
 
     public fun killTaskByPid(pid: Int) {
@@ -43,6 +37,7 @@ object TaskManagerBinder {
 
     public fun getIconBitmapByTaskName(taskName:String): ImageBitmap {
         val iconB64String = taskManager?.getIconB64ByTaskName(taskName)
+        Log.d("COLD","iconB64String: $iconB64String")
         val imageBytes = Base64.decode(iconB64String, Base64.DEFAULT)
         val bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size).asImageBitmap()
         return bitmap
