@@ -52,8 +52,12 @@ fun ProcessView() {
 
     LaunchedEffect(Unit) {
         coroutineScope.launch {
-            val tasks = TaskManagerBinder.getTasks()
-            taskInfoList.addAll(tasks)
+            while (true) {
+                val tasks = TaskManagerBinder.getTasks()
+                taskInfoList.clear()
+                taskInfoList.addAll(tasks)
+                kotlinx.coroutines.delay(100)
+            }
         }
     }
 
@@ -67,27 +71,35 @@ fun ProcessView() {
     ) {
         taskInfoList.map {
             row {
-                onClick = { selectedRow = 0 }
                 cell {
                     Row {
-                        val taskIcon = remember { mutableStateOf<androidx.compose.ui.graphics.ImageBitmap?>(null) }
+                        val taskIcon = remember {
+                            mutableStateOf<androidx.compose.ui.graphics.ImageBitmap?>(null)
+                        }
                         LaunchedEffect(Unit) {
-                            taskIcon.value = TaskManagerBinder.getIconBitmapByTaskName(it.name.toString())
+                            taskIcon.value =
+                                TaskManagerBinder.getIconBitmapByTaskName(it.name.toString())
                         }
 
-                        if (taskIcon.value != null) {
-                            Image(
-                                bitmap = taskIcon.value!!,
-                                contentDescription = null,
-                                modifier = Modifier.size(30.dp)
-                            )
-                        } else {
-                            Image(
-                                painter = painterResource(id = R.drawable.ic_linux),
-                                contentDescription = null,
-                                modifier = Modifier.size(30.dp)
-                            )
-                        }
+//                        if (taskIcon.value != null) {
+//                            Image(
+//                                bitmap = taskIcon.value!!,
+//                                contentDescription = null,
+//                                modifier = Modifier.size(30.dp)
+//                            )
+//                        } else {
+//                            Image(
+//                                painter = painterResource(id = R.drawable.ic_linux),
+//                                contentDescription = null,
+//                                modifier = Modifier.size(30.dp)
+//                            )
+//                        }
+
+                        Image(
+                            painter = painterResource(id = R.drawable.ic_linux),
+                            contentDescription = null,
+                            modifier = Modifier.size(30.dp)
+                        )
 
                         Text(
                             text = it.name.toString(),
@@ -98,7 +110,7 @@ fun ProcessView() {
                 }
                 cell { Text(text = it.user.toString()) }
                 cell { Text(text = it.vmsize.toString()) }
-                cell { Text(text = it.cpuUsage.toString()) }
+                cell { Text(text = it.cpuUsage.toString() + "%") }
                 cell { Text(text = it.pid.toString()) }
                 cell { Text(text = it.rss.toString()) }
                 cell { Text(text = it.readBytes.toString()) }
