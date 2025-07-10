@@ -1,19 +1,22 @@
 package com.example.taskmanager.ui
 
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -21,12 +24,10 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -37,90 +38,66 @@ import androidx.compose.ui.unit.sp
 import com.example.taskmanager.Adapters
 import com.example.taskmanager.R
 import com.example.taskmanager.TaskManagerBinder
-import com.seanproctor.datatable.DataColumn
-import com.seanproctor.datatable.material3.DataTable
 import kotlinx.coroutines.launch
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
-import kotlinx.coroutines.delay
+
+@Composable
+fun Header() {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 5.dp, horizontal = 10.dp)
+    ) {
+        val context = LocalContext.current
+        val taskHeaders = context.resources.getStringArray(R.array.tasks_headers_chinese)
+        val taskItemWeights =
+            context.resources.getIntArray(R.array.task_item_weights).map { it / 100f }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            taskHeaders.forEachIndexed { index, header ->
+                Text(
+                    text = header,
+                    modifier = Modifier
+                        .height(30.dp)
+                        .weight(taskItemWeights.getOrNull(index) ?: 0.1f)
+                        .background(Color.White)
+                        .padding(horizontal = 10.dp),
+                    fontSize = 20.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                VerticalDivider(modifier = Modifier.height(10.dp))
+            }
+        }
+    }
+}
 
 @Composable
 fun ProcessView() {
     val taskInfoList = remember { mutableStateListOf<Adapters.TaskInfo>() }
     val coroutineScope = rememberCoroutineScope()
-    val context = LocalContext.current
-    val taskHeaders = context.resources.getStringArray(R.array.tasks_headers)
-
-    LaunchedEffect(Unit) {
-        coroutineScope.launch {
-            val taskPids =TaskManagerBinder.getTaskPids()
-            taskPids.forEach {
-                val taskInfo = TaskManagerBinder.getTaskByPid(it)
-                if (taskInfo != null) {
-                    taskInfoList.add(taskInfo)
+    val initialLoad = remember { mutableStateOf(false) }
+    LaunchedEffect(initialLoad.value) {
+        if (!initialLoad.value) {
+            initialLoad.value = true
+            coroutineScope.launch {
+                val taskPids = TaskManagerBinder.getTaskPids()
+                taskInfoList.clear()
+                taskPids.forEach {
+                    TaskManagerBinder.getTaskByPid(it)?.let { taskInfoList.add(it) }
                 }
-                delay(1000)
             }
         }
     }
 
-    DataTable(
-        columns = taskHeaders.map {
-            DataColumn {
-                Text(it)
-            }
-        },
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        taskInfoList.map {
-            row {
-                cell {
-                    Row {
-                        val taskIcon = remember {
-                            mutableStateOf<androidx.compose.ui.graphics.ImageBitmap?>(null)
-                        }
-                        LaunchedEffect(Unit) {
-                            taskIcon.value =
-                                TaskManagerBinder.getIconBitmapByTaskName(it.name.toString())
-                        }
-
-/*                        if (taskIcon.value != null) {
-                            Image(
-                                bitmap = taskIcon.value!!,
-                                contentDescription = null,
-                                modifier = Modifier.size(30.dp)
-                            )
-                        } else {
-                            Image(
-                                painter = painterResource(id = R.drawable.ic_linux),
-                                contentDescription = null,
-                                modifier = Modifier.size(30.dp)
-                            )
-                        }
-*/
-
-                        Image(
-                            painter = painterResource(id = R.drawable.ic_linux),
-                            contentDescription = null,
-                            modifier = Modifier.size(30.dp)
-                        )
-
-                        Text(
-                            text = it.name.toString(),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-                }
-                cell { Text(text = it.user.toString()) }
-                cell { Text(text = it.vmsize.toString()) }
-                cell { Text(text = it.cpuUsage.toString() + "%") }
-                cell { Text(text = it.pid.toString()) }
-                cell { Text(text = it.rss.toString()) }
-                cell { Text(text = it.readBytes.toString()) }
-                cell { Text(text = it.writeBytes.toString()) }
-                cell { Text(text = it.readIssued.toString()) }
-                cell { Text(text = it.writeIssued.toString()) }
+    Column {
+        Header()
+        Column(
+            modifier = Modifier.verticalScroll(rememberScrollState())
+        ) {
+            taskInfoList.forEach {
+                TaskItem(it)
+                HorizontalDivider(modifier = Modifier.weight(0.05f))
             }
         }
     }
@@ -128,42 +105,36 @@ fun ProcessView() {
 
 @Composable
 fun TaskItem(taskInfo: Adapters.TaskInfo) {
-    val coroutineScope = rememberCoroutineScope()
-    val taskIcon = remember { mutableStateOf<androidx.compose.ui.graphics.ImageBitmap?>(null) }
-
-    LaunchedEffect(Unit) {
-        coroutineScope.launch {
-            val bitmap = TaskManagerBinder.getIconBitmapByTaskName(taskInfo.name.toString())
-            // set task icon
-            taskIcon.value = bitmap
-        }
-    }
+    val context = LocalContext.current
+    val taskHeaders = context.resources.getStringArray(R.array.tasks_headers_chinese)
+    val taskItemWeights = context.resources.getIntArray(R.array.task_item_weights).map { it / 100f }
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 10.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .padding(vertical = 5.dp, horizontal = 10.dp)
     ) {
-        Row {
-            if (taskIcon.value != null) {
-                Image(
-                    bitmap = taskIcon.value!!,
-                    contentDescription = null,
-                    modifier = Modifier.size(30.dp)
-                )
-            } else {
-                Image(
-                    painter = painterResource(id = R.drawable.ic_linux),
-                    contentDescription = null,
-                    modifier = Modifier.size(30.dp)
-                )
-            }
-
+        val m = listOf(
+            taskInfo.name.toString(),
+            taskInfo.user.toString(),
+            taskInfo.vmsize.toString(),
+            taskInfo.cpuUsage.toString(),
+            taskInfo.cpuUsage.toString(),
+            taskInfo.rss.toString(),
+            taskInfo.readBytes.toString(),
+            taskInfo.writeBytes.toString(),
+            taskInfo.readIssued.toString(),
+            taskInfo.writeIssued.toString()
+        )
+        taskHeaders.forEachIndexed { index, taskItemWeight ->
             Text(
-                text = taskInfo.name.toString(),
-                modifier = Modifier.weight(0.15f),
-                fontSize = 20.sp
+                text = m[index].toString(),
+                modifier = Modifier
+                    .height(30.dp)
+                    .weight(taskItemWeights.getOrNull(0) ?: 0.1f),
+                fontSize = 20.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
         }
     }
