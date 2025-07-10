@@ -27,6 +27,19 @@ object TaskManagerBinder {
         return tasks
     }
 
+    public fun getTaskPids() : List<Int> {
+        val tasksPidString = taskManager?.getTaskPids()
+        val taskPids = Adapters.TaskPidsAdapt(tasksPidString.toString())
+        return taskPids
+    }
+
+    public fun getTaskByPid(pid: Int): Adapters.TaskInfo? {
+        val taskInfoString = taskManager?.getTaskByPid(pid)
+        if(taskInfoString == "null") return null
+        val taskInfo = Adapters.TaskInfoAdapt(taskInfoString.toString())
+        return taskInfo
+    }
+
     public fun killTaskByPid(pid: Int) {
         taskManager?.killTaskByPid(pid)
     }
