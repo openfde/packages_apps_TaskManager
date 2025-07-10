@@ -1,5 +1,6 @@
 package com.example.taskmanager.ui
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -41,10 +42,10 @@ import com.seanproctor.datatable.material3.DataTable
 import kotlinx.coroutines.launch
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
+import kotlinx.coroutines.delay
 
 @Composable
 fun ProcessView() {
-    var selectedRow by remember { mutableStateOf<Int?>(null) }
     val taskInfoList = remember { mutableStateListOf<Adapters.TaskInfo>() }
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -52,11 +53,13 @@ fun ProcessView() {
 
     LaunchedEffect(Unit) {
         coroutineScope.launch {
-            while (true) {
-                val tasks = TaskManagerBinder.getTasks()
-                taskInfoList.clear()
-                taskInfoList.addAll(tasks)
-                kotlinx.coroutines.delay(100)
+            val taskPids =TaskManagerBinder.getTaskPids()
+            taskPids.forEach {
+                val taskInfo = TaskManagerBinder.getTaskByPid(it)
+                if (taskInfo != null) {
+                    taskInfoList.add(taskInfo)
+                }
+                delay(1000)
             }
         }
     }
@@ -81,19 +84,20 @@ fun ProcessView() {
                                 TaskManagerBinder.getIconBitmapByTaskName(it.name.toString())
                         }
 
-//                        if (taskIcon.value != null) {
-//                            Image(
-//                                bitmap = taskIcon.value!!,
-//                                contentDescription = null,
-//                                modifier = Modifier.size(30.dp)
-//                            )
-//                        } else {
-//                            Image(
-//                                painter = painterResource(id = R.drawable.ic_linux),
-//                                contentDescription = null,
-//                                modifier = Modifier.size(30.dp)
-//                            )
-//                        }
+/*                        if (taskIcon.value != null) {
+                            Image(
+                                bitmap = taskIcon.value!!,
+                                contentDescription = null,
+                                modifier = Modifier.size(30.dp)
+                            )
+                        } else {
+                            Image(
+                                painter = painterResource(id = R.drawable.ic_linux),
+                                contentDescription = null,
+                                modifier = Modifier.size(30.dp)
+                            )
+                        }
+*/
 
                         Image(
                             painter = painterResource(id = R.drawable.ic_linux),

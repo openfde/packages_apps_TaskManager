@@ -7,7 +7,7 @@ object Adapters {
     private val gson = Gson()
     private val intListType = object : TypeToken<List<Int>>() {}.type
     private val taskInfoListType = object : TypeToken<List<TaskInfo>>() {}.type
-    public fun TasksPidAdapt(tasksPidString: String): List<Int> = gson.fromJson(tasksPidString, intListType)
+    public fun TaskPidsAdapt(taskPidsString: String): List<Int> = gson.fromJson(taskPidsString, intListType)
     data class TaskInfo(
         var name: String? = null,
         var user: String? = null,
