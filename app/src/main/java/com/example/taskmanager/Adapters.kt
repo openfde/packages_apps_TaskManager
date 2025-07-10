@@ -12,7 +12,7 @@ object Adapters {
         var name: String? = null,
         var user: String? = null,
         var vmsize: Long = 0,
-        var cpuUsage: Long = 0,
+        var cpuUsage: Float = .0f,
         var pid: Int = 0,
         var rss: Long = 0,
         var readBytes: Long = 0,
