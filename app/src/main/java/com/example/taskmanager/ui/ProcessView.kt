@@ -1,6 +1,5 @@
 package com.example.taskmanager.ui
 
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -15,7 +14,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -35,9 +33,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.taskmanager.Adapters
+import com.example.taskmanager.R
 import com.example.taskmanager.TaskManagerBinder
 import kotlinx.coroutines.launch
 
@@ -45,12 +45,12 @@ import kotlinx.coroutines.launch
 fun ProcessView() {
     val coroutineScope = rememberCoroutineScope()
     val taskInfoList = remember { mutableStateListOf<Adapters.TaskInfo>() }
-
     val (query, onQueryChange) = rememberSaveable { mutableStateOf("") }
 
     LaunchedEffect(Unit) {
         coroutineScope.launch {
             val tasks = TaskManagerBinder.getTasks()
+            taskInfoList.addAll(tasks)
         }
     }
 
@@ -71,7 +71,8 @@ fun ProcessView() {
         Row(
             modifier = Modifier
                 .align(Alignment.CenterHorizontally)
-                .padding(top=8.dp, bottom=8.dp),
+                .padding(top = 8.dp, bottom = 8.dp)
+                .background(Color(0xC7F7F7F7).copy(alpha = 1f)),// not work
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             OuterBox()
@@ -111,20 +112,56 @@ fun ProcessView() {
         // items
         Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
             taskInfoList.map {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row {
-                        Text(text = it.name.toString(), modifier = Modifier.weight(0.15f), fontSize = 14.sp)
-                    }
-                }
+                TaskItem(it)
             }
         }
     }
 }
+
+@Composable
+fun TaskItem(taskInfo: Adapters.TaskInfo) {
+    val coroutineScope = rememberCoroutineScope()
+    val taskIcon = remember { mutableStateOf<androidx.compose.ui.graphics.ImageBitmap?>(null) }
+
+    LaunchedEffect(Unit) {
+        coroutineScope.launch {
+            val bitmap = TaskManagerBinder.getIconBitmapByTaskName(taskInfo.name.toString())
+            // set task icon
+            taskIcon.value = bitmap
+        }
+    }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 10.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Row {
+            if (taskIcon.value != null) {
+                Image(
+                    bitmap = taskIcon.value!!,
+                    contentDescription = null,
+                    modifier = Modifier.size(30.dp)
+                )
+            }
+            else {
+                Image(
+                    painter = painterResource(id = R.drawable.ic_linux),
+                    contentDescription = null,
+                    modifier = Modifier.size(30.dp)
+                )
+            }
+
+            Text(
+                text = taskInfo.name.toString(),
+                modifier = Modifier.weight(0.15f),
+                fontSize = 20.sp
+            )
+        }
+    }
+}
+
 
 @Composable
 fun InnerBox(name: String, selected: Boolean) {

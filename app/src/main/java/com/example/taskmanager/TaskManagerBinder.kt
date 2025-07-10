@@ -23,10 +23,6 @@ object TaskManagerBinder {
 
     public fun getTasks(): List<Adapters.TaskInfo> {
         val tasksString = taskManager?.getTasks()
-        val items = tasksString.toString().split("}, {")
-        for (item in items) {
-            Log.d("COLD", item.toString())
-        }
         val tasks = Adapters.TaskInfoListAdapt(tasksString.toString())
         return tasks
     }
@@ -35,9 +31,13 @@ object TaskManagerBinder {
         taskManager?.killTaskByPid(pid)
     }
 
-    public fun getIconBitmapByTaskName(taskName:String): ImageBitmap {
+    public fun getIconBitmapByTaskName(taskName:String): ImageBitmap? {
         val iconB64String = taskManager?.getIconB64ByTaskName(taskName)
-        Log.d("COLD","iconB64String: $iconB64String")
+        Log.d("COLD",iconB64String.toString())
+
+        if (iconB64String == "")
+            return null
+
         val imageBytes = Base64.decode(iconB64String, Base64.DEFAULT)
         val bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size).asImageBitmap()
         return bitmap
