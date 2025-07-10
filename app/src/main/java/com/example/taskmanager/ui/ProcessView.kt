@@ -5,18 +5,14 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -24,11 +20,12 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -39,13 +36,19 @@ import androidx.compose.ui.unit.sp
 import com.example.taskmanager.Adapters
 import com.example.taskmanager.R
 import com.example.taskmanager.TaskManagerBinder
+import com.seanproctor.datatable.DataColumn
+import com.seanproctor.datatable.material3.DataTable
 import kotlinx.coroutines.launch
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextOverflow
 
 @Composable
 fun ProcessView() {
-    val coroutineScope = rememberCoroutineScope()
+    var selectedRow by remember { mutableStateOf<Int?>(null) }
     val taskInfoList = remember { mutableStateListOf<Adapters.TaskInfo>() }
-    val (query, onQueryChange) = rememberSaveable { mutableStateOf("") }
+    val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
+    val taskHeaders = context.resources.getStringArray(R.array.tasks_headers)
 
     LaunchedEffect(Unit) {
         coroutineScope.launch {
@@ -54,65 +57,54 @@ fun ProcessView() {
         }
     }
 
-    val headers = listOf(
-        HeaderItem(name = "进程名称", weight = 0.15f),
-        HeaderItem(name = "用户", weight = 0.1f),
-        HeaderItem(name = "虚拟内存", weight = 0.12f),
-        HeaderItem(name = "% CPU", weight = 0.08f),
-        HeaderItem(name = "ID", weight = 0.08f),
-        HeaderItem(name = "内存", weight = 0.1f),
-        HeaderItem(name = "读盘容量", weight = 0.12f),
-        HeaderItem(name = "写入容量", weight = 0.12f),
-        HeaderItem(name = "磁盘读取", weight = 0.1f),
-        HeaderItem(name = "磁盘写入", weight = 0.1f)
-    )
-
-    Column {
-        Row(
-            modifier = Modifier
-                .align(Alignment.CenterHorizontally)
-                .padding(top = 8.dp, bottom = 8.dp)
-                .background(Color(0xC7F7F7F7).copy(alpha = 1f)),// not work
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            OuterBox()
-            SearchBar(
-                query = query, onQueryChange = onQueryChange, placeholder = "搜索"
-            )
-        }
-
-        HorizontalDivider(modifier = Modifier.fillMaxWidth(), color = Color(0x0D000000))
-
-        // header
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            headers.forEachIndexed { index, header ->
-                Box(
-                    contentAlignment = Alignment.CenterStart,
-                    modifier = Modifier
-                        .weight(header.weight)
-                        .padding(10.dp)
-                ) {
-                    Text(text = header.name, fontSize = 14.sp)
-                }
-
-                if (index < headers.size - 1) {
-                    VerticalDivider(
-                        modifier = Modifier.height(18.dp), color = Color(0x0D000000)
-                    )
-                }
+    DataTable(
+        columns = taskHeaders.map {
+            DataColumn {
+                Text(it)
             }
-        }
-        HorizontalDivider(modifier = Modifier.fillMaxWidth(), color = Color(0x0D000000))
+        },
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        taskInfoList.map {
+            row {
+                onClick = { selectedRow = 0 }
+                cell {
+                    Row {
+                        val taskIcon = remember { mutableStateOf<androidx.compose.ui.graphics.ImageBitmap?>(null) }
+                        LaunchedEffect(Unit) {
+                            taskIcon.value = TaskManagerBinder.getIconBitmapByTaskName(it.name.toString())
+                        }
 
-        // items
-        Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-            taskInfoList.map {
-                TaskItem(it)
+                        if (taskIcon.value != null) {
+                            Image(
+                                bitmap = taskIcon.value!!,
+                                contentDescription = null,
+                                modifier = Modifier.size(30.dp)
+                            )
+                        } else {
+                            Image(
+                                painter = painterResource(id = R.drawable.ic_linux),
+                                contentDescription = null,
+                                modifier = Modifier.size(30.dp)
+                            )
+                        }
+
+                        Text(
+                            text = it.name.toString(),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+                cell { Text(text = it.user.toString()) }
+                cell { Text(text = it.vmsize.toString()) }
+                cell { Text(text = it.cpuUsage.toString()) }
+                cell { Text(text = it.pid.toString()) }
+                cell { Text(text = it.rss.toString()) }
+                cell { Text(text = it.readBytes.toString()) }
+                cell { Text(text = it.writeBytes.toString()) }
+                cell { Text(text = it.readIssued.toString()) }
+                cell { Text(text = it.writeIssued.toString()) }
             }
         }
     }
@@ -144,8 +136,7 @@ fun TaskItem(taskInfo: Adapters.TaskInfo) {
                     contentDescription = null,
                     modifier = Modifier.size(30.dp)
                 )
-            }
-            else {
+            } else {
                 Image(
                     painter = painterResource(id = R.drawable.ic_linux),
                     contentDescription = null,
@@ -214,8 +205,6 @@ fun OuterBox() {
         }
     }
 }
-
-data class HeaderItem(val name: String, val weight: Float)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

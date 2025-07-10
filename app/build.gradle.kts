@@ -73,6 +73,7 @@ dependencies {
     implementation("io.coil-kt:coil-compose:2.0.0-rc01")
     implementation ("org.lsposed.hiddenapibypass:hiddenapibypass:2.0")
     implementation ("com.google.code.gson:gson:2.13.1")
+    implementation("com.seanproctor:data-table-material3:0.11.4")
 
 
 }
