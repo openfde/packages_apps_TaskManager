@@ -1,6 +1,6 @@
 <resources>
     <string name="app_name">taskmanager</string>
-    <string-array name="tasks_headers">
+    <string-array name="tasks_headers_chinese">
         <item>进程名称</item>
         <item>用户</item>
         <item>虚拟内存</item>
@@ -12,4 +12,28 @@
         <item>磁盘读取</item>
         <item>磁盘写入</item>
     </string-array>
+    <string-array name="tasks_headers_name">
+        <item>name</item>
+        <item>user</item>
+        <item>vmsize</item>
+        <item>cpuUsage</item>
+        <item>pid</item>
+        <item>rss</item>
+        <item>readBytes</item>
+        <item>writeBytes</item>
+        <item>readIssued</item>
+        <item>writeIssued</item>
+    </string-array>
+    <array name="task_item_weights">
+        <item type="float">10</item>
+        <item type="float">10</item>
+        <item type="float">10</item>
+        <item type="float">10</item>
+        <item type="float">10</item>
+        <item type="float">10</item>
+        <item type="float">10</item>
+        <item type="float">10</item>
+        <item type="float">10</item>
+        <item type="float">10</item>
+    </array>
 </resources>
