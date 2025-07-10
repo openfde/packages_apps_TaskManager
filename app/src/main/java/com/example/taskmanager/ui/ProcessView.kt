@@ -1,5 +1,6 @@
 package com.example.taskmanager.ui
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -28,10 +29,12 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -41,6 +44,10 @@ import com.example.taskmanager.TaskManagerBinder
 import kotlinx.coroutines.launch
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
+import kotlinx.coroutines.delay
+
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 
 @Composable
 fun Header() {
@@ -77,14 +84,33 @@ fun ProcessView() {
     val taskInfoList = remember { mutableStateListOf<Adapters.TaskInfo>() }
     val coroutineScope = rememberCoroutineScope()
     val initialLoad = remember { mutableStateOf(false) }
-    LaunchedEffect(initialLoad.value) {
+    val pidToIndex = remember { mutableMapOf<Int, Int>() }
+
+    LaunchedEffect(Unit) {
         if (!initialLoad.value) {
             initialLoad.value = true
             coroutineScope.launch {
-                val taskPids = TaskManagerBinder.getTaskPids()
                 taskInfoList.clear()
-                taskPids.forEach {
-                    TaskManagerBinder.getTaskByPid(it)?.let { taskInfoList.add(it) }
+                val allTasks = TaskManagerBinder.getTasks()
+                allTasks.forEachIndexed { index, taskInfo ->
+                    pidToIndex[taskInfo.pid] = index
+                    taskInfoList.add(taskInfo)
+                }
+
+                while (true) {
+                    delay(100)
+                    val currentPids = TaskManagerBinder.getTaskPids().toSet()
+                    taskInfoList.removeAll { it.pid !in currentPids }
+                    currentPids.forEach { pid ->
+                        val existingIndex = taskInfoList.indexOfFirst { it.pid == pid }
+                        val taskInfo = TaskManagerBinder.getTaskByPid(pid) ?: return@forEach
+
+                        if (existingIndex != -1) {
+                            taskInfoList[existingIndex] = taskInfo
+                        } else {
+                            taskInfoList.add(taskInfo)
+                        }
+                    }
                 }
             }
         }
@@ -92,17 +118,13 @@ fun ProcessView() {
 
     Column {
         Header()
-        Column(
-            modifier = Modifier.verticalScroll(rememberScrollState())
-        ) {
-            taskInfoList.forEach {
+        LazyColumn {
+            items(taskInfoList, key = { it.pid }) {
                 TaskItem(it)
-                HorizontalDivider(modifier = Modifier.weight(0.05f))
             }
         }
     }
 }
-
 @Composable
 fun TaskItem(taskInfo: Adapters.TaskInfo) {
     val context = LocalContext.current
