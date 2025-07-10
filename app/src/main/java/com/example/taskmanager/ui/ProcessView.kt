@@ -98,17 +98,18 @@ fun ProcessView() {
                 }
 
                 while (true) {
-                    delay(100)
+                    delay(1000)
                     val currentPids = TaskManagerBinder.getTaskPids().toSet()
-                    taskInfoList.removeAll { it.pid !in currentPids }
                     currentPids.forEach { pid ->
-                        val existingIndex = taskInfoList.indexOfFirst { it.pid == pid }
+                        val existingIndex = pidToIndex.getOrDefault(pid, -1)
                         val taskInfo = TaskManagerBinder.getTaskByPid(pid) ?: return@forEach
 
                         if (existingIndex != -1) {
                             taskInfoList[existingIndex] = taskInfo
-                        } else {
+                        } else if (taskInfo.pid !in pidToIndex) {
                             taskInfoList.add(taskInfo)
+                        } else if (taskInfo.pid in pidToIndex) {
+                            pidToIndex.remove(taskInfo.pid)
                         }
                     }
                 }
@@ -125,6 +126,16 @@ fun ProcessView() {
         }
     }
 }
+
+fun toStringWithUnit(bytes: Long): String {
+    return when {
+        bytes > 1024 * 1024 -> "%.1f MB".format(bytes / (1024f * 1024f))
+        bytes > 1024 -> "%.1f KB".format(bytes / 1024f)
+        else -> "$bytes B"
+    }
+}
+
+
 @Composable
 fun TaskItem(taskInfo: Adapters.TaskInfo) {
     val context = LocalContext.current
@@ -136,17 +147,19 @@ fun TaskItem(taskInfo: Adapters.TaskInfo) {
             .fillMaxWidth()
             .padding(vertical = 5.dp, horizontal = 10.dp)
     ) {
+
+
         val m = listOf(
             taskInfo.name.toString(),
             taskInfo.user.toString(),
-            taskInfo.vmsize.toString(),
-            taskInfo.cpuUsage.toString(),
-            taskInfo.cpuUsage.toString(),
-            taskInfo.rss.toString(),
-            taskInfo.readBytes.toString(),
-            taskInfo.writeBytes.toString(),
-            taskInfo.readIssued.toString(),
-            taskInfo.writeIssued.toString()
+            toStringWithUnit(taskInfo.vmsize),
+            taskInfo.cpuUsage.toString() + "%",
+            taskInfo.pid.toString(),
+            toStringWithUnit(taskInfo.rss),
+            toStringWithUnit(taskInfo.readBytes),
+            toStringWithUnit(taskInfo.writeBytes),
+            toStringWithUnit(taskInfo.readIssued),
+            toStringWithUnit(taskInfo.writeIssued)
         )
         taskHeaders.forEachIndexed { index, taskItemWeight ->
             Text(
