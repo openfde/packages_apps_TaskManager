@@ -25,15 +25,30 @@
         <item>writeIssued</item>
     </string-array>
     <array name="task_item_weights">
-        <item type="float">10</item>
-        <item type="float">10</item>
-        <item type="float">10</item>
-        <item type="float">10</item>
-        <item type="float">10</item>
-        <item type="float">10</item>
-        <item type="float">10</item>
-        <item type="float">10</item>
-        <item type="float">10</item>
-        <item type="float">10</item>
+        <item>10</item>
+        <item>10</item>
+        <item>10</item>
+        <item>10</item>
+        <item>10</item>
+        <item>10</item>
+        <item>10</item>
+        <item>10</item>
+        <item>10</item>
+        <item>10</item>
+    </array>
+    <array name="task_dropdown_menu_items">
+        <item>属性</item>
+        <item>__DIVIDER__</item>
+        <item>内存映射</item>
+        <item>打开文件</item>
+        <item>__DIVIDER__</item>
+        <item>更改优先级</item>
+        <item>设置关联</item>
+        <item>__DIVIDER__</item>
+        <item>停止进程</item>
+        <item>继续</item>
+        <item>终止</item>
+        <item>__DIVIDER__</item>
+        <item>强制终止</item>
     </array>
 </resources>

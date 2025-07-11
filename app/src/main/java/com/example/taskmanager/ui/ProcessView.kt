@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
@@ -35,9 +36,16 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.isSecondaryPressed
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.DpOffset
 
 @Composable
 fun TableHeader() {
@@ -114,9 +122,7 @@ fun ProcessView() {
     Column(modifier = Modifier.background(Color(0xFFFCFDFF))) {
         TableHeader()
         LazyColumn {
-            items(taskInfoList, key = { it.pid }) {
-                TaskItem(it)
-            }
+            items(taskInfoList, key = { it.pid }) { TaskItem(it) }
         }
     }
 }
@@ -134,6 +140,9 @@ fun toStringWithUnit(bytes: Long): String {
 fun TaskItem(taskInfo: Adapters.TaskInfo) {
     val context = LocalContext.current
     val taskItemWeights = context.resources.getIntArray(R.array.task_item_weights).map { it / 100f }
+    val taskDropdownMenuItems = context.resources.getStringArray(R.array.task_dropdown_menu_items)
+    val floatingMenuPosition = remember { mutableStateOf(Offset.Zero) }
+    val floatingMenuExpanded = remember { mutableStateOf(false) }
 
     Row(
         modifier = Modifier
@@ -145,11 +154,14 @@ fun TaskItem(taskInfo: Adapters.TaskInfo) {
                 awaitPointerEventScope {
                     while (true) {
                         val event = awaitPointerEvent()
-                        if (event.type == PointerEventType.Press && event.buttons.isSecondaryPressed)
-                            Log.d("COLD", "右键")
+                        if (event.type == PointerEventType.Press && event.buttons.isSecondaryPressed) {
+                            floatingMenuPosition.value = event.changes.first().position
+                            floatingMenuExpanded.value = true
+                        }
                     }
                 }
-            }, verticalAlignment = Alignment.CenterVertically
+            },
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         val m = listOf(
             taskInfo.name.toString(),
@@ -165,7 +177,8 @@ fun TaskItem(taskInfo: Adapters.TaskInfo) {
         )
         taskItemWeights.forEachIndexed { index, taskItemWeight ->
             Row(
-                modifier = Modifier.weight(taskItemWeights.getOrNull(index) ?: 0.1f)
+                modifier = Modifier
+                    .weight(taskItemWeights.getOrNull(index) ?: 0.1f)
                     .padding(start = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment = Alignment.CenterVertically
@@ -183,6 +196,31 @@ fun TaskItem(taskInfo: Adapters.TaskInfo) {
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
+            }
+        }
+
+        DropdownMenu(
+            expanded = floatingMenuExpanded.value,
+            onDismissRequest = { floatingMenuExpanded.value = false },
+            offset = with(LocalDensity.current) {
+                DpOffset(
+                    x = floatingMenuPosition.value.x.toDp(),
+                    y = (-30).dp
+                )
+            },
+            modifier = Modifier.clip(RoundedCornerShape(8.dp))
+        ) {
+            taskDropdownMenuItems.mapIndexed { index, it ->
+                if(it == "__DIVIDER__")
+                {
+                    HorizontalDivider()
+                } else {
+                    DropdownMenuItem(
+                        text = { Text(it) },
+                        onClick = { /* Do something... */ },
+                        modifier = Modifier.height(32.dp).width(192.dp)
+                    )
+                }
             }
         }
     }

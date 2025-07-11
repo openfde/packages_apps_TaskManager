@@ -18,7 +18,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.taskmanager.R
 
-
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -73,8 +72,8 @@ fun NavigationView() {
 @Composable
 fun WindowButtonsBar() {
     Row(
-        horizontalArrangement = Arrangement.spacedBy(6  .dp),
-        modifier = Modifier.padding(start = 12.dp,end=8.dp)
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        modifier = Modifier.padding(start = 12.dp, end = 8.dp)
     ) {
         Image(
             painter = painterResource(id = R.drawable.window_options_button),
@@ -106,9 +105,9 @@ fun WindowButtonsBar() {
 
 @Composable
 fun LogoBar() {
-    Row(modifier = Modifier.padding(start = 14.dp))  {
+    Row(modifier = Modifier.padding(start = 14.dp)) {
         Image(
-            painter = painterResource(id = R.drawable.ic_taskmanager),
+            painter = painterResource(id = R.drawable.ic_launcher_foreground),
             modifier = Modifier.size(24.dp),
             contentDescription = null
         )
