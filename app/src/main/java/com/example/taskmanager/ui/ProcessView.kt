@@ -3,25 +3,15 @@ package com.example.taskmanager.ui
 import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -29,13 +19,9 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.taskmanager.Adapters
@@ -45,12 +31,17 @@ import kotlinx.coroutines.launch
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import kotlinx.coroutines.delay
-
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.ui.input.pointer.isSecondaryPressed
+import androidx.compose.ui.res.painterResource
 
 @Composable
-fun Header() {
+fun TableHeader() {
+    HorizontalDivider(modifier = Modifier.fillMaxWidth(), color = Color(0xFFE8E9EB))
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -60,23 +51,26 @@ fun Header() {
         val taskHeaders = context.resources.getStringArray(R.array.tasks_headers_chinese)
         val taskItemWeights =
             context.resources.getIntArray(R.array.task_item_weights).map { it / 100f }
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.height(24.dp)
+        ) {
             taskHeaders.forEachIndexed { index, header ->
                 Text(
                     text = header,
                     modifier = Modifier
-                        .height(30.dp)
                         .weight(taskItemWeights.getOrNull(index) ?: 0.1f)
-                        .background(Color.White)
                         .padding(horizontal = 10.dp),
-                    fontSize = 20.sp,
+                    fontSize = 14.sp,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                VerticalDivider(modifier = Modifier.height(10.dp))
+                if (index != taskHeaders.lastIndex)
+                    VerticalDivider(modifier = Modifier.height(8.dp))
             }
         }
     }
+    HorizontalDivider(modifier = Modifier.fillMaxWidth(), color = Color(0xFFE8E9EB))
 }
 
 @Composable
@@ -117,8 +111,8 @@ fun ProcessView() {
         }
     }
 
-    Column {
-        Header()
+    Column(modifier = Modifier.background(Color(0xFFFCFDFF))) {
+        TableHeader()
         LazyColumn {
             items(taskInfoList, key = { it.pid }) {
                 TaskItem(it)
@@ -139,16 +133,24 @@ fun toStringWithUnit(bytes: Long): String {
 @Composable
 fun TaskItem(taskInfo: Adapters.TaskInfo) {
     val context = LocalContext.current
-    val taskHeaders = context.resources.getStringArray(R.array.tasks_headers_chinese)
     val taskItemWeights = context.resources.getIntArray(R.array.task_item_weights).map { it / 100f }
 
     Row(
         modifier = Modifier
+            .height(30.dp)
             .fillMaxWidth()
-            .padding(vertical = 5.dp, horizontal = 10.dp)
+            .padding(horizontal = 10.dp)
+            .clickable(onClick = {})
+            .pointerInput(Unit) {
+                awaitPointerEventScope {
+                    while (true) {
+                        val event = awaitPointerEvent()
+                        if (event.type == PointerEventType.Press && event.buttons.isSecondaryPressed)
+                            Log.d("COLD", "右键")
+                    }
+                }
+            }, verticalAlignment = Alignment.CenterVertically
     ) {
-
-
         val m = listOf(
             taskInfo.name.toString(),
             taskInfo.user.toString(),
@@ -161,108 +163,27 @@ fun TaskItem(taskInfo: Adapters.TaskInfo) {
             toStringWithUnit(taskInfo.readIssued),
             toStringWithUnit(taskInfo.writeIssued)
         )
-        taskHeaders.forEachIndexed { index, taskItemWeight ->
-            Text(
-                text = m[index].toString(),
-                modifier = Modifier
-                    .height(30.dp)
-                    .weight(taskItemWeights.getOrNull(0) ?: 0.1f),
-                fontSize = 20.sp,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+        taskItemWeights.forEachIndexed { index, taskItemWeight ->
+            Row(
+                modifier = Modifier.weight(taskItemWeights.getOrNull(index) ?: 0.1f)
+                    .padding(start = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (index == 0) {
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_linux),
+                        modifier = Modifier.size(28.dp),
+                        contentDescription = null
+                    )
+                }
+                Text(
+                    text = m[index].toString(),
+                    fontSize = 14.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
         }
-    }
-}
-
-
-@Composable
-fun InnerBox(name: String, selected: Boolean) {
-    Surface(
-        modifier = Modifier.size(width = 93.dp, height = 26.dp),
-        shape = RoundedCornerShape(4.dp),
-        shadowElevation = if (selected) 1.dp else 0.dp,
-    ) {
-        Box(
-            modifier = Modifier.background(
-                if (selected) Color.White else Color(0x0A000000)
-            )
-        ) {
-            Text(
-                text = name, modifier = Modifier.align(Alignment.Center), fontSize = 14.sp
-            )
-        }
-    }
-}
-
-@Composable
-fun OuterBox() {
-    Box(
-        modifier = Modifier
-            .size(295.dp, 32.dp)
-            .alpha(1f)
-            .background(
-                color = Color(0x0A000000), shape = RoundedCornerShape(6.dp)
-            )
-            .border(
-                width = 1.dp, color = Color(0x0D000000), shape = RoundedCornerShape(6.dp)
-            ), contentAlignment = Alignment.Center
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(3.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(2.dp)
-        ) {
-            InnerBox(name = "进程", selected = true)
-            VerticalDivider(
-                modifier = Modifier.height(18.dp), color = Color(0x0D000000)
-            )
-            InnerBox(name = "资源", selected = false)
-            VerticalDivider(
-                modifier = Modifier.height(18.dp), color = Color(0x0D000000)
-            )
-            InnerBox(name = "文件系统", selected = false)
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun SearchBar(
-    query: String,
-    onQueryChange: (String) -> Unit,
-    modifier: Modifier = Modifier,
-    placeholder: String
-) {
-
-    Box(
-        modifier = Modifier
-            .size(width = 160.dp, height = 32.dp)
-            .background(
-                color = Color.Black.copy(alpha = 0.05f),
-                shape = RoundedCornerShape(6.dp)
-            )
-            .border(
-                width = 1.dp, color = Color.Black.copy(alpha = 0.05f),
-            ),
-        contentAlignment = Alignment.Center
-    ) {
-        TextField(
-            value = query,
-            onValueChange = onQueryChange,
-            placeholder = { Text(placeholder, color = Color.Black) },
-            singleLine = true,
-            shape = RoundedCornerShape(5.dp),
-            colors = TextFieldDefaults.colors(
-                unfocusedIndicatorColor = Color.Transparent,
-                focusedIndicatorColor = Color.Transparent,
-                disabledIndicatorColor = Color.Transparent,
-                focusedContainerColor = Color.Transparent,
-                unfocusedContainerColor = Color.Transparent,
-                disabledContainerColor = Color.Transparent
-            )
-        )
     }
 }
