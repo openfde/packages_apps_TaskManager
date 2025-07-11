@@ -86,32 +86,31 @@ fun ProcessView() {
     val taskInfoList = remember { mutableStateListOf<Adapters.TaskInfo>() }
     val coroutineScope = rememberCoroutineScope()
     val initialLoad = remember { mutableStateOf(false) }
-    val pidToIndex = remember { mutableMapOf<Int, Int>() }
-
     LaunchedEffect(Unit) {
         if (!initialLoad.value) {
             initialLoad.value = true
             coroutineScope.launch {
                 taskInfoList.clear()
                 val allTasks = TaskManagerBinder.getTasks()
-                allTasks.forEachIndexed { index, taskInfo ->
-                    pidToIndex[taskInfo.pid] = index
-                    taskInfoList.add(taskInfo)
-                }
+                taskInfoList.addAll(allTasks)
 
                 while (true) {
                     delay(1000)
                     val currentPids = TaskManagerBinder.getTaskPids().toSet()
+                    taskInfoList.removeAll { it.pid !in currentPids }
                     currentPids.forEach { pid ->
-                        val existingIndex = pidToIndex.getOrDefault(pid, -1)
-                        val taskInfo = TaskManagerBinder.getTaskByPid(pid) ?: return@forEach
-
+                        // 首先检查该pid的进程是否存在，不存在删除且跳过
+                        val taskInfo = TaskManagerBinder.getTaskByPid(pid)
+                        if(taskInfo == null) {
+                            taskInfoList.removeAll { it.pid == pid }
+                            return@forEach
+                        }
+                        // 检查这个pid是否是之前列表中的
+                        val existingIndex = taskInfoList.indexOfFirst { it.pid == pid }
                         if (existingIndex != -1) {
-                            taskInfoList[existingIndex] = taskInfo
-                        } else if (taskInfo.pid !in pidToIndex) {
-                            taskInfoList.add(taskInfo)
-                        } else if (taskInfo.pid in pidToIndex) {
-                            pidToIndex.remove(taskInfo.pid)
+                            taskInfoList[existingIndex] = taskInfo // 若是则在原基础更新
+                        } else {
+                            taskInfoList.add(taskInfo) // 若不是则添加
                         }
                     }
                 }
@@ -210,15 +209,66 @@ fun TaskItem(taskInfo: Adapters.TaskInfo) {
             },
             modifier = Modifier.clip(RoundedCornerShape(8.dp))
         ) {
-            taskDropdownMenuItems.mapIndexed { index, it ->
-                if(it == "__DIVIDER__")
-                {
-                    HorizontalDivider()
-                } else {
+            /*
+                <item>属性</item> 0
+                <item>__DIVIDER__</item>
+                <item>内存映射</item> 1
+                <item>打开文件</item> 2
+                <item>__DIVIDER__</item>
+                <item>更改优先级</item> 3
+                <item>设置关联</item> 4
+                <item>__DIVIDER__</item>
+                <item>停止进程</item> 5
+                <item>继续</item> 6
+                <item>终止</item> 7
+                <item>__DIVIDER__</item>
+                <item>强制终止</item> 8
+            */
+            val callbackFunctionsMap = mapOf<String, () -> Unit>(
+                "属性" to {
+                    // TODO: 属性
+                },
+                "内存映射" to {
+                    // TODO: 内存映射
+                },
+                "打开文件" to {
+                    // TODO: 打开文件
+                },
+                "更改优先级" to {
+                    // TODO: 更改优先级
+                },
+                "设置关联" to {
+                    // TODO: 设置关联
+                },
+                "停止进程" to {
+                    // TODO: 停止进程
+                },
+                "继续" to {
+                    // TODO: 继续
+                },
+                "终止" to {
+                    // TODO: 终止
+                },
+                "强制终止" to {
+                    // TODO: 强制终止
+                    TaskManagerBinder.killTaskByPid(taskInfo.pid)
+                },
+                "__DIVIDER__" to {
+                    //  TODO: 分割线
+                },
+            )
+
+            taskDropdownMenuItems.map { it ->
+                if (it == "__DIVIDER__") HorizontalDivider()
+                else {
                     DropdownMenuItem(
                         text = { Text(it) },
-                        onClick = { /* Do something... */ },
-                        modifier = Modifier.height(32.dp).width(192.dp)
+                        onClick = {
+                            callbackFunctionsMap[it]?.let { it1 -> it1() }
+                        },
+                        modifier = Modifier
+                            .height(32.dp)
+                            .width(192.dp)
                     )
                 }
             }
