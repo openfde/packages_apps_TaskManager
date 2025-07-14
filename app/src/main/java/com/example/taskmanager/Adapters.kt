@@ -6,8 +6,10 @@ import com.google.gson.reflect.TypeToken
 object Adapters {
     private val gson = Gson()
     private val intListType = object : TypeToken<List<Int>>() {}.type
+    private val floatListType = object : TypeToken<List<Float>>() {}.type
     private val taskInfoListType = object : TypeToken<List<TaskInfo>>() {}.type
     public fun TaskPidsAdapt(taskPidsString: String): List<Int> = gson.fromJson(taskPidsString, intListType)
+    public fun CPUPercentAdapt(cpuPercentString: String): List<Float> = gson.fromJson(cpuPercentString, floatListType)
     data class TaskInfo(
         var name: String? = null,
         var user: String? = null,

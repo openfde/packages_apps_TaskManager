@@ -1,5 +1,6 @@
 package com.example.taskmanager.ui
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -29,9 +30,15 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.VerticalDivider
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.res.painterResource
+import androidx.navigation.NavController
 
 
 sealed class AppRoute(val route: String) {
@@ -54,14 +61,14 @@ fun NavigationView() {
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             LogoBar()
-            NavOuterBox()
+            NavOuterBox(navController)
             WindowButtonsBar()
         }
         NavHost(navController, startDestination = AppRoute.Process.route) {
             listOf(
                 AppRoute.Process to @Composable { ProcessView() },
-                AppRoute.Resource to @Composable { Text("this is Resource") },
-                AppRoute.FileSystem to @Composable { Text("this is FileSystem") }
+                AppRoute.Resource to @Composable { ResourceView() },
+                AppRoute.FileSystem to @Composable { FileSystemView() }
             ).forEach { (route, content) ->
                 composable(route.route) { content() }
             }
@@ -120,11 +127,12 @@ fun LogoBar() {
 }
 
 @Composable
-fun NavInnerBox(name: String, selected: Boolean) {
+fun NavInnerBox(name: String, selected: Boolean,onClick: () -> Unit) {
     Surface(
         modifier = Modifier.size(width = 93.dp, height = 26.dp),
         shape = RoundedCornerShape(4.dp),
         shadowElevation = if (selected) 1.dp else 0.dp,
+        onClick = onClick,
     ) {
         Box(
             modifier = Modifier.background(
@@ -139,7 +147,9 @@ fun NavInnerBox(name: String, selected: Boolean) {
 }
 
 @Composable
-fun NavOuterBox() {
+fun NavOuterBox(navController: NavController) {
+    val selectedItem = remember { mutableStateOf(AppRoute.Process.route) }
+
     Box(
         modifier = Modifier
             .size(295.dp, 32.dp)
@@ -158,15 +168,30 @@ fun NavOuterBox() {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(2.dp)
         ) {
-            NavInnerBox(name = "进程", selected = true)
+            NavInnerBox(name = "进程",
+                selected = selectedItem.value == AppRoute.Process.route,
+                onClick = {
+                    navController.navigate(AppRoute.Process.route)
+                    selectedItem.value = AppRoute.Process.route
+            })
             VerticalDivider(
                 modifier = Modifier.height(18.dp), color = Color(0x0D000000)
             )
-            NavInnerBox(name = "资源", selected = false)
+            NavInnerBox(name = "资源",
+                selected = selectedItem.value == AppRoute.Resource.route,
+                onClick = {
+                navController.navigate(AppRoute.Resource.route)
+                    selectedItem.value = AppRoute.Resource.route
+            })
             VerticalDivider(
                 modifier = Modifier.height(18.dp), color = Color(0x0D000000)
             )
-            NavInnerBox(name = "文件系统", selected = false)
+            NavInnerBox(name = "文件系统",
+                selected = selectedItem.value == AppRoute.FileSystem.route,
+                onClick = {
+                navController.navigate(AppRoute.FileSystem.route)
+                    selectedItem.value = AppRoute.FileSystem.route
+            })
         }
     }
 }
