@@ -133,6 +133,14 @@ fun toStringWithUnit(bytes: Long): String {
     }
 }
 
+fun toStringWithSpeedUnit(bytesPerSecond: Float): String {
+    return when {
+        bytesPerSecond > 1024 * 1024 -> "%.1f MB/s".format(bytesPerSecond / (1024f * 1024f))
+        bytesPerSecond > 1024 -> "%.1f KB/s".format(bytesPerSecond / 1024f)
+        else -> "$bytesPerSecond B/s"
+    }
+}
+
 
 @Composable
 fun TaskItem(taskInfo: Adapters.TaskInfo) {

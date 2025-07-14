@@ -8,4 +8,5 @@ interface ITaskManager {
     String getTaskByPid(int pid);
     String getEachCPUPercent(int interval);
     String getMemoryAndSwap();
+    String getNetworkDownloadAndUpload(int interval);
 }
