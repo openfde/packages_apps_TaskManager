@@ -26,6 +26,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Paint
@@ -55,7 +56,7 @@ fun FoldableBox(
             .clickable(
                 onClick = {
                     expanded.value = !expanded.value
-            })
+                })
             .fillMaxWidth()
             .padding(8.dp)
             .background(
@@ -79,7 +80,10 @@ fun FoldableBox(
 }
 
 @Composable
-fun CPUUsagesAnnotationsLine(colors: List<Color>, annotations: List<String>) {
+fun CPUUsagesAnnotationsLine(
+    colors: List<Color>,
+    annotations: List<String>,
+) {
     Row(
         modifier = Modifier
             .padding(10.dp)
@@ -107,6 +111,51 @@ fun CPUUsagesAnnotationsLine(colors: List<Color>, annotations: List<String>) {
     }
 }
 
+@Composable
+fun MemoryAndSwapAnnotationsLine(
+    colors: List<Color>,
+    annotations: List<String>,
+    capcities: List<Float>
+) {
+    val barWidthTotal = 58.dp
+    val barHeight = 16.dp
+    Row(
+        modifier = Modifier
+            .padding(10.dp)
+            .fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        for (i in colors.indices) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(width = 58.dp, height = barHeight)
+                        .background(
+                            color = Color(0x14000000),
+                            shape = RoundedCornerShape(3.dp)
+                        )
+                        .clip(RoundedCornerShape(3.dp))
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(
+                                if (capcities.getOrNull(i) != null) barWidthTotal * capcities[0] else 0.dp,
+                                height = barHeight
+                            )
+                            .background(color = colors[i]),
+                    )
+                }
+                Spacer(modifier = Modifier.width(4.dp))
+                val annotation = annotations.getOrNull(i)
+                if (annotation != null) Text(text = annotation)
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+        }
+    }
+}
+
 @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
 @Composable
 fun ResourceView() {
@@ -114,22 +163,58 @@ fun ResourceView() {
     val cpuPercentState = remember {
         List(4) { mutableStateListOf<Float>() }.toMutableStateList()
     }
+    val memoryAndSwapState = remember {
+        List(2) { mutableStateListOf<Float>() }.toMutableStateList()
+    }
     val context = LocalContext.current
     val cpuColors = context.resources.getIntArray(R.array.cpu_color_array).map { Color(it) }
-    val currentCPUStringState = remember { mutableStateListOf<String>("", "", "", "") }
+    val memoryAndSwapColors =
+        context.resources.getIntArray(R.array.memory_swap_color_array).map { Color(it) }
+    val currentCPUAnnotationsState = remember { mutableStateListOf<String>("", "", "", "") }
+    val currentMemoryAndSwapAnnotationsState = remember { mutableStateListOf<String>("", "") }
+    val currentMemoryAndSwapCapcityState = remember { mutableStateListOf<Float>(0f, 0f) }
 
     LaunchedEffect(Unit) {
         coroutineScope.launch {
             while (true) {
                 val eachCPUPercent = TaskManagerBinder.getEachCPUPercent(100) // [0,1,2,3]
-                currentCPUStringState.clear()
+                currentCPUAnnotationsState.clear()
+                currentMemoryAndSwapAnnotationsState.clear()
                 eachCPUPercent.forEachIndexed { index, it ->
                     if (cpuPercentState[index].size > 100) cpuPercentState[index].removeFirst()
                     cpuPercentState[index].add(it)
-                    currentCPUStringState.add("CPU${index + 1}: %03.1f%%".format(it))
+                    currentCPUAnnotationsState.add("CPU${index + 1}: %03.1f%%".format(it))
                 }
-                val memoryInfo = TaskManagerBinder.getMemoryAndSwap()
-                delay(100)
+                val memoryAndMemoryInfo = TaskManagerBinder.getMemoryAndSwap()
+                currentMemoryAndSwapAnnotationsState
+                    .add(
+                        "内存占用: %03.1f%%    %s/%s    缓存%s"
+                            .format(
+                                memoryAndMemoryInfo.memory.percent,
+                                toStringWithUnit(memoryAndMemoryInfo.memory.used),
+                                toStringWithUnit(memoryAndMemoryInfo.memory.total),
+                                toStringWithUnit(memoryAndMemoryInfo.memory.cache)
+                            )
+                    )
+                currentMemoryAndSwapAnnotationsState
+                    .add(
+                        "交换: %03.1f%%    %s/%s"
+                            .format(
+                                memoryAndMemoryInfo.memory.percent,
+                                toStringWithUnit(memoryAndMemoryInfo.swap.used),
+                                toStringWithUnit(memoryAndMemoryInfo.swap.total)
+                            )
+                    )
+                currentMemoryAndSwapCapcityState.clear()
+                currentMemoryAndSwapCapcityState.add(memoryAndMemoryInfo.memory.percent / 100f)
+                currentMemoryAndSwapCapcityState.add(memoryAndMemoryInfo.swap.percent / 100f)
+                val memoryList = memoryAndSwapState[0]
+                val swapList = memoryAndSwapState[1]
+                if (swapList.size > 100) swapList.removeFirst()
+                if (memoryList.size > 100) memoryList.removeFirst()
+                memoryList.add(memoryAndMemoryInfo.memory.percent)
+                swapList.add(memoryAndMemoryInfo.swap.percent)
+                delay(400)
             }
         }
     }
@@ -142,17 +227,33 @@ fun ResourceView() {
                     .height(80.dp)
                     .padding(10.dp),
                 allValues = cpuPercentState,
+                colors = cpuColors,
                 strokeWidth = 1f,
                 maxValue = 100f,
                 minValue = 0f
             )
             CPUUsagesAnnotationsLine(
                 colors = cpuColors,
-                annotations = currentCPUStringState
+                annotations = currentCPUAnnotationsState
             )
         }
         FoldableBox("内存和交换") {
-
+            SmoothBezierLineChart(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(80.dp)
+                    .padding(10.dp),
+                allValues = memoryAndSwapState,
+                colors = memoryAndSwapColors,
+                strokeWidth = 1f,
+                maxValue = 100f,
+                minValue = 0f
+            )
+            MemoryAndSwapAnnotationsLine(
+                colors = memoryAndSwapColors,
+                annotations = currentMemoryAndSwapAnnotationsState,
+                capcities = currentMemoryAndSwapCapcityState
+            )
         }
     }
 }

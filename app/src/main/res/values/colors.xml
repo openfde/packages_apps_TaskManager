@@ -10,4 +10,12 @@
         <item>#ffEB6363</item>
         <item>#ff318BF3</item>
     </array>
+    <array name="network_color_array">
+        <item>#ff09B226</item>
+        <item>#ffF9960C</item>
+    </array>
+    <array name="disk_color_array">
+        <item>#ff318BF3</item>
+        <item>#ffEB6363</item>
+    </array>
 </resources>

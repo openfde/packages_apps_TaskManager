@@ -40,14 +40,14 @@ object Adapters {
         val swap: SwapDetail
     ) {
         data class MemoryDetail(
-            val percent: Double,
+            val percent: Float,
             val used: Long,
             val total: Long,
             val cache: Long
         )
 
         data class SwapDetail(
-            val percent: Double,
+            val percent: Float,
             val used: Long,
             val total: Long
         )
