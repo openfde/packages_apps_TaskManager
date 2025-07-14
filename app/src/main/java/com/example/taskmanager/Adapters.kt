@@ -8,8 +8,12 @@ object Adapters {
     private val intListType = object : TypeToken<List<Int>>() {}.type
     private val floatListType = object : TypeToken<List<Float>>() {}.type
     private val taskInfoListType = object : TypeToken<List<TaskInfo>>() {}.type
-    public fun TaskPidsAdapt(taskPidsString: String): List<Int> = gson.fromJson(taskPidsString, intListType)
-    public fun CPUPercentAdapt(cpuPercentString: String): List<Float> = gson.fromJson(cpuPercentString, floatListType)
+    public fun TaskPidsAdapt(taskPidsString: String): List<Int> =
+        gson.fromJson(taskPidsString, intListType)
+
+    public fun CPUPercentAdapt(cpuPercentString: String): List<Float> =
+        gson.fromJson(cpuPercentString, floatListType)
+
     data class TaskInfo(
         var name: String? = null,
         var user: String? = null,
@@ -22,6 +26,32 @@ object Adapters {
         var readIssued: Long = 0,
         var writeIssued: Long = 0
     )
-    public fun TaskInfoAdapt(taskInfoString: String): TaskInfo = gson.fromJson(taskInfoString, TaskInfo::class.java)
-    public fun TaskInfoListAdapt(taskInfoListString: String): List<TaskInfo> = gson.fromJson(taskInfoListString, taskInfoListType)
+
+    public fun TaskInfoAdapt(taskInfoString: String): TaskInfo =
+        gson.fromJson(taskInfoString, TaskInfo::class.java)
+
+    public fun TaskInfoListAdapt(taskInfoListString: String): List<TaskInfo> =
+        gson.fromJson(taskInfoListString, taskInfoListType)
+
+    private val memoryInfoType = object : TypeToken<MemoryInfo>() {}.type
+
+    data class MemoryInfo(
+        val memory: MemoryDetail,
+        val swap: SwapDetail
+    ) {
+        data class MemoryDetail(
+            val percent: Double,
+            val used: Long,
+            val total: Long,
+            val cache: Long
+        )
+
+        data class SwapDetail(
+            val percent: Double,
+            val used: Long,
+            val total: Long
+        )
+    }
+    public fun MemoryInfoAdapt(memoryInfoString: String): MemoryInfo = gson.fromJson(memoryInfoString, memoryInfoType)
+
 }

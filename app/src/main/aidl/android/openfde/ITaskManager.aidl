@@ -7,4 +7,5 @@ interface ITaskManager {
     String getTaskPids();
     String getTaskByPid(int pid);
     String getEachCPUPercent(int interval);
+    String getMemoryAndSwap();
 }
