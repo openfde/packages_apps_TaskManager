@@ -52,6 +52,22 @@ object Adapters {
             val total: Long
         )
     }
-    public fun MemoryInfoAdapt(memoryInfoString: String): MemoryInfo = gson.fromJson(memoryInfoString, memoryInfoType)
 
+    public fun MemoryInfoAdapt(memoryInfoString: String): MemoryInfo =
+        gson.fromJson(memoryInfoString, memoryInfoType)
+
+    private val networkStatsType = object : TypeToken<NetworkStats>() {}.type
+
+    data class NetworkStats(
+        val upload: TransferStats,
+        val download: TransferStats
+    ) {
+        data class TransferStats(
+            val speed: Float,
+            val total: Long
+        )
+    }
+
+    public fun NetworkStatsAdapt(networkStatsString: String): NetworkStats =
+        gson.fromJson(networkStatsString, networkStatsType)
 }

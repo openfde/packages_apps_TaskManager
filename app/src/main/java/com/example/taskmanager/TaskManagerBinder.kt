@@ -68,4 +68,10 @@ object TaskManagerBinder {
         val memoryInfo = Adapters.MemoryInfoAdapt(memoryAndSwap.toString())
         return memoryInfo
     }
+
+    public fun getNetworkDownloadAndUpload(interval: Int) :Adapters.NetworkStats {
+        val networkStats = taskManager?.getNetworkDownloadAndUpload(interval)
+        val networkStatsInfo = Adapters.NetworkStatsAdapt(networkStats.toString())
+        return networkStatsInfo
+    }
 }

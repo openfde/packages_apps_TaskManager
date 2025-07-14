@@ -1,5 +1,6 @@
 package com.example.taskmanager.ui
 
+import android.net.Network
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Canvas
@@ -156,6 +157,36 @@ fun MemoryAndSwapAnnotationsLine(
     }
 }
 
+@Composable
+fun NetworkAnnotationsLine(
+    colors: List<Color>,
+    annotations: List<String>,
+) {
+    Row(
+        modifier = Modifier
+            .padding(10.dp)
+            .fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        val iconIDs = listOf<Int>(R.drawable.download_icon, R.drawable.upload_icon)
+        for (i in colors.indices) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Image(
+                    painter = painterResource(id = iconIDs[i]),
+                    modifier = Modifier.size(28.dp),
+                    contentDescription = null
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                val annotation = annotations.getOrNull(i)
+                if (annotation != null) Text(text = annotation)
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+        }
+    }
+}
+
 @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
 @Composable
 fun ResourceView() {
@@ -166,18 +197,23 @@ fun ResourceView() {
     val memoryAndSwapState = remember {
         List(2) { mutableStateListOf<Float>() }.toMutableStateList()
     }
+    val networkDownloadAndUploadState = remember {
+        List(2) { mutableStateListOf<Float>() }.toMutableStateList()
+    }
     val context = LocalContext.current
     val cpuColors = context.resources.getIntArray(R.array.cpu_color_array).map { Color(it) }
     val memoryAndSwapColors =
         context.resources.getIntArray(R.array.memory_swap_color_array).map { Color(it) }
+    val networkColors = context.resources.getIntArray(R.array.network_color_array).map { Color(it) }
     val currentCPUAnnotationsState = remember { mutableStateListOf<String>("", "", "", "") }
     val currentMemoryAndSwapAnnotationsState = remember { mutableStateListOf<String>("", "") }
     val currentMemoryAndSwapCapcityState = remember { mutableStateListOf<Float>(0f, 0f) }
+    val currentNetworkAnnotationsState = remember { mutableStateListOf<String>("", "") }
 
     LaunchedEffect(Unit) {
         coroutineScope.launch {
             while (true) {
-                val eachCPUPercent = TaskManagerBinder.getEachCPUPercent(100) // [0,1,2,3]
+                val eachCPUPercent = TaskManagerBinder.getEachCPUPercent(200) // [0,1,2,3]
                 currentCPUAnnotationsState.clear()
                 currentMemoryAndSwapAnnotationsState.clear()
                 eachCPUPercent.forEachIndexed { index, it ->
@@ -214,7 +250,26 @@ fun ResourceView() {
                 if (memoryList.size > 100) memoryList.removeFirst()
                 memoryList.add(memoryAndMemoryInfo.memory.percent)
                 swapList.add(memoryAndMemoryInfo.swap.percent)
-                delay(400)
+                val networkDownloadAndUpload = TaskManagerBinder.getNetworkDownloadAndUpload(200)
+                val networkDownloadState = networkDownloadAndUploadState[0]
+                val networkUploadState = networkDownloadAndUploadState[1]
+                if (networkDownloadState.size > 100) networkDownloadState.removeFirst()
+                if (networkUploadState.size > 100) networkUploadState.removeFirst()
+                networkDownloadState.add(networkDownloadAndUpload.download.speed)
+                networkUploadState.add(networkDownloadAndUpload.upload.speed)
+                currentNetworkAnnotationsState.clear()
+
+
+                val currentDownloadSpeedString = toStringWithSpeedUnit(networkDownloadAndUpload.download.speed)
+                val currentDownloadTotalString = toStringWithUnit(networkDownloadAndUpload.download.total)
+                val currentUploadSpeedString = toStringWithSpeedUnit(networkDownloadAndUpload.upload.speed)
+                val currentUploadTotalString = toStringWithUnit(networkDownloadAndUpload.upload.total)
+
+                currentNetworkAnnotationsState
+                    .add("当前下载: $currentDownloadSpeedString 下载总量:$currentDownloadTotalString")
+                currentNetworkAnnotationsState
+                    .add("当前上传:$currentUploadSpeedString 上传总量:$currentUploadTotalString")
+                delay(500)
             }
         }
     }
@@ -255,6 +310,23 @@ fun ResourceView() {
                 capcities = currentMemoryAndSwapCapcityState
             )
         }
+        FoldableBox("网络") {
+            SmoothBezierLineChart(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(80.dp)
+                    .padding(10.dp),
+                allValues = networkDownloadAndUploadState,
+                colors = networkColors,
+                strokeWidth = 1f,
+                minValue = 0f,
+                maxValue = 100 * 1024f
+            )
+            NetworkAnnotationsLine(
+                colors = networkColors,
+                annotations = currentNetworkAnnotationsState
+            )
+        }
     }
 }
 
@@ -269,8 +341,8 @@ fun SmoothBezierLineChart(
         Color(0xff3CC3DF),
     ),
     strokeWidth: Float = 4f,
-    minValue: Float = 0f,
-    maxValue: Float = 1f
+    minValue: Float? = null,
+    maxValue: Float? = null
 ) {
     Canvas(modifier = modifier) {
         val referenceLineCount = 5
@@ -304,6 +376,8 @@ fun SmoothBezierLineChart(
             if (values.size < 2) return@Canvas
             val width = size.width
             val height = size.height
+            var minValue = minValue ?: values.minOrNull() ?: 0f
+            var maxValue = maxValue ?: values.maxOrNull() ?: 0f
             val range = maxValue - minValue
 
             val xStep = width / (values.size - 1f)
