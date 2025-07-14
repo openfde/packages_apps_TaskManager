@@ -1,10 +1,12 @@
 package com.example.taskmanager.ui
 
 import android.os.Build
-import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,7 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.ScaffoldDefaults
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -25,7 +27,6 @@ import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.Path
@@ -35,6 +36,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import com.example.taskmanager.R
 import com.example.taskmanager.TaskManagerBinder
@@ -42,18 +44,66 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
-fun ScaffoldTitleRow(title: String) {
+fun FoldableBox(
+    title: String,
+    content: @Composable () -> Unit
+) {
+    val expanded = remember { mutableStateOf(true) }
     Row(
-        modifier = Modifier.padding(10.dp),
-        verticalAlignment = Alignment.CenterVertically
+        modifier = Modifier
+            .padding(10.dp)
+            .clickable(
+                onClick = {
+                    expanded.value = !expanded.value
+            })
+            .fillMaxWidth()
+            .padding(8.dp)
+            .background(
+                color = Color.Transparent,
+                shape = RoundedCornerShape(8.dp)
+            ),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Image(
-            painter = painterResource(id = R.drawable.down_vetor),
+            painter = painterResource(
+                id = if (expanded.value) R.drawable.down_vector else R.drawable.right_vector
+            ),
             modifier = Modifier.size(16.dp),
             contentDescription = null
         )
         Spacer(modifier = Modifier.width(8.dp))
-        Text("CPU")
+        Text(title)
+    }
+    if (expanded.value)
+        content()
+}
+
+@Composable
+fun CPUUsagesAnnotationsLine(colors: List<Color>, annotations: List<String>) {
+    Row(
+        modifier = Modifier
+            .padding(10.dp)
+            .fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        for (i in colors.indices) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(16.dp)
+                        .background(
+                            color = colors[i],
+                            shape = RoundedCornerShape(3.dp)
+                        )
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                val annotation = annotations.getOrNull(i)
+                if (annotation != null) Text(text = annotation)
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+        }
     }
 }
 
@@ -64,33 +114,46 @@ fun ResourceView() {
     val cpuPercentState = remember {
         List(4) { mutableStateListOf<Float>() }.toMutableStateList()
     }
+    val context = LocalContext.current
+    val cpuColors = context.resources.getIntArray(R.array.cpu_color_array).map { Color(it) }
+    val currentCPUStringState = remember { mutableStateListOf<String>("", "", "", "") }
 
     LaunchedEffect(Unit) {
         coroutineScope.launch {
             while (true) {
                 val eachCPUPercent = TaskManagerBinder.getEachCPUPercent(100) // [0,1,2,3]
+                currentCPUStringState.clear()
                 eachCPUPercent.forEachIndexed { index, it ->
                     if (cpuPercentState[index].size > 100) cpuPercentState[index].removeFirst()
                     cpuPercentState[index].add(it)
+                    currentCPUStringState.add("CPU${index + 1}: %03.1f%%".format(it))
                 }
-                Log.d("COLD", cpuPercentState.toString())
+                val memoryInfo = TaskManagerBinder.getMemoryAndSwap()
                 delay(100)
             }
         }
     }
 
     Column(modifier = Modifier.fillMaxWidth()) {
-        ScaffoldTitleRow("CPU")
-        SmoothBezierLineChart(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(80.dp)
-                .padding(10.dp),
-            allValues = cpuPercentState,
-            strokeWidth = 1f,
-            maxValue = 100f,
-            minValue = 0f
-        )
+        FoldableBox("CPU") {
+            SmoothBezierLineChart(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(80.dp)
+                    .padding(10.dp),
+                allValues = cpuPercentState,
+                strokeWidth = 1f,
+                maxValue = 100f,
+                minValue = 0f
+            )
+            CPUUsagesAnnotationsLine(
+                colors = cpuColors,
+                annotations = currentCPUStringState
+            )
+        }
+        FoldableBox("内存和交换") {
+
+        }
     }
 }
 
@@ -98,11 +161,11 @@ fun ResourceView() {
 fun SmoothBezierLineChart(
     modifier: Modifier = Modifier,
     allValues: List<List<Float>>,
-    lineBrushes: List<Brush> = listOf<Brush>(
-        SolidColor(Color(0xff8979FF)),
-        SolidColor(Color(0xffF5776E)),
-        SolidColor(Color(0xffFFAE4C)),
-        SolidColor(Color(0xff3CC3DF)),
+    colors: List<Color> = listOf<Color>(
+        Color(0xff8979FF),
+        Color(0xffF5776E),
+        Color(0xffFFAE4C),
+        Color(0xff3CC3DF),
     ),
     strokeWidth: Float = 4f,
     minValue: Float = 0f,
@@ -135,7 +198,7 @@ fun SmoothBezierLineChart(
                 labelPaint
             )
         }
-
+        val lineBrushes = colors.map { it -> SolidColor(it) }
         allValues.forEachIndexed { index, values ->
             if (values.size < 2) return@Canvas
             val width = size.width
@@ -169,7 +232,7 @@ fun SmoothBezierLineChart(
 
             drawPath(
                 path = path,
-                brush = lineBrushes[index % lineBrushes.size],
+                brush = lineBrushes[index % colors.size],
                 style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
             )
         }

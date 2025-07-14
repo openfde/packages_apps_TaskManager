@@ -62,4 +62,10 @@ object TaskManagerBinder {
         val cpuPercent = Adapters.CPUPercentAdapt(eachCPUPercent.toString())
         return cpuPercent
     }
+
+    public fun getMemoryAndSwap() : Adapters.MemoryInfo {
+        val memoryAndSwap = taskManager?.getMemoryAndSwap()
+        val memoryInfo = Adapters.MemoryInfoAdapt(memoryAndSwap.toString())
+        return memoryInfo
+    }
 }
