@@ -6,6 +6,7 @@ import android.os.IBinder
 import android.util.Base64
 import android.util.Log
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.Interval
 import androidx.compose.ui.graphics.asImageBitmap
 
 object TaskManagerBinder {
@@ -56,4 +57,9 @@ object TaskManagerBinder {
         return bitmap
     }
 
+    public fun getEachCPUPercent(interval: Int): List<Float> {
+        val eachCPUPercent = taskManager?.getEachCPUPercent(interval)
+        val cpuPercent = Adapters.CPUPercentAdapt(eachCPUPercent.toString())
+        return cpuPercent
+    }
 }

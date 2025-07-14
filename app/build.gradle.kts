@@ -74,6 +74,5 @@ dependencies {
     implementation ("org.lsposed.hiddenapibypass:hiddenapibypass:2.0")
     implementation ("com.google.code.gson:gson:2.13.1")
     implementation("com.seanproctor:data-table-material3:0.11.4")
-
-
+    implementation(libs.vico.compose)
 }

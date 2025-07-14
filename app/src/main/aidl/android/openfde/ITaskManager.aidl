@@ -6,4 +6,5 @@ interface ITaskManager {
     String getIconB64ByTaskName(String taskName);
     String getTaskPids();
     String getTaskByPid(int pid);
+    String getEachCPUPercent(int interval);
 }
