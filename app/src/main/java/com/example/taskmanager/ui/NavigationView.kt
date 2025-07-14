@@ -171,7 +171,10 @@ fun NavOuterBox(navController: NavController) {
             NavInnerBox(name = "进程",
                 selected = selectedItem.value == AppRoute.Process.route,
                 onClick = {
-                    navController.navigate(AppRoute.Process.route)
+                    navController.navigate(AppRoute.Process.route) {
+                        popUpTo(navController.graph.startDestinationId)
+                        launchSingleTop = true
+                    }
                     selectedItem.value = AppRoute.Process.route
             })
             VerticalDivider(
@@ -180,8 +183,11 @@ fun NavOuterBox(navController: NavController) {
             NavInnerBox(name = "资源",
                 selected = selectedItem.value == AppRoute.Resource.route,
                 onClick = {
-                navController.navigate(AppRoute.Resource.route)
-                    selectedItem.value = AppRoute.Resource.route
+                navController.navigate(AppRoute.Resource.route) {
+                    popUpTo(navController.graph.startDestinationId)
+                    launchSingleTop = true
+                }
+                selectedItem.value = AppRoute.Resource.route
             })
             VerticalDivider(
                 modifier = Modifier.height(18.dp), color = Color(0x0D000000)
@@ -189,8 +195,11 @@ fun NavOuterBox(navController: NavController) {
             NavInnerBox(name = "文件系统",
                 selected = selectedItem.value == AppRoute.FileSystem.route,
                 onClick = {
-                navController.navigate(AppRoute.FileSystem.route)
-                    selectedItem.value = AppRoute.FileSystem.route
+                navController.navigate(AppRoute.FileSystem.route) {
+                    popUpTo(navController.graph.startDestinationId)
+                    launchSingleTop = true
+                }
+                selectedItem.value = AppRoute.FileSystem.route
             })
         }
     }
