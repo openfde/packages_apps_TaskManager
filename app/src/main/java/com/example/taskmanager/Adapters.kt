@@ -85,4 +85,20 @@ object Adapters {
 
     public fun DiskStatsAdapt(diskStatsString: String): DiskStats =
         gson.fromJson(diskStatsString, diskStatsType)
+
+    // 在 Adapters 对象中添加以下内容
+    private val diskPartitionType = object : TypeToken<List<DiskPartition>>() {}.type
+
+    data class DiskPartition(
+        val used: String,        // 已用空间
+        val catalogue: String,    // 挂载点 (注意: 原JSON中拼写应为"catalog"或"mountPoint")
+        val device: String,      // 设备名称
+        val type: String,        // 文件系统类型
+        val storage: String,     // 总容量
+        val available: String,    // 可用空间
+        val percent: Int         // 使用百分比（x/100）
+    )
+
+    public fun DiskPartitionAdapt(partitionString: String): List<DiskPartition> =
+        gson.fromJson(partitionString, diskPartitionType)
 }

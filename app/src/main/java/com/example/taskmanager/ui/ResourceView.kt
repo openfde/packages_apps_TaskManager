@@ -293,10 +293,14 @@ fun ResourceView() {
                 networkDownloadState.add(networkDownloadAndUpload.download.speed)
                 networkUploadState.add(networkDownloadAndUpload.upload.speed)
                 currentNetworkAnnotationsState.clear()
-                val currentDownloadSpeedString = toStringWithSpeedUnit(networkDownloadAndUpload.download.speed)
-                val currentDownloadTotalString = toStringWithUnit(networkDownloadAndUpload.download.total)
-                val currentUploadSpeedString = toStringWithSpeedUnit(networkDownloadAndUpload.upload.speed)
-                val currentUploadTotalString = toStringWithUnit(networkDownloadAndUpload.upload.total)
+                val currentDownloadSpeedString =
+                    toStringWithSpeedUnit(networkDownloadAndUpload.download.speed)
+                val currentDownloadTotalString =
+                    toStringWithUnit(networkDownloadAndUpload.download.total)
+                val currentUploadSpeedString =
+                    toStringWithSpeedUnit(networkDownloadAndUpload.upload.speed)
+                val currentUploadTotalString =
+                    toStringWithUnit(networkDownloadAndUpload.upload.total)
                 currentNetworkAnnotationsState
                     .add("当前下载: $currentDownloadSpeedString 下载总量:$currentDownloadTotalString")
                 currentNetworkAnnotationsState
@@ -304,14 +308,15 @@ fun ResourceView() {
                 val diskReadAndWrite = TaskManagerBinder.getDiskReadAndWrite(100)
                 val diskReadState = diskReadAndWriteState[0]
                 val diskWriteState = diskReadAndWriteState[1]
-                if(diskReadState.size > 100) diskReadState.removeFirst()
-                if(diskWriteState.size > 100) diskWriteState.removeFirst()
+                if (diskReadState.size > 100) diskReadState.removeFirst()
+                if (diskWriteState.size > 100) diskWriteState.removeFirst()
                 diskReadState.add(diskReadAndWrite.read.speed)
                 diskWriteState.add(diskReadAndWrite.write.speed)
                 currentDiskAnnotationsState.clear()
                 val currentDiskReadSpeedString = toStringWithSpeedUnit(diskReadAndWrite.read.speed)
                 val currentDiskReadTotalString = toStringWithUnit(diskReadAndWrite.read.total)
-                val currentDiskWriteSpeedString = toStringWithSpeedUnit(diskReadAndWrite.write.speed)
+                val currentDiskWriteSpeedString =
+                    toStringWithSpeedUnit(diskReadAndWrite.write.speed)
                 val currentDiskWriteTotalString = toStringWithUnit(diskReadAndWrite.write.total)
                 currentDiskAnnotationsState
                     .add("当前读盘: $currentDiskReadSpeedString 读盘总计:$currentDiskReadTotalString")
@@ -391,11 +396,18 @@ fun ResourceView() {
                     .height(80.dp)
                     .padding(10.dp),
                 allValues = diskReadAndWriteState,
-                yAxisLabels = listOf("0KB/s", "120KB/s", "240KB/s", "360KB/s", "480KB/s", "600KB/s"),
+                yAxisLabels = listOf(
+                    "0MB/s",
+                    "20MB/s",
+                    "40MB/s",
+                    "60MB/s",
+                    "80MB/s",
+                    "100MB/s"
+                ),
                 colors = diskColors,
                 strokeWidth = 1f,
                 minValue = 0f,
-                maxValue = 600 * 1024f
+                maxValue = 100 * 1024 * 1024f
             )
             DiskAnnotationsLine(
                 colors = diskColors,
@@ -415,7 +427,7 @@ fun SmoothBezierLineChart(
         Color(0xffFFAE4C),
         Color(0xff3CC3DF),
     ),
-    yAxisLabels: List<String> = listOf("0%", "20%", "40%", "60%","80%","100%"),
+    yAxisLabels: List<String> = listOf("0%", "20%", "40%", "60%", "80%", "100%"),
     strokeWidth: Float = 4f,
     minValue: Float? = null,
     maxValue: Float? = null

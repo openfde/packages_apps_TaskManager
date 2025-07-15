@@ -6,8 +6,8 @@ import android.os.IBinder
 import android.util.Base64
 import android.util.Log
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.Interval
 import androidx.compose.ui.graphics.asImageBitmap
+import kotlin.collections.List
 
 object TaskManagerBinder {
     private val taskBinder: IBinder? = try {
@@ -79,5 +79,11 @@ object TaskManagerBinder {
         val diskStats = taskManager?.getDiskReadAndWrite(interval)
         val diskStatsInfo = Adapters.DiskStatsAdapt(diskStats.toString())
         return diskStatsInfo
+    }
+
+    public fun getFileSystemUsage(): List<Adapters.DiskPartition> {
+        val fileSystemUsage = taskManager?.getFileSystemUsage()
+        val fileSystemUsageInfo = Adapters.DiskPartitionAdapt(fileSystemUsage.toString())
+        return fileSystemUsageInfo
     }
 }

@@ -47,7 +47,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.DpOffset
 
 @Composable
-fun TableHeader() {
+fun TasksTableHeader() {
     HorizontalDivider(modifier = Modifier.fillMaxWidth(), color = Color(0xFFE8E9EB))
     Row(
         modifier = Modifier
@@ -118,7 +118,7 @@ fun ProcessView() {
     }
 
     Column(modifier = Modifier.background(Color(0xFFFCFDFF))) {
-        TableHeader()
+        TasksTableHeader()
         LazyColumn {
             items(taskInfoList, key = { it.pid }) { TaskItem(it) }
         }
