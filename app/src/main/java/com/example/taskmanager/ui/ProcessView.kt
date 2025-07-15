@@ -127,6 +127,7 @@ fun ProcessView() {
 
 fun toStringWithUnit(bytes: Long): String {
     return when {
+        bytes > 1024 * 1024 * 1024 -> "%.1f GB".format(bytes / (1024f * 1024f * 1024f))
         bytes > 1024 * 1024 -> "%.1f MB".format(bytes / (1024f * 1024f))
         bytes > 1024 -> "%.1f KB".format(bytes / 1024f)
         else -> "$bytes B"
