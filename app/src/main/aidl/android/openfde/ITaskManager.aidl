@@ -10,4 +10,5 @@ interface ITaskManager {
     String getMemoryAndSwap();
     String getNetworkDownloadAndUpload(int interval);
     String getDiskReadAndWrite(int interval);
+    String getFileSystemUsage();
 }

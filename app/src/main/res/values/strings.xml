@@ -34,7 +34,14 @@
         <item>10</item>
         <item>10</item>
         <item>10</item>
-        <item>10</item>
+    </array>
+    <array name="disk_item_weights">
+        <item>166</item>
+        <item>266</item>
+        <item>199</item>
+        <item>199</item>
+        <item>166</item>
+        <item>166</item>
     </array>
     <array name="task_dropdown_menu_items">
         <item>属性</item>
@@ -51,4 +58,12 @@
         <item>__DIVIDER__</item>
         <item>强制终止</item>
     </array>
+    <string-array name="disks_headers_chinese">
+        <item>已使用</item>
+        <item>目录</item>
+        <item>设备</item>
+        <item>类型</item>
+        <item>总容量</item>
+        <item>可用容量</item>
+    </string-array>
 </resources>

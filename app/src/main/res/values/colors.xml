@@ -18,4 +18,12 @@
         <item>#ff318BF3</item>
         <item>#ffEB6363</item>
     </array>
+    <array name="disk_partition_colors">
+        <item>#ffEB6363</item>
+        <item>#ff09B226</item>
+        <item>#ff318BF3</item>
+        <item>#ffF9960C</item>
+        <item>#ff8979FF</item>
+        <item>#ff3CC3DF</item>
+    </array>
 </resources>
