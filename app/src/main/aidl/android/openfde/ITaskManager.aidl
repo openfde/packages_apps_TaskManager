@@ -11,4 +11,5 @@ interface ITaskManager {
     String getNetworkDownloadAndUpload(int interval);
     String getDiskReadAndWrite(int interval);
     String getFileSystemUsage();
+    void changeTaskPriority(int pid, int priority);
 }

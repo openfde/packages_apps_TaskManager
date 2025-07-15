@@ -17,8 +17,11 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        maven {
+            url = uri("https://jitpack.io")
+        }
     }
-}
 
-rootProject.name = "taskmanager"
-include(":app")
+    rootProject.name = "taskmanager"
+    include(":app")
+}

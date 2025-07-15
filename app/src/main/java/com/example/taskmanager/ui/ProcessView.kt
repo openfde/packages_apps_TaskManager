@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -36,15 +37,25 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Slider
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.isSecondaryPressed
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.DpOffset
+import okhttp3.Callback
 
 @Composable
 fun TasksTableHeader() {
@@ -80,6 +91,7 @@ fun TasksTableHeader() {
     HorizontalDivider(modifier = Modifier.fillMaxWidth(), color = Color(0xFFE8E9EB))
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProcessView() {
     val taskInfoList = remember { mutableStateListOf<Adapters.TaskInfo>() }
@@ -100,7 +112,7 @@ fun ProcessView() {
                     currentPids.forEach { pid ->
                         // 首先检查该pid的进程是否存在，不存在删除且跳过
                         val taskInfo = TaskManagerBinder.getTaskByPid(pid)
-                        if(taskInfo == null) {
+                        if (taskInfo == null) {
                             taskInfoList.removeAll { it.pid == pid }
                             return@forEach
                         }
@@ -142,6 +154,26 @@ fun toStringWithSpeedUnit(bytesPerSecond: Float): String {
     }
 }
 
+@Composable
+fun PrioritySlider(
+    sliderValue: Int,
+    onChange: (Int) -> Unit
+) {
+    val minValue = -19
+    val maxValue = 20
+
+    Slider(
+        value = sliderValue.toFloat(),
+        onValueChange = {
+            onChange(it.toInt())
+        },
+        valueRange = minValue.toFloat()..maxValue.toFloat(),
+        steps = maxValue - minValue,
+        modifier = Modifier.fillMaxWidth()
+    )
+
+}
+
 
 @Composable
 fun TaskItem(taskInfo: Adapters.TaskInfo) {
@@ -150,6 +182,138 @@ fun TaskItem(taskInfo: Adapters.TaskInfo) {
     val taskDropdownMenuItems = context.resources.getStringArray(R.array.task_dropdown_menu_items)
     val floatingMenuPosition = remember { mutableStateOf(Offset.Zero) }
     val floatingMenuExpanded = remember { mutableStateOf(false) }
+    val floatingPropertiesWindowShow = remember { mutableStateOf(false) }
+    val floatingPriorityModificationWindowShow = remember { mutableStateOf(false) }
+    var priorityModificationSliderValue = remember { mutableIntStateOf(taskInfo.nice) }
+
+    if (floatingPropertiesWindowShow.value) {
+        AlertDialog(
+            onDismissRequest = {
+                floatingPropertiesWindowShow.value = false
+            },
+            title = {
+                Text(
+                    text = taskInfo.name.toString(),
+                    fontWeight = FontWeight.W700,
+                )
+            },
+            text = {
+                Column {
+                    Row {
+                        Text("用户名:")
+                        Spacer(modifier = Modifier.weight(1f))
+                        Text(taskInfo.user.toString())
+                    }
+                    Row {
+                        Text("虚拟内存:")
+                        Spacer(modifier = Modifier.weight(1f))
+                        Text(toStringWithUnit(taskInfo.vmsize))
+                    }
+                    Row {
+                        Text("CPU占用率:")
+                        Spacer(modifier = Modifier.weight(1f))
+                        Text(taskInfo.cpuUsage.toString() + "%")
+                    }
+                    Row {
+                        Text("PID:")
+                        Spacer(modifier = Modifier.weight(1f))
+                        Text(taskInfo.pid.toString())
+                    }
+                    Row {
+                        Text("内存:")
+                        Spacer(modifier = Modifier.weight(1f))
+                        Text(toStringWithUnit(taskInfo.rss))
+                    }
+                    Row {
+                        Text("读盘容量:")
+                        Spacer(modifier = Modifier.weight(1f))
+                        Text(toStringWithUnit(taskInfo.readBytes))
+                    }
+                    Row {
+                        Text("写入容量:")
+                        Spacer(modifier = Modifier.weight(1f))
+                        Text(toStringWithUnit(taskInfo.writeBytes))
+                    }
+                    Row {
+                        Text("磁盘读取:")
+                        Spacer(modifier = Modifier.weight(1f))
+                        Text(toStringWithUnit(taskInfo.readIssued))
+                    }
+                    Row {
+                        Text("磁盘写入:")
+                        Spacer(modifier = Modifier.weight(1f))
+                        Text(toStringWithUnit(taskInfo.writeIssued))
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        floatingPropertiesWindowShow.value = false
+                    }
+                ) {
+                    Text(
+                        "取消",
+                        fontWeight = FontWeight.W700,
+                    )
+                }
+            }
+        )
+    }
+
+    if (floatingPriorityModificationWindowShow.value) {
+        AlertDialog(
+            onDismissRequest = {
+                floatingPriorityModificationWindowShow.value = false
+            },
+            title = {
+                Text(
+                    text = taskInfo.name.toString(),
+                    fontWeight = FontWeight.W700,
+                )
+            },
+            text = {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(text = "当前优先级: ${priorityModificationSliderValue.intValue}")
+                    PrioritySlider(
+                        sliderValue = priorityModificationSliderValue.intValue,
+                        onChange = { it ->
+                            priorityModificationSliderValue.intValue = it
+                        }
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        floatingPriorityModificationWindowShow.value = false
+                        TaskManagerBinder.changeTaskPriority(
+                            taskInfo.pid,
+                            priorityModificationSliderValue.intValue
+                        )
+                    }
+                ) {
+                    Text(
+                        "确定",
+                        fontWeight = FontWeight.W700,
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        floatingPriorityModificationWindowShow.value = false
+                    }
+                ) {
+                    Text(
+                        "取消",
+                        fontWeight = FontWeight.W700,
+                    )
+                }
+            }
+        )
+    }
 
     Row(
         modifier = Modifier
@@ -234,7 +398,8 @@ fun TaskItem(taskInfo: Adapters.TaskInfo) {
             */
             val callbackFunctionsMap = mapOf<String, () -> Unit>(
                 "属性" to {
-                    // TODO: 属性
+                    floatingMenuExpanded.value = false
+                    floatingPropertiesWindowShow.value = true
                 },
                 "内存映射" to {
                     // TODO: 内存映射
@@ -243,22 +408,22 @@ fun TaskItem(taskInfo: Adapters.TaskInfo) {
                     // TODO: 打开文件
                 },
                 "更改优先级" to {
-                    // TODO: 更改优先级
+                    floatingMenuExpanded.value = false
+                    floatingPriorityModificationWindowShow.value = true
                 },
                 "设置关联" to {
                     // TODO: 设置关联
                 },
                 "停止进程" to {
-                    // TODO: 停止进程
+                    TaskManagerBinder.killTaskByPid(taskInfo.pid)
                 },
                 "继续" to {
                     // TODO: 继续
                 },
                 "终止" to {
-                    // TODO: 终止
+                    TaskManagerBinder.killTaskByPid(taskInfo.pid)
                 },
                 "强制终止" to {
-                    // TODO: 强制终止
                     TaskManagerBinder.killTaskByPid(taskInfo.pid)
                 },
                 "__DIVIDER__" to {

@@ -16,7 +16,7 @@ object TaskManagerBinder {
             .invoke(null, "openfdetaskmanager") as IBinder?
     } catch (e: Exception) {
         e.printStackTrace()
-        Log.d("COLD","error :$e")
+        Log.d("COLD", "error :$e")
         null
     }
 
@@ -28,7 +28,7 @@ object TaskManagerBinder {
         return tasks
     }
 
-    public fun getTaskPids() : List<Int> {
+    public fun getTaskPids(): List<Int> {
         val tasksPidString = taskManager?.getTaskPids()
         val taskPids = Adapters.TaskPidsAdapt(tasksPidString.toString())
         return taskPids
@@ -36,7 +36,7 @@ object TaskManagerBinder {
 
     public fun getTaskByPid(pid: Int): Adapters.TaskInfo? {
         val taskInfoString = taskManager?.getTaskByPid(pid)
-        if(taskInfoString == "null") return null
+        if (taskInfoString == "null") return null
         val taskInfo = Adapters.TaskInfoAdapt(taskInfoString.toString())
         return taskInfo
     }
@@ -45,9 +45,9 @@ object TaskManagerBinder {
         taskManager?.killTaskByPid(pid)
     }
 
-    public fun getIconBitmapByTaskName(taskName:String): ImageBitmap? {
+    public fun getIconBitmapByTaskName(taskName: String): ImageBitmap? {
         val iconB64String = taskManager?.getIconB64ByTaskName(taskName)
-        Log.d("COLD",iconB64String.toString())
+        Log.d("COLD", iconB64String.toString())
 
         if (iconB64String == "")
             return null
@@ -63,19 +63,19 @@ object TaskManagerBinder {
         return cpuPercent
     }
 
-    public fun getMemoryAndSwap() : Adapters.MemoryInfo {
+    public fun getMemoryAndSwap(): Adapters.MemoryInfo {
         val memoryAndSwap = taskManager?.getMemoryAndSwap()
         val memoryInfo = Adapters.MemoryInfoAdapt(memoryAndSwap.toString())
         return memoryInfo
     }
 
-    public fun getNetworkDownloadAndUpload(interval: Int) :Adapters.NetworkStats {
+    public fun getNetworkDownloadAndUpload(interval: Int): Adapters.NetworkStats {
         val networkStats = taskManager?.getNetworkDownloadAndUpload(interval)
         val networkStatsInfo = Adapters.NetworkStatsAdapt(networkStats.toString())
         return networkStatsInfo
     }
 
-    public fun getDiskReadAndWrite(interval:Int) : Adapters.DiskStats {
+    public fun getDiskReadAndWrite(interval: Int): Adapters.DiskStats {
         val diskStats = taskManager?.getDiskReadAndWrite(interval)
         val diskStatsInfo = Adapters.DiskStatsAdapt(diskStats.toString())
         return diskStatsInfo
@@ -85,5 +85,9 @@ object TaskManagerBinder {
         val fileSystemUsage = taskManager?.getFileSystemUsage()
         val fileSystemUsageInfo = Adapters.DiskPartitionAdapt(fileSystemUsage.toString())
         return fileSystemUsageInfo
+    }
+
+    public fun changeTaskPriority(pid: Int, priority: Int) {
+        taskManager?.changeTaskPriority(pid, priority)
     }
 }

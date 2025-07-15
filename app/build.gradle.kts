@@ -75,4 +75,5 @@ dependencies {
     implementation ("com.google.code.gson:gson:2.13.1")
     implementation("com.seanproctor:data-table-material3:0.11.4")
     implementation(libs.vico.compose)
+    implementation("com.github.only52607:ComposeFloatingWindow:1.0")
 }
