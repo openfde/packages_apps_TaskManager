@@ -70,4 +70,19 @@ object Adapters {
 
     public fun NetworkStatsAdapt(networkStatsString: String): NetworkStats =
         gson.fromJson(networkStatsString, networkStatsType)
+
+    private val diskStatsType = object : TypeToken<DiskStats>() {}.type
+
+    data class DiskStats(
+        val read: TransferStats,
+        val write: TransferStats
+    ) {
+        data class TransferStats(
+            val speed: Float,
+            val total: Long
+        )
+    }
+
+    public fun DiskStatsAdapt(diskStatsString: String): DiskStats =
+        gson.fromJson(diskStatsString, diskStatsType)
 }

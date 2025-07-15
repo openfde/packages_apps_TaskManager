@@ -187,6 +187,36 @@ fun NetworkAnnotationsLine(
     }
 }
 
+@Composable
+fun DiskAnnotationsLine(
+    colors: List<Color>,
+    annotations: List<String>,
+) {
+    Row(
+        modifier = Modifier
+            .padding(10.dp)
+            .fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        val iconIDs = listOf<Int>(R.drawable.disk_read_icon, R.drawable.disk_write_icon)
+        for (i in colors.indices) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Image(
+                    painter = painterResource(id = iconIDs[i]),
+                    modifier = Modifier.size(28.dp),
+                    contentDescription = null
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                val annotation = annotations.getOrNull(i)
+                if (annotation != null) Text(text = annotation)
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+        }
+    }
+}
+
 @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
 @Composable
 fun ResourceView() {
@@ -200,15 +230,20 @@ fun ResourceView() {
     val networkDownloadAndUploadState = remember {
         List(2) { mutableStateListOf<Float>() }.toMutableStateList()
     }
+    val diskReadAndWriteState = remember {
+        List(2) { mutableStateListOf<Float>() }.toMutableStateList()
+    }
     val context = LocalContext.current
     val cpuColors = context.resources.getIntArray(R.array.cpu_color_array).map { Color(it) }
     val memoryAndSwapColors =
         context.resources.getIntArray(R.array.memory_swap_color_array).map { Color(it) }
     val networkColors = context.resources.getIntArray(R.array.network_color_array).map { Color(it) }
+    val diskColors = context.resources.getIntArray(R.array.disk_color_array).map { Color(it) }
     val currentCPUAnnotationsState = remember { mutableStateListOf<String>("", "", "", "") }
     val currentMemoryAndSwapAnnotationsState = remember { mutableStateListOf<String>("", "") }
     val currentMemoryAndSwapCapcityState = remember { mutableStateListOf<Float>(0f, 0f) }
     val currentNetworkAnnotationsState = remember { mutableStateListOf<String>("", "") }
+    val currentDiskAnnotationsState = remember { mutableStateListOf<String>("", "") }
 
     LaunchedEffect(Unit) {
         coroutineScope.launch {
@@ -258,17 +293,31 @@ fun ResourceView() {
                 networkDownloadState.add(networkDownloadAndUpload.download.speed)
                 networkUploadState.add(networkDownloadAndUpload.upload.speed)
                 currentNetworkAnnotationsState.clear()
-
-
                 val currentDownloadSpeedString = toStringWithSpeedUnit(networkDownloadAndUpload.download.speed)
                 val currentDownloadTotalString = toStringWithUnit(networkDownloadAndUpload.download.total)
                 val currentUploadSpeedString = toStringWithSpeedUnit(networkDownloadAndUpload.upload.speed)
                 val currentUploadTotalString = toStringWithUnit(networkDownloadAndUpload.upload.total)
-
                 currentNetworkAnnotationsState
                     .add("当前下载: $currentDownloadSpeedString 下载总量:$currentDownloadTotalString")
                 currentNetworkAnnotationsState
                     .add("当前上传:$currentUploadSpeedString 上传总量:$currentUploadTotalString")
+                val diskReadAndWrite = TaskManagerBinder.getDiskReadAndWrite(100)
+                val diskReadState = diskReadAndWriteState[0]
+                val diskWriteState = diskReadAndWriteState[1]
+                if(diskReadState.size > 100) diskReadState.removeFirst()
+                if(diskWriteState.size > 100) diskWriteState.removeFirst()
+                diskReadState.add(diskReadAndWrite.read.speed)
+                diskWriteState.add(diskReadAndWrite.write.speed)
+                currentDiskAnnotationsState.clear()
+                val currentDiskReadSpeedString = toStringWithSpeedUnit(diskReadAndWrite.read.speed)
+                val currentDiskReadTotalString = toStringWithUnit(diskReadAndWrite.read.total)
+                val currentDiskWriteSpeedString = toStringWithSpeedUnit(diskReadAndWrite.write.speed)
+                val currentDiskWriteTotalString = toStringWithUnit(diskReadAndWrite.write.total)
+                currentDiskAnnotationsState
+                    .add("当前读盘: $currentDiskReadSpeedString 读盘总计:$currentDiskReadTotalString")
+                currentDiskAnnotationsState
+                    .add("当前写入: $currentDiskWriteSpeedString 写入总计:$currentDiskWriteTotalString")
+
                 delay(500)
             }
         }
@@ -317,6 +366,14 @@ fun ResourceView() {
                     .height(80.dp)
                     .padding(10.dp),
                 allValues = networkDownloadAndUploadState,
+                yAxisLabels = listOf(
+                    "0kb/s",
+                    "20kb/s",
+                    "40kb/s",
+                    "60kb/s",
+                    "80kb/s",
+                    "100kb/s",
+                ),
                 colors = networkColors,
                 strokeWidth = 1f,
                 minValue = 0f,
@@ -325,6 +382,24 @@ fun ResourceView() {
             NetworkAnnotationsLine(
                 colors = networkColors,
                 annotations = currentNetworkAnnotationsState
+            )
+        }
+        FoldableBox("磁盘") {
+            SmoothBezierLineChart(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(80.dp)
+                    .padding(10.dp),
+                allValues = diskReadAndWriteState,
+                yAxisLabels = listOf("0KB/s", "120KB/s", "240KB/s", "360KB/s", "480KB/s", "600KB/s"),
+                colors = diskColors,
+                strokeWidth = 1f,
+                minValue = 0f,
+                maxValue = 600 * 1024f
+            )
+            DiskAnnotationsLine(
+                colors = diskColors,
+                annotations = currentDiskAnnotationsState
             )
         }
     }
@@ -340,19 +415,20 @@ fun SmoothBezierLineChart(
         Color(0xffFFAE4C),
         Color(0xff3CC3DF),
     ),
+    yAxisLabels: List<String> = listOf("0%", "20%", "40%", "60%","80%","100%"),
     strokeWidth: Float = 4f,
     minValue: Float? = null,
     maxValue: Float? = null
 ) {
     Canvas(modifier = modifier) {
-        val referenceLineCount = 5
+        val referenceLineCount = 6
         val referenceLineColor = Color(0x3300001A)
         val labelPaint = Paint().asFrameworkPaint().apply {
             isAntiAlias = true
             textSize = 10f
             color = android.graphics.Color.argb(0xff, 0x47, 0x47, 0x47)
         }
-        repeat(referenceLineCount) { i ->
+        repeat(yAxisLabels.size) { i ->
             val ratio = i / (referenceLineCount - 1f)
             val y = size.height - ratio * size.height
             drawLine(
@@ -365,7 +441,7 @@ fun SmoothBezierLineChart(
 
             val textWidth = labelPaint.measureText("${(ratio * 100).toInt()}%")
             drawContext.canvas.nativeCanvas.drawText(
-                "${(ratio * 100).toInt()}%",
+                yAxisLabels[i],
                 size.width - textWidth - 4f, // 右侧对齐，距离右边留4f间距
                 y,
                 labelPaint

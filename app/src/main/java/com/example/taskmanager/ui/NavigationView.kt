@@ -1,6 +1,8 @@
 package com.example.taskmanager.ui
 
+import android.os.Build
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -48,6 +50,7 @@ sealed class AppRoute(val route: String) {
 }
 
 
+@RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
 @Composable
 fun NavigationView() {
     val navController = rememberNavController()
