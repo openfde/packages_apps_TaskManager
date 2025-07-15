@@ -24,7 +24,8 @@ object Adapters {
         var readBytes: Long = 0,
         var writeBytes: Long = 0,
         var readIssued: Long = 0,
-        var writeIssued: Long = 0
+        var writeIssued: Long = 0,
+        var nice: Int = 0
     )
 
     public fun TaskInfoAdapt(taskInfoString: String): TaskInfo =
