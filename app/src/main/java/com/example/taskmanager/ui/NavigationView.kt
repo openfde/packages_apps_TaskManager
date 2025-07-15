@@ -6,6 +6,7 @@ import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -26,21 +27,31 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.VerticalDivider
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.isSecondaryPressed
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.DpOffset
 import androidx.navigation.NavController
+import com.example.taskmanager.TaskManagerBinder
 
 
 sealed class AppRoute(val route: String) {
@@ -71,8 +82,7 @@ fun NavigationView() {
             listOf(
                 AppRoute.Process to @Composable { ProcessView() },
                 AppRoute.Resource to @Composable { ResourceView() },
-                AppRoute.FileSystem to @Composable { FileSystemView() }
-            ).forEach { (route, content) ->
+                AppRoute.FileSystem to @Composable { FileSystemView() }).forEach { (route, content) ->
                 composable(route.route) { content() }
             }
         }
@@ -80,16 +90,234 @@ fun NavigationView() {
 }
 
 @Composable
-fun WindowButtonsBar() {
+fun SearchBar(
+    text: String,
+    onTextChange: (String) -> Unit
+) {
     Row(
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-        modifier = Modifier.padding(start = 12.dp, end = 8.dp)
+        modifier = Modifier
+            .size(width = 160.dp, height = 32.dp)
+            .background(
+                color = Color(0x0D000000), // 设置背景颜色为 #0d000000
+                shape = RoundedCornerShape(6.dp)
+            )
+            .border(
+                width = 1.dp,
+                color = Color.Black.copy(alpha = 0.05f), // 边框风格 border: 1px solid rgba(0, 0, 0, 0.05)
+                shape = RoundedCornerShape(6.dp)
+            )
+            .padding(horizontal = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         Image(
-            painter = painterResource(id = R.drawable.window_options_button),
-            modifier = Modifier.size(28.dp),
-            contentDescription = null
+            painter = painterResource(id = R.drawable.search_icon),
+            contentDescription = null,
+            modifier = Modifier.size(16.dp)
         )
+
+        BasicTextField(
+            value = text,
+            onValueChange = onTextChange,
+            singleLine = true,
+            modifier = Modifier.weight(1f)
+        )
+    }
+}
+
+@Composable
+fun WindowOptionsDisplayProcessSubDropdownMenu(
+    expanded: Boolean,
+    onDismissRequest: () -> Unit,
+    offset: Offset
+) {
+    DropdownMenu(
+        expanded = expanded,
+        onDismissRequest = {
+            onDismissRequest()
+        },
+        offset = with(LocalDensity.current) {
+            DpOffset(
+                x = offset.x.toDp() - 192.dp,
+                y = offset.y.toDp()
+            )
+        },
+        modifier = Modifier.clip(RoundedCornerShape(8.dp))
+    ) {
+        DropdownMenuItem(
+            text = { Text("所有进程") },
+            onClick = {
+
+            },
+            modifier = Modifier
+                .height(32.dp)
+                .width(192.dp)
+        )
+        DropdownMenuItem(
+            text = { Text("活动进程") },
+            onClick = {
+
+            },
+            modifier = Modifier
+                .height(32.dp)
+                .width(192.dp)
+        )
+        DropdownMenuItem(
+            text = { Text("我的进程") },
+            onClick = {
+
+            },
+            modifier = Modifier
+                .height(32.dp)
+                .width(192.dp)
+        )
+    }
+}
+
+
+@Composable
+fun WindowButtonsBar() {
+    val searchBarValue = remember { mutableStateOf<String>("") }
+    val windowOptionsDropdownMenuOffset = remember {
+        mutableStateOf<Offset>(Offset.Zero)
+    }
+    val windowOptionsDropdownSubMenuOffset = remember {
+        mutableStateOf<Offset>(Offset.Zero)
+    }
+    val windowOptionsDropdownMenuShow = remember {
+        mutableStateOf<Boolean>(false)
+    }
+    val windowOptionsDropdownSubMenuShow = remember {
+        mutableStateOf<Boolean>(false)
+    }
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.padding(start = 12.dp, end = 8.dp)
+    ) {
+        WindowOptionsDisplayProcessSubDropdownMenu(
+            expanded = windowOptionsDropdownSubMenuShow.value,
+            onDismissRequest = {
+                windowOptionsDropdownSubMenuShow.value = false
+            },
+            offset = windowOptionsDropdownMenuOffset.value
+        )
+        DropdownMenu(
+            expanded = windowOptionsDropdownMenuShow.value,
+            onDismissRequest = { windowOptionsDropdownMenuShow.value = false },
+            offset = with(LocalDensity.current) {
+                DpOffset(
+                    x = windowOptionsDropdownMenuOffset.value.x.toDp(),
+                    y = windowOptionsDropdownMenuOffset.value.y.toDp()
+                )
+            },
+            modifier = Modifier.clip(RoundedCornerShape(8.dp))
+        ) {
+            DropdownMenuItem(
+                text = { Text("刷新") },
+                onClick = {
+
+                },
+                modifier = Modifier
+                    .height(32.dp)
+                    .width(192.dp)
+            )
+            DropdownMenuItem(
+                modifier = Modifier.pointerInput(Unit) {
+                    awaitPointerEventScope {
+                        while (true) {
+                            val event = awaitPointerEvent()
+                            if (event.type == PointerEventType.Press) {
+                                windowOptionsDropdownSubMenuOffset.value =
+                                    event.changes.first().position
+                                windowOptionsDropdownSubMenuShow.value = true
+                            }
+                        }
+                    }
+                },
+                onClick = {},
+                text = { Text("进程显示") }
+            )
+            HorizontalDivider()
+            DropdownMenuItem(
+                text = { Text("显示依赖项") },
+                onClick = {
+
+                },
+                modifier = Modifier
+                    .height(32.dp)
+                    .width(192.dp)
+            )
+            DropdownMenuItem(
+                text = { Text("搜索打开的文件") },
+                onClick = {
+
+                },
+                modifier = Modifier
+                    .height(32.dp)
+                    .width(192.dp)
+            )
+            HorizontalDivider()
+            DropdownMenuItem(
+                text = { Text("偏好设置") },
+                onClick = {
+
+                },
+                modifier = Modifier
+                    .height(32.dp)
+                    .width(192.dp)
+            )
+            DropdownMenuItem(
+                text = { Text("帮助") },
+                onClick = {
+
+                },
+                modifier = Modifier
+                    .height(32.dp)
+                    .width(192.dp)
+            )
+            DropdownMenuItem(
+                text = { Text("快捷键") },
+                onClick = {
+
+                },
+                modifier = Modifier
+                    .height(32.dp)
+                    .width(192.dp)
+            )
+            DropdownMenuItem(
+                text = { Text("关于") },
+                onClick = {
+
+                },
+                modifier = Modifier
+                    .height(32.dp)
+                    .width(192.dp)
+            )
+        }
+        SearchBar(
+            text = searchBarValue.value, onTextChange = { searchBarValue.value = it })
+        Image(
+            painter = painterResource(id = R.drawable.window_options_button),
+            modifier = Modifier
+                .size(28.dp)
+                .clickable(
+                    onClick = {})
+                .pointerInput(Unit) {
+                    awaitPointerEventScope {
+                        while (true) {
+                            val event = awaitPointerEvent()
+                            if (event.type == PointerEventType.Press) {
+                                windowOptionsDropdownMenuOffset.value =
+                                    event.changes.first().position
+                                windowOptionsDropdownMenuShow.value = true
+                            }
+                        }
+                    }
+                },
+            contentDescription = null,
+        )
+
         Image(
             painter = painterResource(id = R.drawable.window_max_button),
             modifier = Modifier.size(28.dp),
@@ -122,15 +350,13 @@ fun LogoBar() {
             contentDescription = null
         )
         Text(
-            text = "资源管理器",
-            modifier = Modifier.padding(start = 8.dp),
-            fontSize = 14.sp
+            text = "资源管理器", modifier = Modifier.padding(start = 8.dp), fontSize = 14.sp
         )
     }
 }
 
 @Composable
-fun NavInnerBox(name: String, selected: Boolean,onClick: () -> Unit) {
+fun NavInnerBox(name: String, selected: Boolean, onClick: () -> Unit) {
     Surface(
         modifier = Modifier.size(width = 93.dp, height = 26.dp),
         shape = RoundedCornerShape(4.dp),
@@ -171,39 +397,38 @@ fun NavOuterBox(navController: NavController) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(2.dp)
         ) {
-            NavInnerBox(name = "进程",
-                selected = selectedItem.value == AppRoute.Process.route,
-                onClick = {
+            NavInnerBox(
+                name = "进程", selected = selectedItem.value == AppRoute.Process.route, onClick = {
                     navController.navigate(AppRoute.Process.route) {
                         popUpTo(navController.graph.startDestinationId)
                         launchSingleTop = true
                     }
                     selectedItem.value = AppRoute.Process.route
-            })
+                })
             VerticalDivider(
                 modifier = Modifier.height(18.dp), color = Color(0x0D000000)
             )
-            NavInnerBox(name = "资源",
-                selected = selectedItem.value == AppRoute.Resource.route,
-                onClick = {
-                navController.navigate(AppRoute.Resource.route) {
-                    popUpTo(navController.graph.startDestinationId)
-                    launchSingleTop = true
-                }
-                selectedItem.value = AppRoute.Resource.route
-            })
+            NavInnerBox(
+                name = "资源", selected = selectedItem.value == AppRoute.Resource.route, onClick = {
+                    navController.navigate(AppRoute.Resource.route) {
+                        popUpTo(navController.graph.startDestinationId)
+                        launchSingleTop = true
+                    }
+                    selectedItem.value = AppRoute.Resource.route
+                })
             VerticalDivider(
                 modifier = Modifier.height(18.dp), color = Color(0x0D000000)
             )
-            NavInnerBox(name = "文件系统",
+            NavInnerBox(
+                name = "文件系统",
                 selected = selectedItem.value == AppRoute.FileSystem.route,
                 onClick = {
-                navController.navigate(AppRoute.FileSystem.route) {
-                    popUpTo(navController.graph.startDestinationId)
-                    launchSingleTop = true
-                }
-                selectedItem.value = AppRoute.FileSystem.route
-            })
+                    navController.navigate(AppRoute.FileSystem.route) {
+                        popUpTo(navController.graph.startDestinationId)
+                        launchSingleTop = true
+                    }
+                    selectedItem.value = AppRoute.FileSystem.route
+                })
         }
     }
 }
@@ -220,13 +445,11 @@ fun SearchBar(
         modifier = Modifier
             .size(width = 160.dp, height = 32.dp)
             .background(
-                color = Color.Black.copy(alpha = 0.05f),
-                shape = RoundedCornerShape(6.dp)
+                color = Color.Black.copy(alpha = 0.05f), shape = RoundedCornerShape(6.dp)
             )
             .border(
                 width = 1.dp, color = Color.Black.copy(alpha = 0.05f),
-            ),
-        contentAlignment = Alignment.Center
+            ), contentAlignment = Alignment.Center
     ) {
         TextField(
             value = query,

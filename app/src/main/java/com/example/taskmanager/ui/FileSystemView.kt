@@ -49,9 +49,6 @@ fun FileSystemView() {
     LaunchedEffect(Unit) {
         coroutineScope.launch {
             val fileSystemUsage = TaskManagerBinder.getFileSystemUsage()
-            fileSystemUsage.map { it ->
-                Log.d("COLD", it.percent.toString())
-            }
             fileSystemUsageState.clear()
             fileSystemUsageState.addAll(fileSystemUsage)
             delay(500)
