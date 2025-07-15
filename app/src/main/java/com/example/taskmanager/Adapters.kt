@@ -15,6 +15,7 @@ object Adapters {
         gson.fromJson(cpuPercentString, floatListType)
 
     data class TaskInfo(
+        var running: Boolean = false,
         var name: String? = null,
         var user: String? = null,
         var vmsize: Long = 0,

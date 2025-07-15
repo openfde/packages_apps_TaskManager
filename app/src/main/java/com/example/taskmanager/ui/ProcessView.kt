@@ -106,23 +106,25 @@ fun ProcessView() {
                 taskInfoList.addAll(allTasks)
 
                 while (true) {
-                    delay(1000)
-                    val currentPids = TaskManagerBinder.getTaskPids().toSet()
+                    val currentPids = TaskManagerBinder.getTaskPids()
                     taskInfoList.removeAll { it.pid !in currentPids }
-                    currentPids.forEach { pid ->
-                        // 首先检查该pid的进程是否存在，不存在删除且跳过
-                        val taskInfo = TaskManagerBinder.getTaskByPid(pid)
-                        if (taskInfo == null) {
-                            taskInfoList.removeAll { it.pid == pid }
-                            return@forEach
+                    for (i in currentPids.indices step 20) {
+                        val batch = currentPids.subList(i, minOf(i + 20, currentPids.size))
+                        batch.forEach { pid ->
+                            val taskInfo = TaskManagerBinder.getTaskByPid(pid)
+                            if (taskInfo == null) {
+                                taskInfoList.removeAll { it.pid == pid }
+                                return@forEach
+                            }
+                            // 检查这个pid是否是之前列表中的
+                            val existingIndex = taskInfoList.indexOfFirst { it.pid == pid }
+                            if (existingIndex != -1) {
+                                taskInfoList[existingIndex] = taskInfo // 若是则在原基础更新
+                            } else {
+                                taskInfoList.add(taskInfo) // 若不是则添加
+                            }
                         }
-                        // 检查这个pid是否是之前列表中的
-                        val existingIndex = taskInfoList.indexOfFirst { it.pid == pid }
-                        if (existingIndex != -1) {
-                            taskInfoList[existingIndex] = taskInfo // 若是则在原基础更新
-                        } else {
-                            taskInfoList.add(taskInfo) // 若不是则添加
-                        }
+                        delay(100)
                     }
                 }
             }
@@ -185,6 +187,9 @@ fun TaskItem(taskInfo: Adapters.TaskInfo) {
     val floatingPropertiesWindowShow = remember { mutableStateOf(false) }
     val floatingPriorityModificationWindowShow = remember { mutableStateOf(false) }
     var priorityModificationSliderValue = remember { mutableIntStateOf(taskInfo.nice) }
+    val iconBitmap = TaskManagerBinder
+        .getIconBitmapByTaskName(taskInfo.name.toString())
+    val iconExists = iconBitmap != null
 
     if (floatingPropertiesWindowShow.value) {
         AlertDialog(
@@ -355,11 +360,19 @@ fun TaskItem(taskInfo: Adapters.TaskInfo) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 if (index == 0) {
-                    Image(
-                        painter = painterResource(id = R.drawable.ic_linux),
-                        modifier = Modifier.size(28.dp),
-                        contentDescription = null
-                    )
+                    if (iconExists) {
+                        Image(
+                            bitmap = iconBitmap,
+                            modifier = Modifier.size(28.dp),
+                            contentDescription = null
+                        )
+                    } else {
+                        Image(
+                            painter = painterResource(id = R.drawable.ic_linux),
+                            modifier = Modifier.size(28.dp),
+                            contentDescription = null
+                        )
+                    }
                 }
                 Text(
                     text = m[index].toString(),
@@ -381,21 +394,6 @@ fun TaskItem(taskInfo: Adapters.TaskInfo) {
             },
             modifier = Modifier.clip(RoundedCornerShape(8.dp))
         ) {
-            /*
-                <item>属性</item> 0
-                <item>__DIVIDER__</item>
-                <item>内存映射</item> 1
-                <item>打开文件</item> 2
-                <item>__DIVIDER__</item>
-                <item>更改优先级</item> 3
-                <item>设置关联</item> 4
-                <item>__DIVIDER__</item>
-                <item>停止进程</item> 5
-                <item>继续</item> 6
-                <item>终止</item> 7
-                <item>__DIVIDER__</item>
-                <item>强制终止</item> 8
-            */
             val callbackFunctionsMap = mapOf<String, () -> Unit>(
                 "属性" to {
                     floatingMenuExpanded.value = false

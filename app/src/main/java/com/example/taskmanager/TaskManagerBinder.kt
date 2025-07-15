@@ -16,7 +16,6 @@ object TaskManagerBinder {
             .invoke(null, "openfdetaskmanager") as IBinder?
     } catch (e: Exception) {
         e.printStackTrace()
-        Log.d("COLD", "error :$e")
         null
     }
 
@@ -47,8 +46,6 @@ object TaskManagerBinder {
 
     public fun getIconBitmapByTaskName(taskName: String): ImageBitmap? {
         val iconB64String = taskManager?.getIconB64ByTaskName(taskName)
-        Log.d("COLD", iconB64String.toString())
-
         if (iconB64String == "")
             return null
 
