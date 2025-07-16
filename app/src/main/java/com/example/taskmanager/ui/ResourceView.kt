@@ -1,6 +1,5 @@
 package com.example.taskmanager.ui
 
-import android.net.Network
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Canvas
@@ -245,9 +244,11 @@ fun ResourceView() {
     val currentNetworkAnnotationsState = remember { mutableStateListOf<String>("", "") }
     val currentDiskAnnotationsState = remember { mutableStateListOf<String>("", "") }
 
+    val delayGap:Long = 500
     LaunchedEffect(Unit) {
         coroutineScope.launch {
             while (true) {
+//                1
                 val eachCPUPercent = TaskManagerBinder.getEachCPUPercent(200) // [0,1,2,3]
                 currentCPUAnnotationsState.clear()
                 currentMemoryAndSwapAnnotationsState.clear()
@@ -256,6 +257,12 @@ fun ResourceView() {
                     cpuPercentState[index].add(it)
                     currentCPUAnnotationsState.add("CPU${index + 1}: %03.1f%%".format(it))
                 }
+                delay(delayGap)
+            }
+        }
+        coroutineScope.launch {
+            while (true) {
+//                2
                 val memoryAndMemoryInfo = TaskManagerBinder.getMemoryAndSwap()
                 currentMemoryAndSwapAnnotationsState
                     .add(
@@ -285,6 +292,12 @@ fun ResourceView() {
                 if (memoryList.size > 100) memoryList.removeFirst()
                 memoryList.add(memoryAndMemoryInfo.memory.percent)
                 swapList.add(memoryAndMemoryInfo.swap.percent)
+                delay(delayGap)
+            }
+        }
+        coroutineScope.launch {
+            while (true) {
+//                3
                 val networkDownloadAndUpload = TaskManagerBinder.getNetworkDownloadAndUpload(200)
                 val networkDownloadState = networkDownloadAndUploadState[0]
                 val networkUploadState = networkDownloadAndUploadState[1]
@@ -305,6 +318,12 @@ fun ResourceView() {
                     .add("当前下载: $currentDownloadSpeedString 下载总量:$currentDownloadTotalString")
                 currentNetworkAnnotationsState
                     .add("当前上传:$currentUploadSpeedString 上传总量:$currentUploadTotalString")
+                delay(delayGap)
+            }
+        }
+        coroutineScope.launch {
+            while (true) {
+//                4
                 val diskReadAndWrite = TaskManagerBinder.getDiskReadAndWrite(100)
                 val diskReadState = diskReadAndWriteState[0]
                 val diskWriteState = diskReadAndWriteState[1]
@@ -322,8 +341,7 @@ fun ResourceView() {
                     .add("当前读盘: $currentDiskReadSpeedString 读盘总计:$currentDiskReadTotalString")
                 currentDiskAnnotationsState
                     .add("当前写入: $currentDiskWriteSpeedString 写入总计:$currentDiskWriteTotalString")
-
-                delay(500)
+                delay(delayGap)
             }
         }
     }

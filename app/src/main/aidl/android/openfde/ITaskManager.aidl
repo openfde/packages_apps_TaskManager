@@ -12,4 +12,5 @@ interface ITaskManager {
     String getDiskReadAndWrite(int interval);
     String getFileSystemUsage();
     void changeTaskPriority(int pid, int priority);
+    String getUserName();
 }
