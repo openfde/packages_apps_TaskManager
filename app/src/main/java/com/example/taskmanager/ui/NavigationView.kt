@@ -65,6 +65,8 @@ sealed class AppRoute(val route: String) {
 @Composable
 fun NavigationView() {
     val navController = rememberNavController()
+    val displayModeState = remember { mutableStateOf(DisplayMode.ALL_PROCESSES) }
+    val searchBarValue = remember { mutableStateOf("") }
     Column {
         Row(
             modifier = Modifier
@@ -76,11 +78,17 @@ fun NavigationView() {
         ) {
             LogoBar()
             NavOuterBox(navController)
-            WindowButtonsBar()
+            WindowButtonsBar(
+                onDisplayModeChange = { displayModeState.value = it },
+                onSearchBarChange = { searchBarValue.value = it })
         }
         NavHost(navController, startDestination = AppRoute.Process.route) {
             listOf(
-                AppRoute.Process to @Composable { ProcessView() },
+                AppRoute.Process to @Composable {
+                    ProcessView(
+                        displayModeState.value, searchBarValue.value
+                    )
+                },
                 AppRoute.Resource to @Composable { ResourceView() },
                 AppRoute.FileSystem to @Composable { FileSystemView() }).forEach { (route, content) ->
                 composable(route.route) { content() }
@@ -91,8 +99,7 @@ fun NavigationView() {
 
 @Composable
 fun SearchBar(
-    text: String,
-    onTextChange: (String) -> Unit
+    text: String, onTextChange: (String) -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -129,45 +136,36 @@ fun SearchBar(
 fun WindowOptionsDisplayProcessSubDropdownMenu(
     expanded: Boolean,
     onDismissRequest: () -> Unit,
-    offset: Offset
+    offset: Offset,
+    onDisplayModeChange: (DisplayMode) -> Unit
 ) {
     DropdownMenu(
-        expanded = expanded,
-        onDismissRequest = {
+        expanded = expanded, onDismissRequest = {
             onDismissRequest()
-        },
-        offset = with(LocalDensity.current) {
+        }, offset = with(LocalDensity.current) {
             DpOffset(
-                x = offset.x.toDp() - 192.dp,
-                y = offset.y.toDp()
+                x = offset.x.toDp() - 192.dp, y = offset.y.toDp()
             )
-        },
-        modifier = Modifier.clip(RoundedCornerShape(8.dp))
+        }, modifier = Modifier.clip(RoundedCornerShape(8.dp))
     ) {
         DropdownMenuItem(
-            text = { Text("所有进程") },
-            onClick = {
-
-            },
-            modifier = Modifier
+            text = { Text("所有进程") }, onClick = {
+                onDisplayModeChange(DisplayMode.ALL_PROCESSES)
+            }, modifier = Modifier
                 .height(32.dp)
                 .width(192.dp)
         )
         DropdownMenuItem(
-            text = { Text("活动进程") },
-            onClick = {
-
-            },
-            modifier = Modifier
+            text = { Text("活动进程") }, onClick = {
+                onDisplayModeChange(DisplayMode.ACTIVE_PROCESSES)
+            }, modifier = Modifier
                 .height(32.dp)
                 .width(192.dp)
         )
         DropdownMenuItem(
-            text = { Text("我的进程") },
-            onClick = {
-
-            },
-            modifier = Modifier
+            text = { Text("我的进程") }, onClick = {
+                onDisplayModeChange(DisplayMode.MY_PROCESSES)
+            }, modifier = Modifier
                 .height(32.dp)
                 .width(192.dp)
         )
@@ -176,7 +174,9 @@ fun WindowOptionsDisplayProcessSubDropdownMenu(
 
 
 @Composable
-fun WindowButtonsBar() {
+fun WindowButtonsBar(
+    onDisplayModeChange: (DisplayMode) -> Unit, onSearchBarChange: (String) -> Unit
+) {
     val searchBarValue = remember { mutableStateOf<String>("") }
     val windowOptionsDropdownMenuOffset = remember {
         mutableStateOf<Offset>(Offset.Zero)
@@ -200,8 +200,11 @@ fun WindowButtonsBar() {
             onDismissRequest = {
                 windowOptionsDropdownSubMenuShow.value = false
             },
-            offset = windowOptionsDropdownMenuOffset.value
-        )
+            offset = windowOptionsDropdownMenuOffset.value,
+            onDisplayModeChange = { mode ->
+                onDisplayModeChange(mode)
+                Log.d("COLD", "mode changed:$mode")
+            })
         DropdownMenu(
             expanded = windowOptionsDropdownMenuShow.value,
             onDismissRequest = { windowOptionsDropdownMenuShow.value = false },
@@ -214,89 +217,78 @@ fun WindowButtonsBar() {
             modifier = Modifier.clip(RoundedCornerShape(8.dp))
         ) {
             DropdownMenuItem(
-                text = { Text("刷新") },
-                onClick = {
+                text = { Text("刷新") }, onClick = {
 
-                },
-                modifier = Modifier
+                }, modifier = Modifier
                     .height(32.dp)
                     .width(192.dp)
             )
-            DropdownMenuItem(
-                modifier = Modifier.pointerInput(Unit) {
-                    awaitPointerEventScope {
-                        while (true) {
-                            val event = awaitPointerEvent()
-                            if (event.type == PointerEventType.Press) {
-                                windowOptionsDropdownSubMenuOffset.value =
-                                    event.changes.first().position
-                                windowOptionsDropdownSubMenuShow.value = true
-                            }
+            DropdownMenuItem(modifier = Modifier.pointerInput(Unit) {
+                awaitPointerEventScope {
+                    while (true) {
+                        val event = awaitPointerEvent()
+                        if (event.type == PointerEventType.Press) {
+                            windowOptionsDropdownSubMenuOffset.value =
+                                event.changes.first().position
+                            windowOptionsDropdownSubMenuShow.value = true
                         }
                     }
-                },
-                onClick = {},
-                text = { Text("进程显示") }
-            )
+                }
+            }, onClick = {}, text = { Text("进程显示") })
             HorizontalDivider()
             DropdownMenuItem(
-                text = { Text("显示依赖项") },
-                onClick = {
+                text = { Text("显示依赖项") }, onClick = {
 
-                },
-                modifier = Modifier
+                }, modifier = Modifier
                     .height(32.dp)
                     .width(192.dp)
             )
             DropdownMenuItem(
-                text = { Text("搜索打开的文件") },
-                onClick = {
+                text = { Text("搜索打开的文件") }, onClick = {
 
-                },
-                modifier = Modifier
+                }, modifier = Modifier
                     .height(32.dp)
                     .width(192.dp)
             )
             HorizontalDivider()
             DropdownMenuItem(
-                text = { Text("偏好设置") },
-                onClick = {
+                text = { Text("偏好设置") }, onClick = {
 
-                },
-                modifier = Modifier
+                }, modifier = Modifier
                     .height(32.dp)
                     .width(192.dp)
             )
             DropdownMenuItem(
-                text = { Text("帮助") },
-                onClick = {
+                text = { Text("帮助") }, onClick = {
 
-                },
-                modifier = Modifier
+                }, modifier = Modifier
                     .height(32.dp)
                     .width(192.dp)
             )
             DropdownMenuItem(
-                text = { Text("快捷键") },
-                onClick = {
+                text = { Text("快捷键") }, onClick = {
 
-                },
-                modifier = Modifier
+                }, modifier = Modifier
                     .height(32.dp)
                     .width(192.dp)
             )
             DropdownMenuItem(
-                text = { Text("关于") },
-                onClick = {
+                text = { Text("关于") }, onClick = {
 
-                },
-                modifier = Modifier
+                }, modifier = Modifier
                     .height(32.dp)
                     .width(192.dp)
             )
         }
         SearchBar(
-            text = searchBarValue.value, onTextChange = { searchBarValue.value = it })
+            text = searchBarValue.value, onTextChange = {
+                Log.d("COLD", "searchBarValue:$searchBarValue")
+                searchBarValue.value = it
+                if (searchBarValue.value != "") {
+                    onDisplayModeChange(DisplayMode.SEARCH_FILTERED_PROCESSES)
+                    Log.d("COLD", "changed:$searchBarValue")
+                }
+            })
         Image(
             painter = painterResource(id = R.drawable.window_options_button),
             modifier = Modifier
@@ -430,41 +422,5 @@ fun NavOuterBox(navController: NavController) {
                     selectedItem.value = AppRoute.FileSystem.route
                 })
         }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun SearchBar(
-    query: String,
-    onQueryChange: (String) -> Unit,
-    modifier: Modifier = Modifier,
-    placeholder: String
-) {
-    Box(
-        modifier = Modifier
-            .size(width = 160.dp, height = 32.dp)
-            .background(
-                color = Color.Black.copy(alpha = 0.05f), shape = RoundedCornerShape(6.dp)
-            )
-            .border(
-                width = 1.dp, color = Color.Black.copy(alpha = 0.05f),
-            ), contentAlignment = Alignment.Center
-    ) {
-        TextField(
-            value = query,
-            onValueChange = onQueryChange,
-            placeholder = { Text(placeholder, color = Color.Black) },
-            singleLine = true,
-            shape = RoundedCornerShape(5.dp),
-            colors = TextFieldDefaults.colors(
-                unfocusedIndicatorColor = Color.Transparent,
-                focusedIndicatorColor = Color.Transparent,
-                disabledIndicatorColor = Color.Transparent,
-                focusedContainerColor = Color.Transparent,
-                unfocusedContainerColor = Color.Transparent,
-                disabledContainerColor = Color.Transparent
-            )
-        )
     }
 }

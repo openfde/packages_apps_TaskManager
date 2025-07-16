@@ -87,4 +87,8 @@ object TaskManagerBinder {
     public fun changeTaskPriority(pid: Int, priority: Int) {
         taskManager?.changeTaskPriority(pid, priority)
     }
+
+    public fun getUserName():String {
+        return taskManager?.getUserName() ?: "Unknown"
+    }
 }
