@@ -32,11 +32,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Surface
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -45,13 +42,11 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.isSecondaryPressed
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.DpOffset
 import androidx.navigation.NavController
-import com.example.taskmanager.TaskManagerBinder
 
 
 sealed class AppRoute(val route: String) {
@@ -80,15 +75,17 @@ fun NavigationView() {
             NavOuterBox(navController)
             WindowButtonsBar(
                 onDisplayModeChange = { displayModeState.value = it },
-                onSearchBarChange = { searchBarValue.value = it })
+                onSearchBarChange = { searchBarValue.value = it },
+                searchBarValue.value
+            )
         }
         NavHost(navController, startDestination = AppRoute.Process.route) {
             listOf(
                 AppRoute.Process to @Composable {
-                    ProcessView(
-                        displayModeState.value, searchBarValue.value
-                    )
-                },
+                ProcessView(
+                    displayModeState.value, searchBarValue.value
+                )
+            },
                 AppRoute.Resource to @Composable { ResourceView() },
                 AppRoute.FileSystem to @Composable { FileSystemView() }).forEach { (route, content) ->
                 composable(route.route) { content() }
@@ -99,7 +96,7 @@ fun NavigationView() {
 
 @Composable
 fun SearchBar(
-    text: String, onTextChange: (String) -> Unit
+    text: String, onValueChange: (String) -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -125,7 +122,7 @@ fun SearchBar(
 
         BasicTextField(
             value = text,
-            onValueChange = onTextChange,
+            onValueChange = onValueChange,
             singleLine = true,
             modifier = Modifier.weight(1f)
         )
@@ -141,31 +138,31 @@ fun WindowOptionsDisplayProcessSubDropdownMenu(
 ) {
     DropdownMenu(
         expanded = expanded, onDismissRequest = {
-            onDismissRequest()
-        }, offset = with(LocalDensity.current) {
-            DpOffset(
-                x = offset.x.toDp() - 192.dp, y = offset.y.toDp()
-            )
-        }, modifier = Modifier.clip(RoundedCornerShape(8.dp))
+        onDismissRequest()
+    }, offset = with(LocalDensity.current) {
+        DpOffset(
+            x = offset.x.toDp() - 192.dp, y = offset.y.toDp()
+        )
+    }, modifier = Modifier.clip(RoundedCornerShape(8.dp))
     ) {
         DropdownMenuItem(
             text = { Text("所有进程") }, onClick = {
-                onDisplayModeChange(DisplayMode.ALL_PROCESSES)
-            }, modifier = Modifier
+            onDisplayModeChange(DisplayMode.ALL_PROCESSES)
+        }, modifier = Modifier
                 .height(32.dp)
                 .width(192.dp)
         )
         DropdownMenuItem(
             text = { Text("活动进程") }, onClick = {
-                onDisplayModeChange(DisplayMode.ACTIVE_PROCESSES)
-            }, modifier = Modifier
+            onDisplayModeChange(DisplayMode.ACTIVE_PROCESSES)
+        }, modifier = Modifier
                 .height(32.dp)
                 .width(192.dp)
         )
         DropdownMenuItem(
             text = { Text("我的进程") }, onClick = {
-                onDisplayModeChange(DisplayMode.MY_PROCESSES)
-            }, modifier = Modifier
+            onDisplayModeChange(DisplayMode.MY_PROCESSES)
+        }, modifier = Modifier
                 .height(32.dp)
                 .width(192.dp)
         )
@@ -175,9 +172,10 @@ fun WindowOptionsDisplayProcessSubDropdownMenu(
 
 @Composable
 fun WindowButtonsBar(
-    onDisplayModeChange: (DisplayMode) -> Unit, onSearchBarChange: (String) -> Unit
+    onDisplayModeChange: (DisplayMode) -> Unit,
+    onSearchBarChange: (String) -> Unit,
+    searchBarValue: String
 ) {
-    val searchBarValue = remember { mutableStateOf<String>("") }
     val windowOptionsDropdownMenuOffset = remember {
         mutableStateOf<Offset>(Offset.Zero)
     }
@@ -219,7 +217,7 @@ fun WindowButtonsBar(
             DropdownMenuItem(
                 text = { Text("刷新") }, onClick = {
 
-                }, modifier = Modifier
+            }, modifier = Modifier
                     .height(32.dp)
                     .width(192.dp)
             )
@@ -239,14 +237,14 @@ fun WindowButtonsBar(
             DropdownMenuItem(
                 text = { Text("显示依赖项") }, onClick = {
 
-                }, modifier = Modifier
+            }, modifier = Modifier
                     .height(32.dp)
                     .width(192.dp)
             )
             DropdownMenuItem(
                 text = { Text("搜索打开的文件") }, onClick = {
 
-                }, modifier = Modifier
+            }, modifier = Modifier
                     .height(32.dp)
                     .width(192.dp)
             )
@@ -254,37 +252,37 @@ fun WindowButtonsBar(
             DropdownMenuItem(
                 text = { Text("偏好设置") }, onClick = {
 
-                }, modifier = Modifier
+            }, modifier = Modifier
                     .height(32.dp)
                     .width(192.dp)
             )
             DropdownMenuItem(
                 text = { Text("帮助") }, onClick = {
 
-                }, modifier = Modifier
+            }, modifier = Modifier
                     .height(32.dp)
                     .width(192.dp)
             )
             DropdownMenuItem(
                 text = { Text("快捷键") }, onClick = {
 
-                }, modifier = Modifier
+            }, modifier = Modifier
                     .height(32.dp)
                     .width(192.dp)
             )
             DropdownMenuItem(
                 text = { Text("关于") }, onClick = {
 
-                }, modifier = Modifier
+            }, modifier = Modifier
                     .height(32.dp)
                     .width(192.dp)
             )
         }
         SearchBar(
-            text = searchBarValue.value, onTextChange = {
-                Log.d("COLD", "searchBarValue:$searchBarValue")
-                searchBarValue.value = it
-                if (searchBarValue.value != "") {
+            text = searchBarValue, onValueChange = {it->
+                Log.d("COLD", "searchBarValue:$it")
+                onSearchBarChange(it)
+                if (searchBarValue != "") {
                     onDisplayModeChange(DisplayMode.SEARCH_FILTERED_PROCESSES)
                     Log.d("COLD", "changed:$searchBarValue")
                 }
