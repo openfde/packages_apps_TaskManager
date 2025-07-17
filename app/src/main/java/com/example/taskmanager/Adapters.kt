@@ -119,4 +119,31 @@ object Adapters {
 
     public fun DiskPartitionAdapt(partitionString: String): List<DiskPartition> =
         gson.fromJson(partitionString, diskPartitionType)
+
+    private val appsResponseType = object : TypeToken<AppsResponse>() {}.type
+
+    data class AppsResponse(
+        val code: Int,
+        val message: String,
+        val data: ResponseData
+    )
+
+    data class ResponseData(
+        val data: List<AppInfo>
+    )
+
+    data class AppInfo(
+        val Type: String,
+        val Path: String,
+        val Icon: String,
+        val IconPath: String,
+        val IconType: String,
+        val Name: String,
+        val ZhName: String,
+        val FileName: String,
+        val IsAndroidApp: Boolean
+    )
+
+    public fun AppsResponseAdapt(jsonString: String): AppsResponse =
+        gson.fromJson(jsonString, appsResponseType)
 }

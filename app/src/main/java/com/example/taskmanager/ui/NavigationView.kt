@@ -201,7 +201,6 @@ fun WindowButtonsBar(
             offset = windowOptionsDropdownMenuOffset.value,
             onDisplayModeChange = { mode ->
                 onDisplayModeChange(mode)
-                Log.d("COLD", "mode changed:$mode")
             })
         DropdownMenu(
             expanded = windowOptionsDropdownMenuShow.value,
@@ -280,11 +279,9 @@ fun WindowButtonsBar(
         }
         SearchBar(
             text = searchBarValue, onValueChange = {it->
-                Log.d("COLD", "searchBarValue:$it")
                 onSearchBarChange(it)
                 if (searchBarValue != "") {
                     onDisplayModeChange(DisplayMode.SEARCH_FILTERED_PROCESSES)
-                    Log.d("COLD", "changed:$searchBarValue")
                 }
             })
         Image(
