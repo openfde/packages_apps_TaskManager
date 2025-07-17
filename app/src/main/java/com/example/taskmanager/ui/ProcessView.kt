@@ -1,7 +1,9 @@
 package com.example.taskmanager.ui
 
 import android.content.pm.PackageManager
+import android.graphics.BitmapFactory
 import android.graphics.drawable.Drawable
+import android.util.Base64
 import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -46,6 +48,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Slider
 import androidx.compose.material3.TextButton
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
@@ -57,8 +60,14 @@ import androidx.compose.ui.input.pointer.isSecondaryPressed
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.toLowerCase
 import androidx.compose.ui.unit.DpOffset
 import androidx.core.graphics.drawable.toBitmap
+import io.ktor.client.*
+import io.ktor.client.call.body
+import io.ktor.client.engine.android.Android
+import io.ktor.client.request.*
+import java.util.Locale
 
 @Composable
 fun TasksTableHeader(sortMode: SortMode, onSortModeChange: (SortMode) -> Unit) {
@@ -261,6 +270,10 @@ enum class SortMode {
     BY_NAME_SEQUENTIAL, BY_NAME_REVERSE, BY_ID_SEQUENTIAL, BY_ID_REVERSE,
 }
 
+var LocalAppResponse = compositionLocalOf {
+
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProcessView(displayMode: DisplayMode, searchBarValue: String) {
@@ -269,12 +282,22 @@ fun ProcessView(displayMode: DisplayMode, searchBarValue: String) {
     val initialLoad = remember { mutableStateOf(false) }
     val userName = TaskManagerBinder.getUserName()
     val sortModeState = remember { mutableStateOf(SortMode.BY_NAME_SEQUENTIAL) }
+    val appResponseState = remember { mutableStateOf<Adapters.AppsResponse?>(null) }
 
     LaunchedEffect(Unit) {
         if (!initialLoad.value) {
             initialLoad.value = true
         } else {
             return@LaunchedEffect
+        }
+        coroutineScope.launch {
+            try {
+                val client = HttpClient(Android)
+                val response = client.get("http://127.0.0.1:18080/api/v1/apps?page=1&page_size=100")
+                appResponseState.value = Adapters.AppsResponseAdapt(response.body())
+            } catch (e: Exception) {
+
+            }
         }
         coroutineScope.launch {
             val allTasks = TaskManagerBinder.getTasks()
@@ -309,6 +332,7 @@ fun ProcessView(displayMode: DisplayMode, searchBarValue: String) {
                 }
             }
         }
+
     }
 
     Column(modifier = Modifier.background(Color(0xFFFCFDFF))) {
@@ -318,13 +342,13 @@ fun ProcessView(displayMode: DisplayMode, searchBarValue: String) {
         LazyColumn {
             items(
                 when (sortModeState.value) {
-                SortMode.BY_NAME_SEQUENTIAL -> taskInfoList.sortedBy { it.name }
-                SortMode.BY_NAME_REVERSE -> taskInfoList.sortedByDescending { it.name }
-                SortMode.BY_ID_SEQUENTIAL -> taskInfoList.sortedBy { it.pid }
-                SortMode.BY_ID_REVERSE -> taskInfoList.sortedByDescending { it.pid }
-                else -> taskInfoList
-            }, key = { it.pid }) {
-                TaskItem(it, displayMode, userName, searchBarValue)
+                    SortMode.BY_NAME_SEQUENTIAL -> taskInfoList.sortedBy { it.name }
+                    SortMode.BY_NAME_REVERSE -> taskInfoList.sortedByDescending { it.name }
+                    SortMode.BY_ID_SEQUENTIAL -> taskInfoList.sortedBy { it.pid }
+                    SortMode.BY_ID_REVERSE -> taskInfoList.sortedByDescending { it.pid }
+                    else -> taskInfoList
+                }, key = { it.pid }) {
+                TaskItem(it, displayMode, userName, searchBarValue, appResponseState.value)
             }
         }
     }
@@ -375,7 +399,7 @@ fun TaskItem(
     displayMode: DisplayMode,
     userName: String,
     searchBarValue: String,
-    linuxIconBitmap: ImageBitmap? = null
+    appResponse: Adapters.AppsResponse?
 ) {
     val context = LocalContext.current
     val taskDropdownMenuItems = context.resources.getStringArray(R.array.task_dropdown_menu_items)
@@ -411,14 +435,22 @@ fun TaskItem(
 
         else -> {
             // linux app
-            /*
-            val bitMap = TaskManagerBinder.getIconBitmapByTaskName(taskInfo.name.toString(), false)
-            if (bitMap != null) {
-                iconBitmap = bitMap
-                iconType = IconType.LINUX_BITMAP_ICON
-            } else iconType = IconType.LINUX_NULL_ICON
-            */
-            iconType = IconType.LINUX_NULL_ICON
+            if (appResponse == null) {
+                iconType = IconType.LINUX_NULL_ICON
+            } else {
+                val appInfoIndex = appResponse.data.data.indexOfFirst {
+                    taskInfo.name!!.lowercase().contains(it.Name.lowercase())
+                }
+                if (appInfoIndex == -1) {
+                    iconType = IconType.LINUX_NULL_ICON
+                } else {
+                    val iconB64String = appResponse.data.data[appInfoIndex].Icon
+                    val imageBytes = Base64.decode(iconB64String, Base64.DEFAULT)
+                    iconBitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+                        .asImageBitmap()
+                    iconType = IconType.LINUX_BITMAP_ICON
+                }
+            }
         }
     }
 
@@ -619,8 +651,6 @@ fun TaskItem(
                             )
                         }
                     }
-
-
                 }
                 Text(
                     text = m[index].toString(),
@@ -682,8 +712,8 @@ fun TaskItem(
             else {
                 DropdownMenuItem(
                     text = { Text(it) }, onClick = {
-                    callbackFunctionsMap[it]?.let { it1 -> it1() }
-                }, modifier = Modifier
+                        callbackFunctionsMap[it]?.let { it1 -> it1() }
+                    }, modifier = Modifier
                         .height(32.dp)
                         .width(192.dp)
                 )
