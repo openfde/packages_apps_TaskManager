@@ -4,7 +4,8 @@ import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
 import android.graphics.drawable.Drawable
 import android.util.Base64
-import android.util.Log
+import androidx.collection.MutableFloatList
+import androidx.collection.mutableFloatListOf
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -48,7 +49,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Slider
 import androidx.compose.material3.TextButton
-import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
@@ -60,19 +60,54 @@ import androidx.compose.ui.input.pointer.isSecondaryPressed
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.toLowerCase
 import androidx.compose.ui.unit.DpOffset
 import androidx.core.graphics.drawable.toBitmap
 import io.ktor.client.*
 import io.ktor.client.call.body
 import io.ktor.client.engine.android.Android
 import io.ktor.client.request.*
-import java.util.Locale
 
 @Composable
-fun TasksTableHeader(sortMode: SortMode, onSortModeChange: (SortMode) -> Unit) {
+fun TaskHeaderDivider(
+    clickAction: () -> Unit, doubleClickAction: () -> Unit
+) {
+    VerticalDivider(
+        modifier = Modifier
+            .height(8.dp)
+            .pointerInput(Unit) {
+                var lastClickTime = 0L
+                awaitPointerEventScope {
+                    while (true) {
+                        val event = awaitPointerEvent()
+                        if (event.type == PointerEventType.Press) {
+                            val currentTime = System.currentTimeMillis()
+                            if (currentTime - lastClickTime < 300) {
+                                // 双击
+                                doubleClickAction()
+                            } else {
+                                // 单击
+                                clickAction()
+                            }
+                            lastClickTime = currentTime
+                        }
+                    }
+                }
+            }
+
+    )
+}
+
+
+@Composable
+fun TasksTableHeader(
+    sortMode: SortMode,
+    onSortModeChange: (SortMode) -> Unit,
+    weights: MutableFloatList,
+    onWeightChange: (Int, Float) -> Unit
+) {
     val nameSortedReverseState = remember { mutableStateOf(false) }
     val idSortedReverseState = remember { mutableStateOf(false) }
+
     HorizontalDivider(modifier = Modifier.fillMaxWidth(), color = Color(0xFFE8E9EB))
     Row(
         modifier = Modifier
@@ -83,7 +118,7 @@ fun TasksTableHeader(sortMode: SortMode, onSortModeChange: (SortMode) -> Unit) {
             verticalAlignment = Alignment.CenterVertically, modifier = Modifier.height(24.dp)
         ) {
             Row(
-                modifier = Modifier.weight(0.1f),
+                modifier = Modifier.weight(weights[0]),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
@@ -128,39 +163,47 @@ fun TasksTableHeader(sortMode: SortMode, onSortModeChange: (SortMode) -> Unit) {
                     contentDescription = null,
                 )
             }
-            VerticalDivider(modifier = Modifier.height(8.dp))
+            TaskHeaderDivider(
+                clickAction = { onWeightChange(0, weights[0] + 0.05f) },
+                doubleClickAction = { onWeightChange(0, 0.23f) })
             Text(
                 text = "用户",
                 modifier = Modifier
-                    .weight(0.1f)
+                    .weight(weights[1])
                     .padding(horizontal = 10.dp),
                 fontSize = 14.sp,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            VerticalDivider(modifier = Modifier.height(8.dp))
+            TaskHeaderDivider(
+                clickAction = { onWeightChange(1, weights[1] + 0.05f) },
+                doubleClickAction = { onWeightChange(0, 0.08f) })
             Text(
                 text = "虚拟内存",
                 modifier = Modifier
-                    .weight(0.1f)
+                    .weight(weights[2])
                     .padding(horizontal = 10.dp),
                 fontSize = 14.sp,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            VerticalDivider(modifier = Modifier.height(8.dp))
+            TaskHeaderDivider(
+                clickAction = { onWeightChange(2, weights[2] + 0.05f) },
+                doubleClickAction = { onWeightChange(0, 0.09f) })
             Text(
                 text = "% CPU",
                 modifier = Modifier
-                    .weight(0.1f)
+                    .weight(weights[3])
                     .padding(horizontal = 10.dp),
                 fontSize = 14.sp,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            VerticalDivider(modifier = Modifier.height(8.dp))
+            TaskHeaderDivider(
+                clickAction = { onWeightChange(3, weights[3] + 0.05f) },
+                doubleClickAction = { onWeightChange(3, 0.09f) })
             Row(
-                modifier = Modifier.weight(0.1f),
+                modifier = Modifier.weight(weights[4]),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
@@ -203,57 +246,66 @@ fun TasksTableHeader(sortMode: SortMode, onSortModeChange: (SortMode) -> Unit) {
                     contentDescription = null
                 )
             }
-            VerticalDivider(modifier = Modifier.height(8.dp))
+            TaskHeaderDivider(
+                clickAction = { onWeightChange(4, weights[4] + 0.05f) },
+                doubleClickAction = { onWeightChange(4, 0.09f) })
             Text(
                 text = "内存",
                 modifier = Modifier
-                    .weight(0.1f)
+                    .weight(weights[5])
                     .padding(horizontal = 10.dp),
                 fontSize = 14.sp,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            VerticalDivider(modifier = Modifier.height(8.dp))
+            TaskHeaderDivider(
+                clickAction = { onWeightChange(5, weights[5] + 0.05f) },
+                doubleClickAction = { onWeightChange(5, 0.09f) })
             Text(
                 text = "读盘容量",
                 modifier = Modifier
-                    .weight(0.1f)
+                    .weight(weights[6])
                     .padding(horizontal = 10.dp),
                 fontSize = 14.sp,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            VerticalDivider(modifier = Modifier.height(8.dp))
+            TaskHeaderDivider(
+                clickAction = { onWeightChange(6, weights[6] + 0.05f) },
+                doubleClickAction = { onWeightChange(6, 0.09f) })
             Text(
                 text = "写入容量",
                 modifier = Modifier
-                    .weight(0.1f)
+                    .weight(weights[7])
                     .padding(horizontal = 10.dp),
                 fontSize = 14.sp,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            VerticalDivider(modifier = Modifier.height(8.dp))
+            TaskHeaderDivider(
+                clickAction = { onWeightChange(7, weights[7] + 0.05f) },
+                doubleClickAction = { onWeightChange(7, 0.09f) })
             Text(
                 text = "磁盘读取",
                 modifier = Modifier
-                    .weight(0.1f)
+                    .weight(weights[8])
                     .padding(horizontal = 10.dp),
                 fontSize = 14.sp,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            VerticalDivider(modifier = Modifier.height(8.dp))
+            TaskHeaderDivider(
+                clickAction = { onWeightChange(8, weights[8] + 0.05f) },
+                doubleClickAction = { onWeightChange(8, 0.09f) })
             Text(
                 text = "磁盘写入",
                 modifier = Modifier
-                    .weight(0.1f)
+                    .weight(weights[9])
                     .padding(horizontal = 10.dp),
                 fontSize = 14.sp,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            VerticalDivider(modifier = Modifier.height(8.dp))
         }
     }
     HorizontalDivider(modifier = Modifier.fillMaxWidth(), color = Color(0xFFE8E9EB))
@@ -270,10 +322,6 @@ enum class SortMode {
     BY_NAME_SEQUENTIAL, BY_NAME_REVERSE, BY_ID_SEQUENTIAL, BY_ID_REVERSE,
 }
 
-var LocalAppResponse = compositionLocalOf {
-
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProcessView(displayMode: DisplayMode, searchBarValue: String) {
@@ -283,6 +331,11 @@ fun ProcessView(displayMode: DisplayMode, searchBarValue: String) {
     val userName = TaskManagerBinder.getUserName()
     val sortModeState = remember { mutableStateOf(SortMode.BY_NAME_SEQUENTIAL) }
     val appResponseState = remember { mutableStateOf<Adapters.AppsResponse?>(null) }
+    val taskHeaderItemWeightsState = remember {
+        mutableFloatListOf(
+            0.23f, 0.08f, 0.09f, 0.09f, 0.09f, 0.09f, 0.09f, 0.09f, 0.09f, 0.09f
+        )
+    }
 
     LaunchedEffect(Unit) {
         if (!initialLoad.value) {
@@ -332,23 +385,31 @@ fun ProcessView(displayMode: DisplayMode, searchBarValue: String) {
                 }
             }
         }
-
     }
 
     Column(modifier = Modifier.background(Color(0xFFFCFDFF))) {
         TasksTableHeader(sortModeState.value, onSortModeChange = {
             sortModeState.value = it
+        }, taskHeaderItemWeightsState, onWeightChange = { index, value ->
+            taskHeaderItemWeightsState[index] = value
         })
         LazyColumn {
             items(
                 when (sortModeState.value) {
-                    SortMode.BY_NAME_SEQUENTIAL -> taskInfoList.sortedBy { it.name }
-                    SortMode.BY_NAME_REVERSE -> taskInfoList.sortedByDescending { it.name }
-                    SortMode.BY_ID_SEQUENTIAL -> taskInfoList.sortedBy { it.pid }
-                    SortMode.BY_ID_REVERSE -> taskInfoList.sortedByDescending { it.pid }
-                    else -> taskInfoList
-                }, key = { it.pid }) {
-                TaskItem(it, displayMode, userName, searchBarValue, appResponseState.value)
+                SortMode.BY_NAME_SEQUENTIAL -> taskInfoList.sortedBy { it.name }
+                SortMode.BY_NAME_REVERSE -> taskInfoList.sortedByDescending { it.name }
+                SortMode.BY_ID_SEQUENTIAL -> taskInfoList.sortedBy { it.pid }
+                SortMode.BY_ID_REVERSE -> taskInfoList.sortedByDescending { it.pid }
+                else -> taskInfoList
+            }, key = { it.pid }) {
+                TaskItem(
+                    it,
+                    displayMode,
+                    userName,
+                    searchBarValue,
+                    appResponseState.value,
+                    taskHeaderItemWeightsState
+                )
             }
         }
     }
@@ -399,7 +460,8 @@ fun TaskItem(
     displayMode: DisplayMode,
     userName: String,
     searchBarValue: String,
-    appResponse: Adapters.AppsResponse?
+    appResponse: Adapters.AppsResponse?,
+    weights: MutableFloatList
 ) {
     val context = LocalContext.current
     val taskDropdownMenuItems = context.resources.getStringArray(R.array.task_dropdown_menu_items)
@@ -606,7 +668,7 @@ fun TaskItem(
             )
             for (index in 0 until 10) Row(
                 modifier = Modifier
-                    .weight(0.1f)
+                    .weight(weights[index])
                     .padding(start = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment = Alignment.CenterVertically
@@ -712,8 +774,8 @@ fun TaskItem(
             else {
                 DropdownMenuItem(
                     text = { Text(it) }, onClick = {
-                        callbackFunctionsMap[it]?.let { it1 -> it1() }
-                    }, modifier = Modifier
+                    callbackFunctionsMap[it]?.let { it1 -> it1() }
+                }, modifier = Modifier
                         .height(32.dp)
                         .width(192.dp)
                 )
