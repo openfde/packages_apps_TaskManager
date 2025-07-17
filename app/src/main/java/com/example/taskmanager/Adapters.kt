@@ -2,6 +2,7 @@ package com.example.taskmanager
 
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import java.util.stream.LongStream
 
 object Adapters {
     private val gson = Gson()
@@ -26,8 +27,23 @@ object Adapters {
         var writeBytes: Long = 0,
         var readIssued: Long = 0,
         var writeIssued: Long = 0,
-        var nice: Int = 0
+        var nice: Int = 0,
+        var isAndroidApp: Boolean = false
     )
+
+    data class TaskUpdateInfo(
+        var vmsize: Long,
+        var cpuUsage: Float,
+        var rss: Long,
+        var readIssued: Long,
+        var writeIssued: Long,
+        var readBytes: Long,
+        var writeBytes: Long,
+        var nice: Int
+    )
+
+    public fun TaskUpdateInfoAdapt(taskUpdateInfoString: String): TaskUpdateInfo =
+        gson.fromJson(taskUpdateInfoString, TaskUpdateInfo::class.java)
 
     public fun TaskInfoAdapt(taskInfoString: String): TaskInfo =
         gson.fromJson(taskInfoString, TaskInfo::class.java)

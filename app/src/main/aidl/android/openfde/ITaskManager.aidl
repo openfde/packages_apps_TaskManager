@@ -5,7 +5,7 @@ interface ITaskManager {
     void killTaskByPid(int pid);
     String getIconB64ByTaskName(String taskName);
     String getTaskPids();
-    String getTaskByPid(int pid);
+    String getTaskUpdateInfoByPid(int pid);
     String getEachCPUPercent(int interval);
     String getMemoryAndSwap();
     String getNetworkDownloadAndUpload(int interval);

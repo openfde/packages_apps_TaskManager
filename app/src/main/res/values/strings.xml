@@ -1,17 +1,5 @@
 <resources>
     <string name="app_name">taskmanager</string>
-    <string-array name="tasks_headers_chinese">
-        <item>进程名称</item>
-        <item>用户</item>
-        <item>虚拟内存</item>
-        <item>% CPU</item>
-        <item>ID</item>
-        <item>内存</item>
-        <item>读盘容量</item>
-        <item>写入容量</item>
-        <item>磁盘读取</item>
-        <item>磁盘写入</item>
-    </string-array>
     <string-array name="tasks_headers_name">
         <item>name</item>
         <item>user</item>
@@ -24,17 +12,6 @@
         <item>readIssued</item>
         <item>writeIssued</item>
     </string-array>
-    <array name="task_item_weights">
-        <item>10</item>
-        <item>10</item>
-        <item>10</item>
-        <item>10</item>
-        <item>10</item>
-        <item>10</item>
-        <item>10</item>
-        <item>10</item>
-        <item>10</item>
-    </array>
     <array name="disk_item_weights">
         <item>166</item>
         <item>266</item>
