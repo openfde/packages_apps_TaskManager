@@ -57,6 +57,8 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.isSecondaryPressed
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -396,12 +398,12 @@ fun ProcessView(displayMode: DisplayMode, searchBarValue: String) {
         LazyColumn {
             items(
                 when (sortModeState.value) {
-                SortMode.BY_NAME_SEQUENTIAL -> taskInfoList.sortedBy { it.name }
-                SortMode.BY_NAME_REVERSE -> taskInfoList.sortedByDescending { it.name }
-                SortMode.BY_ID_SEQUENTIAL -> taskInfoList.sortedBy { it.pid }
-                SortMode.BY_ID_REVERSE -> taskInfoList.sortedByDescending { it.pid }
-                else -> taskInfoList
-            }, key = { it.pid }) {
+                    SortMode.BY_NAME_SEQUENTIAL -> taskInfoList.sortedBy { it.name }
+                    SortMode.BY_NAME_REVERSE -> taskInfoList.sortedByDescending { it.name }
+                    SortMode.BY_ID_SEQUENTIAL -> taskInfoList.sortedBy { it.pid }
+                    SortMode.BY_ID_REVERSE -> taskInfoList.sortedByDescending { it.pid }
+                    else -> taskInfoList
+                }, key = { it.pid }) {
                 TaskItem(
                     it,
                     displayMode,
@@ -461,7 +463,7 @@ fun TaskItem(
     userName: String,
     searchBarValue: String,
     appResponse: Adapters.AppsResponse?,
-    weights: MutableFloatList
+    weights: MutableFloatList,
 ) {
     val context = LocalContext.current
     val taskDropdownMenuItems = context.resources.getStringArray(R.array.task_dropdown_menu_items)
@@ -470,6 +472,7 @@ fun TaskItem(
     val floatingPropertiesWindowShow = remember { mutableStateOf(false) }
     val floatingPriorityModificationWindowShow = remember { mutableStateOf(false) }
     var priorityModificationSliderValue = remember { mutableIntStateOf(taskInfo.nice) }
+
 
     var iconBitmap: ImageBitmap? = null
     var iconDrawable: Drawable? = null
@@ -634,6 +637,9 @@ fun TaskItem(
         displayMode == DisplayMode.SEARCH_FILTERED_PROCESSES && (taskInfo.pid.toString()
             .contains(searchBarValue) || taskInfo.name.toString().contains(searchBarValue))
 
+    val density = LocalDensity.current
+    val globalPositionState = remember { mutableStateOf(Offset.Zero) }
+
     if (allProcessBoolean || myProcessBoolean || searchBarFilteredBoolean) {
         Row(
             modifier = Modifier
@@ -641,12 +647,19 @@ fun TaskItem(
                 .fillMaxWidth()
                 .padding(horizontal = 10.dp)
                 .clickable(onClick = {})
+                .onGloballyPositioned { coordinates ->
+                    globalPositionState.value = coordinates.positionInRoot()
+                }
                 .pointerInput(Unit) {
                     awaitPointerEventScope {
                         while (true) {
                             val event = awaitPointerEvent()
                             if (event.type == PointerEventType.Press && event.buttons.isSecondaryPressed) {
-                                floatingMenuPosition.value = event.changes.first().position
+                                val localOffset = event.changes.first().position
+                                val location = IntArray(2)
+                                val globalX = location[0] + localOffset.x * density.density
+                                val globalY = location[1] + localOffset.y * density.density
+                                floatingMenuPosition.value = Offset(globalX, globalY)
                                 floatingMenuExpanded.value = true
                             }
                         }
@@ -654,6 +667,7 @@ fun TaskItem(
                 },
             verticalAlignment = Alignment.CenterVertically,
         ) {
+
             val m = listOf(
                 taskInfo.name.toString(),
                 taskInfo.user.toString(),
@@ -729,7 +743,8 @@ fun TaskItem(
         onDismissRequest = { floatingMenuExpanded.value = false },
         offset = with(LocalDensity.current) {
             DpOffset(
-                x = floatingMenuPosition.value.x.toDp(), y = (-30).dp
+                x = floatingMenuPosition.value.x.toDp(),
+                y = floatingMenuPosition.value.y.toDp() + globalPositionState.value.y.toDp()
             )
         },
         modifier = Modifier.clip(RoundedCornerShape(8.dp))
@@ -774,8 +789,8 @@ fun TaskItem(
             else {
                 DropdownMenuItem(
                     text = { Text(it) }, onClick = {
-                    callbackFunctionsMap[it]?.let { it1 -> it1() }
-                }, modifier = Modifier
+                        callbackFunctionsMap[it]?.let { it1 -> it1() }
+                    }, modifier = Modifier
                         .height(32.dp)
                         .width(192.dp)
                 )
