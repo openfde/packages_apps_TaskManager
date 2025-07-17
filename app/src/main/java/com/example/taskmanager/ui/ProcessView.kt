@@ -1,5 +1,7 @@
 package com.example.taskmanager.ui
 
+import android.content.pm.PackageManager
+import android.graphics.drawable.Drawable
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -20,7 +22,6 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -45,42 +46,204 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Slider
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.isSecondaryPressed
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.DpOffset
+import androidx.core.graphics.drawable.toBitmap
 
 @Composable
-fun TasksTableHeader() {
-
+fun TasksTableHeader(sortMode: SortMode, onSortModeChange: (SortMode) -> Unit) {
+    val nameSortedReverseState = remember { mutableStateOf(false) }
+    val idSortedReverseState = remember { mutableStateOf(false) }
     HorizontalDivider(modifier = Modifier.fillMaxWidth(), color = Color(0xFFE8E9EB))
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 5.dp, horizontal = 10.dp)
     ) {
-        val context = LocalContext.current
-        val taskHeaders = context.resources.getStringArray(R.array.tasks_headers_chinese)
-        val taskItemWeights =
-            context.resources.getIntArray(R.array.task_item_weights).map { it / 100f }
         Row(
             verticalAlignment = Alignment.CenterVertically, modifier = Modifier.height(24.dp)
         ) {
-            taskHeaders.forEachIndexed { index, header ->
+            Row(
+                modifier = Modifier.weight(0.1f),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
                 Text(
-                    text = header,
-                    modifier = Modifier
-                        .weight(taskItemWeights.getOrNull(index) ?: 0.1f)
-                        .padding(horizontal = 10.dp),
+                    text = "进程名称",
+                    modifier = Modifier.padding(horizontal = 10.dp),
                     fontSize = 14.sp,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                if (index != taskHeaders.lastIndex) VerticalDivider(modifier = Modifier.height(8.dp))
+                Image(
+                    painter = painterResource(id = R.drawable.task_header_down_vector),
+                    modifier = Modifier
+                        .size(28.dp)
+                        .graphicsLayer {
+                            rotationX = when (sortMode) {
+                                SortMode.BY_NAME_SEQUENTIAL -> 0f
+                                SortMode.BY_NAME_REVERSE -> 180f
+                                SortMode.BY_ID_SEQUENTIAL -> 0f
+                                SortMode.BY_ID_REVERSE -> 0f
+                                else -> 0f
+                            }
+                        }
+                        .clickable(onClick = {
+                            when (sortMode) {
+                                SortMode.BY_ID_SEQUENTIAL, SortMode.BY_ID_REVERSE -> {
+                                    // 进一步看
+                                    if (nameSortedReverseState.value) {
+                                        // 名称顺序
+                                        onSortModeChange(SortMode.BY_NAME_REVERSE)
+                                        nameSortedReverseState.value = false
+                                    } else {
+                                        onSortModeChange(SortMode.BY_NAME_REVERSE)
+                                        nameSortedReverseState.value = true
+                                    }
+                                }
+
+                                SortMode.BY_NAME_SEQUENTIAL -> onSortModeChange(SortMode.BY_NAME_REVERSE)
+                                SortMode.BY_NAME_REVERSE -> onSortModeChange(SortMode.BY_NAME_SEQUENTIAL)
+                            }
+                        }),
+                    contentDescription = null,
+                )
             }
+            VerticalDivider(modifier = Modifier.height(8.dp))
+            Text(
+                text = "用户",
+                modifier = Modifier
+                    .weight(0.1f)
+                    .padding(horizontal = 10.dp),
+                fontSize = 14.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            VerticalDivider(modifier = Modifier.height(8.dp))
+            Text(
+                text = "虚拟内存",
+                modifier = Modifier
+                    .weight(0.1f)
+                    .padding(horizontal = 10.dp),
+                fontSize = 14.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            VerticalDivider(modifier = Modifier.height(8.dp))
+            Text(
+                text = "% CPU",
+                modifier = Modifier
+                    .weight(0.1f)
+                    .padding(horizontal = 10.dp),
+                fontSize = 14.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            VerticalDivider(modifier = Modifier.height(8.dp))
+            Row(
+                modifier = Modifier.weight(0.1f),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = "ID",
+                    modifier = Modifier.padding(horizontal = 10.dp),
+                    fontSize = 14.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Image(
+                    painter = painterResource(id = R.drawable.task_header_down_vector),
+                    modifier = Modifier
+                        .size(28.dp)
+                        .graphicsLayer {
+                            rotationX = when (sortMode) {
+                                SortMode.BY_NAME_SEQUENTIAL -> 0f
+                                SortMode.BY_NAME_REVERSE -> 0f
+                                SortMode.BY_ID_SEQUENTIAL -> 0f
+                                SortMode.BY_ID_REVERSE -> 180f
+                                else -> 0f
+                            }
+                        }
+                        .clickable(onClick = {
+                            when(sortMode) {
+                                SortMode.BY_NAME_SEQUENTIAL, SortMode.BY_NAME_REVERSE -> {
+                                    if (idSortedReverseState.value) {
+                                        onSortModeChange(SortMode.BY_ID_SEQUENTIAL)
+                                        idSortedReverseState.value = false
+                                    } else {
+                                        onSortModeChange(SortMode.BY_ID_REVERSE)
+                                        idSortedReverseState.value = true
+                                    }
+                                }
+
+                                SortMode.BY_ID_SEQUENTIAL -> onSortModeChange(SortMode.BY_ID_REVERSE)
+                                SortMode.BY_ID_REVERSE -> onSortModeChange(SortMode.BY_ID_SEQUENTIAL)
+                            }
+                        }),
+                    contentDescription = null
+                )
+            }
+            VerticalDivider(modifier = Modifier.height(8.dp))
+            Text(
+                text = "内存",
+                modifier = Modifier
+                    .weight(0.1f)
+                    .padding(horizontal = 10.dp),
+                fontSize = 14.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            VerticalDivider(modifier = Modifier.height(8.dp))
+            Text(
+                text = "读盘容量",
+                modifier = Modifier
+                    .weight(0.1f)
+                    .padding(horizontal = 10.dp),
+                fontSize = 14.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            VerticalDivider(modifier = Modifier.height(8.dp))
+            Text(
+                text = "写入容量",
+                modifier = Modifier
+                    .weight(0.1f)
+                    .padding(horizontal = 10.dp),
+                fontSize = 14.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            VerticalDivider(modifier = Modifier.height(8.dp))
+            Text(
+                text = "磁盘读取",
+                modifier = Modifier
+                    .weight(0.1f)
+                    .padding(horizontal = 10.dp),
+                fontSize = 14.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            VerticalDivider(modifier = Modifier.height(8.dp))
+            Text(
+                text = "磁盘写入",
+                modifier = Modifier
+                    .weight(0.1f)
+                    .padding(horizontal = 10.dp),
+                fontSize = 14.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            VerticalDivider(modifier = Modifier.height(8.dp))
         }
     }
     HorizontalDivider(modifier = Modifier.fillMaxWidth(), color = Color(0xFFE8E9EB))
@@ -93,6 +256,10 @@ enum class DisplayMode {
     SEARCH_FILTERED_PROCESSES // 搜索过滤进程
 }
 
+enum class SortMode {
+    BY_NAME_SEQUENTIAL, BY_NAME_REVERSE, BY_ID_SEQUENTIAL, BY_ID_REVERSE,
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProcessView(displayMode: DisplayMode, searchBarValue: String) {
@@ -100,44 +267,52 @@ fun ProcessView(displayMode: DisplayMode, searchBarValue: String) {
     val coroutineScope = rememberCoroutineScope()
     val initialLoad = remember { mutableStateOf(false) }
     val userName = TaskManagerBinder.getUserName()
+    val sortModeState = remember { mutableStateOf(SortMode.BY_NAME_SEQUENTIAL) }
+
     LaunchedEffect(Unit) {
         if (!initialLoad.value) {
             initialLoad.value = true
-            coroutineScope.launch {
-                taskInfoList.clear()
-                val allTasks = TaskManagerBinder.getTasks()
-                taskInfoList.addAll(allTasks)
-
-                while (true) {
-                    val currentPids = TaskManagerBinder.getTaskPids()
-                    taskInfoList.removeAll { it.pid !in currentPids }
-                    for (i in currentPids.indices step 20) {
-                        val batch = currentPids.subList(i, minOf(i + 20, currentPids.size))
-                        batch.forEach { pid ->
-                            val taskInfo = TaskManagerBinder.getTaskByPid(pid)
-                            if (taskInfo == null) {
-                                taskInfoList.removeAll { it.pid == pid }
-                                return@forEach
-                            }
-                            // 检查这个pid是否是之前列表中的
-                            val existingIndex = taskInfoList.indexOfFirst { it.pid == pid }
-                            if (existingIndex != -1) {
-                                taskInfoList[existingIndex] = taskInfo // 若是则在原基础更新
-                            } else {
-                                taskInfoList.add(taskInfo) // 若不是则添加
-                            }
+        } else {
+            return@LaunchedEffect
+        }
+        coroutineScope.launch {
+            val allTasks = TaskManagerBinder.getTasks()
+            taskInfoList.clear()
+            taskInfoList.addAll(allTasks)
+            while (true) {
+                val batchSize = 10
+                var start = 0
+                while (start < allTasks.size) {
+                    val end = minOf(start + batchSize, allTasks.size)
+                    val batch = allTasks.subList(start, end)
+                    for ((i, task) in batch.withIndex()) {
+                        val targetIdx = start + i
+                        if (targetIdx < taskInfoList.size) {
+                            taskInfoList[targetIdx] = task
+                        } else {
+                            taskInfoList.add(task)
                         }
-                        delay(100)
                     }
+                    start += batchSize
+                    delay(50)
                 }
             }
         }
     }
 
     Column(modifier = Modifier.background(Color(0xFFFCFDFF))) {
-        TasksTableHeader()
+        TasksTableHeader(sortModeState.value, onSortModeChange = {
+            sortModeState.value = it
+        })
         LazyColumn {
-            items(taskInfoList, key = { it.pid }) {
+            items(
+                when (sortModeState.value) {
+                SortMode.BY_NAME_SEQUENTIAL -> taskInfoList.sortedBy { it.name }
+                SortMode.BY_NAME_REVERSE -> taskInfoList.sortedByDescending { it.name }
+                SortMode.BY_ID_SEQUENTIAL -> taskInfoList.sortedBy { it.pid }
+                SortMode.BY_ID_REVERSE -> taskInfoList.sortedByDescending { it.pid }
+                else -> taskInfoList
+            }, key = { it.pid }) {
                 TaskItem(it, displayMode, userName, searchBarValue)
             }
         }
@@ -179,21 +354,47 @@ fun PrioritySlider(
     )
 }
 
+enum class AndroidIconType {
+    BITMAP, DRAWABLE, NULL
+}
 
 @Composable
 fun TaskItem(
     taskInfo: Adapters.TaskInfo, displayMode: DisplayMode, userName: String, searchBarValue: String
 ) {
     val context = LocalContext.current
-    val taskItemWeights = context.resources.getIntArray(R.array.task_item_weights).map { it / 100f }
     val taskDropdownMenuItems = context.resources.getStringArray(R.array.task_dropdown_menu_items)
     val floatingMenuPosition = remember { mutableStateOf(Offset.Zero) }
     val floatingMenuExpanded = remember { mutableStateOf(false) }
     val floatingPropertiesWindowShow = remember { mutableStateOf(false) }
     val floatingPriorityModificationWindowShow = remember { mutableStateOf(false) }
     var priorityModificationSliderValue = remember { mutableIntStateOf(taskInfo.nice) }
-    val iconBitmap = TaskManagerBinder.getIconBitmapByTaskName(taskInfo.name.toString())
-    val iconExists = iconBitmap != null
+
+    var iconBitmap: ImageBitmap? = null
+    var iconDrawable: Drawable? = null
+    var iconType: AndroidIconType? = null
+
+    when {
+        taskInfo.isAndroidApp -> {
+            // 首先尝试使用packageManager获取图标
+            val pm: PackageManager = context.packageManager
+            try {
+                iconDrawable = pm.getApplicationIcon(taskInfo.name.toString())
+                iconType = AndroidIconType.DRAWABLE
+            } catch (e: PackageManager.NameNotFoundException) {
+                // 再尝试用local图标
+                val bitMap = TaskManagerBinder.getIconBitmapByTaskName(taskInfo.name.toString())
+                if (bitMap != null) {
+                    iconBitmap = bitMap
+                    iconType = AndroidIconType.BITMAP
+                } else {
+                    iconType = AndroidIconType.NULL
+                }
+            }
+        }
+
+        else -> iconType = AndroidIconType.NULL
+    }
 
     if (floatingPropertiesWindowShow.value) {
         AlertDialog(onDismissRequest = {
@@ -309,9 +510,9 @@ fun TaskItem(
     val allProcessBoolean =
         displayMode == DisplayMode.ALL_PROCESSES || displayMode == DisplayMode.ACTIVE_PROCESSES
     val myProcessBoolean = displayMode == DisplayMode.MY_PROCESSES && taskInfo.user == userName
-    val searchBarFilteredBoolean = displayMode == DisplayMode.SEARCH_FILTERED_PROCESSES
-            && (taskInfo.pid.toString().contains(searchBarValue)
-            || taskInfo.name.toString().contains(searchBarValue))
+    val searchBarFilteredBoolean =
+        displayMode == DisplayMode.SEARCH_FILTERED_PROCESSES && (taskInfo.pid.toString()
+            .contains(searchBarValue) || taskInfo.name.toString().contains(searchBarValue))
 
     if (allProcessBoolean || myProcessBoolean || searchBarFilteredBoolean) {
         Row(
@@ -345,96 +546,130 @@ fun TaskItem(
                 toStringWithUnit(taskInfo.readIssued),
                 toStringWithUnit(taskInfo.writeIssued)
             )
-            taskItemWeights.forEachIndexed { index, taskItemWeight ->
-                Row(
-                    modifier = Modifier
-                        .weight(taskItemWeights.getOrNull(index) ?: 0.1f)
-                        .padding(start = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    if (index == 0) {
-                        if (iconExists) {
+            for (index in 0 until 10) Row(
+                modifier = Modifier
+                    .weight(0.1f)
+                    .padding(start = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (index == 0) {
+                    if (taskInfo.isAndroidApp) {
+                        if (iconType == AndroidIconType.BITMAP) {
+                            if (iconBitmap != null) {
+                                Image(
+                                    bitmap = iconBitmap,
+                                    modifier = Modifier.size(28.dp),
+                                    contentDescription = null
+                                )
+                            } else {
+                                Image(
+                                    painter = painterResource(id = R.drawable.ic_linux),
+                                    modifier = Modifier.size(28.dp),
+                                    contentDescription = null
+                                )
+                            }
+                        }
+
+                        if (iconType == AndroidIconType.DRAWABLE) {
+                            if (iconDrawable != null) {
+                                Image(
+                                    bitmap = iconDrawable.toBitmap().asImageBitmap(),
+                                    modifier = Modifier.size(28.dp),
+                                    contentDescription = null
+                                )
+                            } else {
+                                Image(
+                                    painter = painterResource(id = R.drawable.ic_linux),
+                                    modifier = Modifier.size(28.dp),
+                                    contentDescription = null
+                                )
+                            }
+                        }
+
+                        if (iconType == AndroidIconType.NULL) {
                             Image(
-                                bitmap = iconBitmap,
-                                modifier = Modifier.size(28.dp),
-                                contentDescription = null
-                            )
-                        } else {
-                            Image(
-                                painter = painterResource(id = R.drawable.ic_linux),
+                                painter = painterResource(id = R.drawable.ic_android),
                                 modifier = Modifier.size(28.dp),
                                 contentDescription = null
                             )
                         }
-                    }
-                    Text(
-                        text = m[index].toString(),
-                        fontSize = 14.sp,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
-            }
-
-            DropdownMenu(
-                expanded = floatingMenuExpanded.value,
-                onDismissRequest = { floatingMenuExpanded.value = false },
-                offset = with(LocalDensity.current) {
-                    DpOffset(
-                        x = floatingMenuPosition.value.x.toDp(), y = (-30).dp
-                    )
-                },
-                modifier = Modifier.clip(RoundedCornerShape(8.dp))
-            ) {
-                val callbackFunctionsMap = mapOf<String, () -> Unit>(
-                    "属性" to {
-                        floatingMenuExpanded.value = false
-                        floatingPropertiesWindowShow.value = true
-                    },
-                    "内存映射" to {
-                        // TODO: 内存映射
-                    },
-                    "打开文件" to {
-                        // TODO: 打开文件
-                    },
-                    "更改优先级" to {
-                        floatingMenuExpanded.value = false
-                        floatingPriorityModificationWindowShow.value = true
-                    },
-                    "设置关联" to {
-                        // TODO: 设置关联
-                    },
-                    "停止进程" to {
-                        TaskManagerBinder.killTaskByPid(taskInfo.pid)
-                    },
-                    "继续" to {
-                        // TODO: 继续
-                    },
-                    "终止" to {
-                        TaskManagerBinder.killTaskByPid(taskInfo.pid)
-                    },
-                    "强制终止" to {
-                        TaskManagerBinder.killTaskByPid(taskInfo.pid)
-                    },
-                    "__DIVIDER__" to {
-                        //  TODO: 分割线
-                    },
-                )
-
-                taskDropdownMenuItems.map { it ->
-                    if (it == "__DIVIDER__") HorizontalDivider()
-                    else {
-                        DropdownMenuItem(
-                            text = { Text(it) }, onClick = {
-                                callbackFunctionsMap[it]?.let { it1 -> it1() }
-                            }, modifier = Modifier
-                                .height(32.dp)
-                                .width(192.dp)
+                    } else {
+                        Image(
+                            painter = painterResource(id = R.drawable.ic_linux),
+                            modifier = Modifier.size(28.dp),
+                            contentDescription = null
                         )
                     }
+                }
+
+                Text(
+                    text = m[index].toString(),
+                    fontSize = 14.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+
+        DropdownMenu(
+            expanded = floatingMenuExpanded.value,
+            onDismissRequest = { floatingMenuExpanded.value = false },
+            offset = with(LocalDensity.current) {
+                DpOffset(
+                    x = floatingMenuPosition.value.x.toDp(), y = (-30).dp
+                )
+            },
+            modifier = Modifier.clip(RoundedCornerShape(8.dp))
+        ) {
+            val callbackFunctionsMap = mapOf<String, () -> Unit>(
+                "属性" to {
+                    floatingMenuExpanded.value = false
+                    floatingPropertiesWindowShow.value = true
+                },
+                "内存映射" to {
+                    // TODO: 内存映射
+                },
+                "打开文件" to {
+                    // TODO: 打开文件
+                },
+                "更改优先级" to {
+                    floatingMenuExpanded.value = false
+                    floatingPriorityModificationWindowShow.value = true
+                },
+                "设置关联" to {
+                    // TODO: 设置关联
+                },
+                "停止进程" to {
+                    TaskManagerBinder.killTaskByPid(taskInfo.pid)
+                },
+                "继续" to {
+                    // TODO: 继续
+                },
+                "终止" to {
+                    TaskManagerBinder.killTaskByPid(taskInfo.pid)
+                },
+                "强制终止" to {
+                    TaskManagerBinder.killTaskByPid(taskInfo.pid)
+                },
+                "__DIVIDER__" to {
+                    //  TODO: 分割线
+                },
+            )
+
+            taskDropdownMenuItems.map { it ->
+                if (it == "__DIVIDER__") HorizontalDivider()
+                else {
+                    DropdownMenuItem(
+                        text = { Text(it) }, onClick = {
+                        callbackFunctionsMap[it]?.let { it1 -> it1() }
+                    }, modifier = Modifier
+                            .height(32.dp)
+                            .width(192.dp)
+                    )
                 }
             }
         }
     }
 }
+

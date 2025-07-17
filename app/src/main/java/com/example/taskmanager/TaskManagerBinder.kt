@@ -33,11 +33,11 @@ object TaskManagerBinder {
         return taskPids
     }
 
-    public fun getTaskByPid(pid: Int): Adapters.TaskInfo? {
-        val taskInfoString = taskManager?.getTaskByPid(pid)
-        if (taskInfoString == "null") return null
-        val taskInfo = Adapters.TaskInfoAdapt(taskInfoString.toString())
-        return taskInfo
+    public fun getTaskUpdateInfoByPid(pid: Int): Adapters.TaskUpdateInfo? {
+        val taskUpdateInfoString = taskManager?.getTaskUpdateInfoByPid(pid)
+        if (taskUpdateInfoString == "null") return null
+        val taskUpdateInfo = Adapters.TaskUpdateInfoAdapt(taskUpdateInfoString.toString())
+        return taskUpdateInfo
     }
 
     public fun killTaskByPid(pid: Int) {
