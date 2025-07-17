@@ -78,6 +78,8 @@ android {
 dependencies {
     val versionNav = "2.9.0"
     val versionSer = "1.6.0"
+//    implementation(files("libs/SystemUISharedLib.jar"))
+//    compileOnly(files("libs/framework.jar"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)

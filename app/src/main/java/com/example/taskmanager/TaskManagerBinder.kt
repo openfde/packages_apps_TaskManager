@@ -44,8 +44,8 @@ object TaskManagerBinder {
         taskManager?.killTaskByPid(pid)
     }
 
-    public fun getIconBitmapByTaskName(taskName: String): ImageBitmap? {
-        val iconB64String = taskManager?.getIconB64ByTaskName(taskName)
+    public fun getIconBitmapByTaskName(taskName: String,isAndroidApp: Boolean): ImageBitmap? {
+        val iconB64String = taskManager?.getIconB64ByTaskName(taskName, if (isAndroidApp) 1 else 0)
         if (iconB64String == "")
             return null
 
@@ -88,7 +88,7 @@ object TaskManagerBinder {
         taskManager?.changeTaskPriority(pid, priority)
     }
 
-    public fun getUserName():String {
+    public fun getUserName(): String {
         return taskManager?.getUserName() ?: "Unknown"
     }
 }

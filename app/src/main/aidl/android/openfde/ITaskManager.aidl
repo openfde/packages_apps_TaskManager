@@ -3,7 +3,7 @@ package android.openfde;
 interface ITaskManager {
     String getTasks();
     void killTaskByPid(int pid);
-    String getIconB64ByTaskName(String taskName);
+    String getIconB64ByTaskName(String taskName,int isAndroidApp);
     String getTaskPids();
     String getTaskUpdateInfoByPid(int pid);
     String getEachCPUPercent(int interval);
