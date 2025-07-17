@@ -2,6 +2,7 @@ package com.example.taskmanager.ui
 
 import android.content.pm.PackageManager
 import android.graphics.drawable.Drawable
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -175,7 +176,7 @@ fun TasksTableHeader(sortMode: SortMode, onSortModeChange: (SortMode) -> Unit) {
                             }
                         }
                         .clickable(onClick = {
-                            when(sortMode) {
+                            when (sortMode) {
                                 SortMode.BY_NAME_SEQUENTIAL, SortMode.BY_NAME_REVERSE -> {
                                     if (idSortedReverseState.value) {
                                         onSortModeChange(SortMode.BY_ID_SEQUENTIAL)
@@ -280,21 +281,31 @@ fun ProcessView(displayMode: DisplayMode, searchBarValue: String) {
             taskInfoList.clear()
             taskInfoList.addAll(allTasks)
             while (true) {
-                val batchSize = 10
-                var start = 0
-                while (start < allTasks.size) {
-                    val end = minOf(start + batchSize, allTasks.size)
-                    val batch = allTasks.subList(start, end)
-                    for ((i, task) in batch.withIndex()) {
-                        val targetIdx = start + i
-                        if (targetIdx < taskInfoList.size) {
-                            taskInfoList[targetIdx] = task
+                val tasks = TaskManagerBinder.getTasks()
+                val currentPids = TaskManagerBinder.getTaskPids().toSet()
+
+                val batchSize = 20 // 每个批次的大小
+                val totalTasks = tasks.size
+                var currentIndex = 0
+
+                val toRemove = taskInfoList.filter { it.pid !in currentPids }
+                toRemove.forEach { taskInfoList.remove(it) }
+
+                while (currentIndex < totalTasks) {
+                    val endIndex = minOf(currentIndex + batchSize, totalTasks)
+                    val batch = tasks.subList(currentIndex, endIndex)
+                    for (task in batch) {
+                        val index = taskInfoList.indexOfFirst { it.pid == task.pid }
+                        if (index != -1) {
+                            // 存在，只需要更新
+                            taskInfoList[index] = task
                         } else {
+                            // 不存在，需要添加
                             taskInfoList.add(task)
                         }
                     }
-                    start += batchSize
-                    delay(50)
+                    currentIndex = endIndex
+                    delay(100) // 每批次延迟100ms
                 }
             }
         }
@@ -354,13 +365,17 @@ fun PrioritySlider(
     )
 }
 
-enum class AndroidIconType {
-    BITMAP, DRAWABLE, NULL
+enum class IconType {
+    ANDROID_BITMAP_ICON, ANDROID_DRAWABLE_ICON, ANDROID_NULL_ICON, LINUX_BITMAP_ICON, LINUX_NULL_ICON
 }
 
 @Composable
 fun TaskItem(
-    taskInfo: Adapters.TaskInfo, displayMode: DisplayMode, userName: String, searchBarValue: String
+    taskInfo: Adapters.TaskInfo,
+    displayMode: DisplayMode,
+    userName: String,
+    searchBarValue: String,
+    linuxIconBitmap: ImageBitmap? = null
 ) {
     val context = LocalContext.current
     val taskDropdownMenuItems = context.resources.getStringArray(R.array.task_dropdown_menu_items)
@@ -372,7 +387,7 @@ fun TaskItem(
 
     var iconBitmap: ImageBitmap? = null
     var iconDrawable: Drawable? = null
-    var iconType: AndroidIconType? = null
+    var iconType: IconType? = null
 
     when {
         taskInfo.isAndroidApp -> {
@@ -380,20 +395,31 @@ fun TaskItem(
             val pm: PackageManager = context.packageManager
             try {
                 iconDrawable = pm.getApplicationIcon(taskInfo.name.toString())
-                iconType = AndroidIconType.DRAWABLE
+                iconType = IconType.ANDROID_DRAWABLE_ICON
             } catch (e: PackageManager.NameNotFoundException) {
                 // 再尝试用local图标
-                val bitMap = TaskManagerBinder.getIconBitmapByTaskName(taskInfo.name.toString())
+                val bitMap =
+                    TaskManagerBinder.getIconBitmapByTaskName(taskInfo.name.toString(), true)
                 if (bitMap != null) {
                     iconBitmap = bitMap
-                    iconType = AndroidIconType.BITMAP
+                    iconType = IconType.ANDROID_BITMAP_ICON
                 } else {
-                    iconType = AndroidIconType.NULL
+                    iconType = IconType.ANDROID_NULL_ICON
                 }
             }
         }
 
-        else -> iconType = AndroidIconType.NULL
+        else -> {
+            // linux app
+            /*
+            val bitMap = TaskManagerBinder.getIconBitmapByTaskName(taskInfo.name.toString(), false)
+            if (bitMap != null) {
+                iconBitmap = bitMap
+                iconType = IconType.LINUX_BITMAP_ICON
+            } else iconType = IconType.LINUX_NULL_ICON
+            */
+            iconType = IconType.LINUX_NULL_ICON
+        }
     }
 
     if (floatingPropertiesWindowShow.value) {
@@ -555,39 +581,22 @@ fun TaskItem(
             ) {
                 if (index == 0) {
                     if (taskInfo.isAndroidApp) {
-                        if (iconType == AndroidIconType.BITMAP) {
-                            if (iconBitmap != null) {
-                                Image(
-                                    bitmap = iconBitmap,
-                                    modifier = Modifier.size(28.dp),
-                                    contentDescription = null
-                                )
-                            } else {
-                                Image(
-                                    painter = painterResource(id = R.drawable.ic_linux),
-                                    modifier = Modifier.size(28.dp),
-                                    contentDescription = null
-                                )
-                            }
-                        }
-
-                        if (iconType == AndroidIconType.DRAWABLE) {
-                            if (iconDrawable != null) {
-                                Image(
-                                    bitmap = iconDrawable.toBitmap().asImageBitmap(),
-                                    modifier = Modifier.size(28.dp),
-                                    contentDescription = null
-                                )
-                            } else {
-                                Image(
-                                    painter = painterResource(id = R.drawable.ic_linux),
-                                    modifier = Modifier.size(28.dp),
-                                    contentDescription = null
-                                )
-                            }
-                        }
-
-                        if (iconType == AndroidIconType.NULL) {
+                        if (iconType == IconType.ANDROID_BITMAP_ICON && iconBitmap != null) {
+                            // android bitmap
+                            Image(
+                                bitmap = iconBitmap,
+                                modifier = Modifier.size(28.dp),
+                                contentDescription = null
+                            )
+                        } else if (iconType == IconType.ANDROID_DRAWABLE_ICON && iconDrawable != null) {
+                            // android drawable
+                            Image(
+                                bitmap = iconDrawable.toBitmap().asImageBitmap(),
+                                modifier = Modifier.size(28.dp),
+                                contentDescription = null
+                            )
+                        } else if (iconType == IconType.ANDROID_NULL_ICON) {
+                            // not found
                             Image(
                                 painter = painterResource(id = R.drawable.ic_android),
                                 modifier = Modifier.size(28.dp),
@@ -595,14 +604,24 @@ fun TaskItem(
                             )
                         }
                     } else {
-                        Image(
-                            painter = painterResource(id = R.drawable.ic_linux),
-                            modifier = Modifier.size(28.dp),
-                            contentDescription = null
-                        )
+                        // linux app
+                        if (iconType == IconType.LINUX_BITMAP_ICON && iconBitmap != null) {
+                            Image(
+                                bitmap = iconBitmap,
+                                modifier = Modifier.size(28.dp),
+                                contentDescription = null
+                            )
+                        } else if (iconType == IconType.LINUX_NULL_ICON) {
+                            Image(
+                                painter = painterResource(id = R.drawable.ic_linux),
+                                modifier = Modifier.size(28.dp),
+                                contentDescription = null
+                            )
+                        }
                     }
-                }
 
+
+                }
                 Text(
                     text = m[index].toString(),
                     fontSize = 14.sp,
@@ -611,65 +630,66 @@ fun TaskItem(
                 )
             }
         }
+    }
 
-        DropdownMenu(
-            expanded = floatingMenuExpanded.value,
-            onDismissRequest = { floatingMenuExpanded.value = false },
-            offset = with(LocalDensity.current) {
-                DpOffset(
-                    x = floatingMenuPosition.value.x.toDp(), y = (-30).dp
-                )
-            },
-            modifier = Modifier.clip(RoundedCornerShape(8.dp))
-        ) {
-            val callbackFunctionsMap = mapOf<String, () -> Unit>(
-                "属性" to {
-                    floatingMenuExpanded.value = false
-                    floatingPropertiesWindowShow.value = true
-                },
-                "内存映射" to {
-                    // TODO: 内存映射
-                },
-                "打开文件" to {
-                    // TODO: 打开文件
-                },
-                "更改优先级" to {
-                    floatingMenuExpanded.value = false
-                    floatingPriorityModificationWindowShow.value = true
-                },
-                "设置关联" to {
-                    // TODO: 设置关联
-                },
-                "停止进程" to {
-                    TaskManagerBinder.killTaskByPid(taskInfo.pid)
-                },
-                "继续" to {
-                    // TODO: 继续
-                },
-                "终止" to {
-                    TaskManagerBinder.killTaskByPid(taskInfo.pid)
-                },
-                "强制终止" to {
-                    TaskManagerBinder.killTaskByPid(taskInfo.pid)
-                },
-                "__DIVIDER__" to {
-                    //  TODO: 分割线
-                },
+    DropdownMenu(
+        expanded = floatingMenuExpanded.value,
+        onDismissRequest = { floatingMenuExpanded.value = false },
+        offset = with(LocalDensity.current) {
+            DpOffset(
+                x = floatingMenuPosition.value.x.toDp(), y = (-30).dp
             )
+        },
+        modifier = Modifier.clip(RoundedCornerShape(8.dp))
+    ) {
+        val callbackFunctionsMap = mapOf<String, () -> Unit>(
+            "属性" to {
+                floatingMenuExpanded.value = false
+                floatingPropertiesWindowShow.value = true
+            },
+            "内存映射" to {
+                // TODO: 内存映射
+            },
+            "打开文件" to {
+                // TODO: 打开文件
+            },
+            "更改优先级" to {
+                floatingMenuExpanded.value = false
+                floatingPriorityModificationWindowShow.value = true
+            },
+            "设置关联" to {
+                // TODO: 设置关联
+            },
+            "停止进程" to {
+                TaskManagerBinder.killTaskByPid(taskInfo.pid)
+            },
+            "继续" to {
+                // TODO: 继续
+            },
+            "终止" to {
+                TaskManagerBinder.killTaskByPid(taskInfo.pid)
+            },
+            "强制终止" to {
+                TaskManagerBinder.killTaskByPid(taskInfo.pid)
+            },
+            "__DIVIDER__" to {
+                //  TODO: 分割线
+            },
+        )
 
-            taskDropdownMenuItems.map { it ->
-                if (it == "__DIVIDER__") HorizontalDivider()
-                else {
-                    DropdownMenuItem(
-                        text = { Text(it) }, onClick = {
-                        callbackFunctionsMap[it]?.let { it1 -> it1() }
-                    }, modifier = Modifier
-                            .height(32.dp)
-                            .width(192.dp)
-                    )
-                }
+        taskDropdownMenuItems.map { it ->
+            if (it == "__DIVIDER__") HorizontalDivider()
+            else {
+                DropdownMenuItem(
+                    text = { Text(it) }, onClick = {
+                    callbackFunctionsMap[it]?.let { it1 -> it1() }
+                }, modifier = Modifier
+                        .height(32.dp)
+                        .width(192.dp)
+                )
             }
         }
     }
 }
+
 
