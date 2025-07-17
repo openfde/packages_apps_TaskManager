@@ -1,0 +1,37 @@
+<resources>
+    <string name="app_name">资源管理器</string>
+    <string name="processes_tab">进程</string>
+    <string name="resources_tab">资源</string>
+    <string name="filesystems_tab">文件系统</string>
+    <string name="process_name">进程名称</string>
+    <string name="user">用户</string>
+    <string name="virtual_memory">虚拟内存</string>
+    <string name="memory">内存</string>
+    <string name="disk_read_storage">读盘容量</string>
+    <string name="disk_write_storage">写盘容量</string>
+    <string name="disk_read">磁盘读取</string>
+    <string name="disk_write">磁盘写入</string>
+    <string name="memory_and_swap">内存和交换</string>
+    <string name="network">网络</string>
+    <string name="disk">磁盘</string>
+    <string name="memory_usage">内存占用</string>
+    <string name="cache">缓存</string>
+    <string name="swap">交换</string>
+    <string name="current_download">当前下载</string>
+    <string name="current_download_total">下载总量</string>
+    <string name="current_upload">当前上传</string>
+    <string name="current_upload_total">上传总量</string>
+    <string name="current_read_disk">当前读盘</string>
+    <string name="current_read_disk_total">读盘总计</string>
+    <string name="current_write_disk">当前写入</string>
+    <string name="current_write_disk_total">写入总计</string>
+    <string name="used">已使用</string>
+    <string name="catalogue">目录</string>
+    <string name="device">设备</string>
+    <string name="type">类型</string>
+    <string name="total_storage">总容量</string>
+    <string name="available_storage">可用容量</string>
+
+
+
+</resources>

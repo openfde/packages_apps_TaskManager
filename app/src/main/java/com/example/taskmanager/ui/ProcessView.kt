@@ -73,23 +73,22 @@ fun TaskHeaderDivider(
 ) {
     VerticalDivider(
         modifier = Modifier
-            .height(8.dp)
+            .height(18.dp)
             .pointerInput(Unit) {
                 var lastClickTime = 0L
                 awaitPointerEventScope {
                     while (true) {
-                        val event = awaitPointerEvent()
+                        val event = awaitPointerEvent()/*
                         if (event.type == PointerEventType.Press) {
                             val currentTime = System.currentTimeMillis()
                             if (currentTime - lastClickTime < 300) {
-                                // 双击
                                 doubleClickAction()
                             } else {
-                                // 单击
                                 clickAction()
                             }
                             lastClickTime = currentTime
                         }
+                        */
                     }
                 }
             }
@@ -107,6 +106,7 @@ fun TasksTableHeader(
 ) {
     val nameSortedReverseState = remember { mutableStateOf(false) }
     val idSortedReverseState = remember { mutableStateOf(false) }
+    val context = LocalContext.current
 
     HorizontalDivider(modifier = Modifier.fillMaxWidth(), color = Color(0xFFE8E9EB))
     Row(
@@ -123,7 +123,7 @@ fun TasksTableHeader(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "进程名称",
+                    text = context.getString(R.string.process_name),
                     modifier = Modifier.padding(horizontal = 10.dp),
                     fontSize = 14.sp,
                     maxLines = 1,
@@ -167,7 +167,7 @@ fun TasksTableHeader(
                 clickAction = { onWeightChange(0, weights[0] + 0.05f) },
                 doubleClickAction = { onWeightChange(0, 0.23f) })
             Text(
-                text = "用户",
+                text = context.getString(R.string.user),
                 modifier = Modifier
                     .weight(weights[1])
                     .padding(horizontal = 10.dp),
@@ -179,7 +179,7 @@ fun TasksTableHeader(
                 clickAction = { onWeightChange(1, weights[1] + 0.05f) },
                 doubleClickAction = { onWeightChange(0, 0.08f) })
             Text(
-                text = "虚拟内存",
+                text = context.getString(R.string.virtual_memory),
                 modifier = Modifier
                     .weight(weights[2])
                     .padding(horizontal = 10.dp),
@@ -250,7 +250,7 @@ fun TasksTableHeader(
                 clickAction = { onWeightChange(4, weights[4] + 0.05f) },
                 doubleClickAction = { onWeightChange(4, 0.09f) })
             Text(
-                text = "内存",
+                text = context.getString(R.string.memory),
                 modifier = Modifier
                     .weight(weights[5])
                     .padding(horizontal = 10.dp),
@@ -262,7 +262,7 @@ fun TasksTableHeader(
                 clickAction = { onWeightChange(5, weights[5] + 0.05f) },
                 doubleClickAction = { onWeightChange(5, 0.09f) })
             Text(
-                text = "读盘容量",
+                text = context.getString(R.string.disk_read_storage),
                 modifier = Modifier
                     .weight(weights[6])
                     .padding(horizontal = 10.dp),
@@ -274,7 +274,7 @@ fun TasksTableHeader(
                 clickAction = { onWeightChange(6, weights[6] + 0.05f) },
                 doubleClickAction = { onWeightChange(6, 0.09f) })
             Text(
-                text = "写入容量",
+                text = context.getString(R.string.disk_write_storage),
                 modifier = Modifier
                     .weight(weights[7])
                     .padding(horizontal = 10.dp),
@@ -286,7 +286,7 @@ fun TasksTableHeader(
                 clickAction = { onWeightChange(7, weights[7] + 0.05f) },
                 doubleClickAction = { onWeightChange(7, 0.09f) })
             Text(
-                text = "磁盘读取",
+                text = context.getString(R.string.disk_read),
                 modifier = Modifier
                     .weight(weights[8])
                     .padding(horizontal = 10.dp),
@@ -298,7 +298,7 @@ fun TasksTableHeader(
                 clickAction = { onWeightChange(8, weights[8] + 0.05f) },
                 doubleClickAction = { onWeightChange(8, 0.09f) })
             Text(
-                text = "磁盘写入",
+                text = context.getString(R.string.disk_write),
                 modifier = Modifier
                     .weight(weights[9])
                     .padding(horizontal = 10.dp),

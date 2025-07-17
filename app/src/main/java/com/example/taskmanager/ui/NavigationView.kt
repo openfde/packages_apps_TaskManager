@@ -43,6 +43,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.DpOffset
@@ -278,7 +279,7 @@ fun WindowButtonsBar(
             )
         }
         SearchBar(
-            text = searchBarValue, onValueChange = {it->
+            text = searchBarValue, onValueChange = { it ->
                 onSearchBarChange(it)
                 if (searchBarValue != "") {
                     onDisplayModeChange(DisplayMode.SEARCH_FILTERED_PROCESSES)
@@ -330,14 +331,18 @@ fun WindowButtonsBar(
 
 @Composable
 fun LogoBar() {
-    Row(modifier = Modifier.padding(start = 14.dp)) {
+    val context = LocalContext.current
+    Row(
+        modifier = Modifier.padding(start = 14.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
         Image(
             painter = painterResource(id = R.drawable.ic_launcher_foreground),
             modifier = Modifier.size(24.dp),
             contentDescription = null
         )
         Text(
-            text = "资源管理器", modifier = Modifier.padding(start = 8.dp), fontSize = 14.sp
+            text = context.getString(R.string.app_name), modifier = Modifier.padding(start = 8.dp), fontSize = 14.sp
         )
     }
 }
@@ -365,6 +370,7 @@ fun NavInnerBox(name: String, selected: Boolean, onClick: () -> Unit) {
 @Composable
 fun NavOuterBox(navController: NavController) {
     val selectedItem = remember { mutableStateOf(AppRoute.Process.route) }
+    val context = LocalContext.current
 
     Box(
         modifier = Modifier
@@ -385,7 +391,9 @@ fun NavOuterBox(navController: NavController) {
             horizontalArrangement = Arrangement.spacedBy(2.dp)
         ) {
             NavInnerBox(
-                name = "进程", selected = selectedItem.value == AppRoute.Process.route, onClick = {
+                name = context.getString(R.string.processes_tab),
+                selected = selectedItem.value == AppRoute.Process.route,
+                onClick = {
                     navController.navigate(AppRoute.Process.route) {
                         popUpTo(navController.graph.startDestinationId)
                         launchSingleTop = true
@@ -396,7 +404,9 @@ fun NavOuterBox(navController: NavController) {
                 modifier = Modifier.height(18.dp), color = Color(0x0D000000)
             )
             NavInnerBox(
-                name = "资源", selected = selectedItem.value == AppRoute.Resource.route, onClick = {
+                name = context.getString(R.string.resources_tab),
+                selected = selectedItem.value == AppRoute.Resource.route,
+                onClick = {
                     navController.navigate(AppRoute.Resource.route) {
                         popUpTo(navController.graph.startDestinationId)
                         launchSingleTop = true
@@ -407,7 +417,7 @@ fun NavOuterBox(navController: NavController) {
                 modifier = Modifier.height(18.dp), color = Color(0x0D000000)
             )
             NavInnerBox(
-                name = "文件系统",
+                name = context.getString(R.string.filesystems_tab),
                 selected = selectedItem.value == AppRoute.FileSystem.route,
                 onClick = {
                     navController.navigate(AppRoute.FileSystem.route) {

@@ -104,5 +104,6 @@ dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.3")
     implementation("io.ktor:ktor-client-core:2.3.4")
     implementation("io.ktor:ktor-client-android:2.3.4")
+    implementation("cafe.adriel.lyricist:lyricist:1.7.0")
 
 }
