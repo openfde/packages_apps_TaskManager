@@ -46,8 +46,7 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun FoldableBox(
-    title: String,
-    content: @Composable () -> Unit
+    title: String, content: @Composable () -> Unit
 ) {
     val expanded = remember { mutableStateOf(true) }
     Row(
@@ -60,23 +59,19 @@ fun FoldableBox(
             .fillMaxWidth()
             .padding(8.dp)
             .background(
-                color = Color.Transparent,
-                shape = RoundedCornerShape(8.dp)
+                color = Color.Transparent, shape = RoundedCornerShape(8.dp)
             ),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Image(
             painter = painterResource(
                 id = if (expanded.value) R.drawable.down_vector else R.drawable.right_vector
-            ),
-            modifier = Modifier.size(16.dp),
-            contentDescription = null
+            ), modifier = Modifier.size(16.dp), contentDescription = null
         )
         Spacer(modifier = Modifier.width(8.dp))
         Text(title)
     }
-    if (expanded.value)
-        content()
+    if (expanded.value) content()
 }
 
 @Composable
@@ -98,8 +93,7 @@ fun CPUUsagesAnnotationsLine(
                     modifier = Modifier
                         .size(16.dp)
                         .background(
-                            color = colors[i],
-                            shape = RoundedCornerShape(3.dp)
+                            color = colors[i], shape = RoundedCornerShape(3.dp)
                         )
                 )
                 Spacer(modifier = Modifier.width(4.dp))
@@ -113,9 +107,7 @@ fun CPUUsagesAnnotationsLine(
 
 @Composable
 fun MemoryAndSwapAnnotationsLine(
-    colors: List<Color>,
-    annotations: List<String>,
-    capcities: List<Float>
+    colors: List<Color>, annotations: List<String>, capcities: List<Float>
 ) {
     val barWidthTotal = 58.dp
     val barHeight = 16.dp
@@ -133,8 +125,7 @@ fun MemoryAndSwapAnnotationsLine(
                     modifier = Modifier
                         .size(width = 58.dp, height = barHeight)
                         .background(
-                            color = Color(0x14000000),
-                            shape = RoundedCornerShape(3.dp)
+                            color = Color(0x14000000), shape = RoundedCornerShape(3.dp)
                         )
                         .clip(RoundedCornerShape(3.dp))
                 ) {
@@ -244,7 +235,7 @@ fun ResourceView() {
     val currentNetworkAnnotationsState = remember { mutableStateListOf<String>("", "") }
     val currentDiskAnnotationsState = remember { mutableStateListOf<String>("", "") }
 
-    val delayGap:Long = 500
+    val delayGap: Long = 500
     LaunchedEffect(Unit) {
         coroutineScope.launch {
             while (true) {
@@ -260,29 +251,30 @@ fun ResourceView() {
                 delay(delayGap)
             }
         }
+
         coroutineScope.launch {
             while (true) {
 //                2
                 val memoryAndMemoryInfo = TaskManagerBinder.getMemoryAndSwap()
-                currentMemoryAndSwapAnnotationsState
-                    .add(
-                        "内存占用: %03.1f%%    %s/%s    缓存%s"
-                            .format(
-                                memoryAndMemoryInfo.memory.percent,
-                                toStringWithUnit(memoryAndMemoryInfo.memory.used),
-                                toStringWithUnit(memoryAndMemoryInfo.memory.total),
-                                toStringWithUnit(memoryAndMemoryInfo.memory.cache)
-                            )
+                currentMemoryAndSwapAnnotationsState.add(
+                    "${context.getString(R.string.memory_usage)}: %03.1f%%    %s/%s    ${
+                        context.getString(
+                            R.string.cache
+                        )
+                    }%s".format(
+                        memoryAndMemoryInfo.memory.percent,
+                        toStringWithUnit(memoryAndMemoryInfo.memory.used),
+                        toStringWithUnit(memoryAndMemoryInfo.memory.total),
+                        toStringWithUnit(memoryAndMemoryInfo.memory.cache)
                     )
-                currentMemoryAndSwapAnnotationsState
-                    .add(
-                        "交换: %03.1f%%    %s/%s"
-                            .format(
-                                memoryAndMemoryInfo.memory.percent,
-                                toStringWithUnit(memoryAndMemoryInfo.swap.used),
-                                toStringWithUnit(memoryAndMemoryInfo.swap.total)
-                            )
+                )
+                currentMemoryAndSwapAnnotationsState.add(
+                    "${context.getString(R.string.swap)}: %03.1f%%    %s/%s".format(
+                        memoryAndMemoryInfo.memory.percent,
+                        toStringWithUnit(memoryAndMemoryInfo.swap.used),
+                        toStringWithUnit(memoryAndMemoryInfo.swap.total)
                     )
+                )
                 currentMemoryAndSwapCapcityState.clear()
                 currentMemoryAndSwapCapcityState.add(memoryAndMemoryInfo.memory.percent / 100f)
                 currentMemoryAndSwapCapcityState.add(memoryAndMemoryInfo.swap.percent / 100f)
@@ -314,10 +306,14 @@ fun ResourceView() {
                     toStringWithSpeedUnit(networkDownloadAndUpload.upload.speed)
                 val currentUploadTotalString =
                     toStringWithUnit(networkDownloadAndUpload.upload.total)
-                currentNetworkAnnotationsState
-                    .add("当前下载: $currentDownloadSpeedString 下载总量:$currentDownloadTotalString")
-                currentNetworkAnnotationsState
-                    .add("当前上传:$currentUploadSpeedString 上传总量:$currentUploadTotalString")
+                currentNetworkAnnotationsState.add(
+                    "${context.getString(R.string.current_download)}: $currentDownloadSpeedString ${
+                        context.getString(
+                            R.string.current_download_total
+                        )
+                    }:$currentDownloadTotalString"
+                )
+                currentNetworkAnnotationsState.add("${context.getString(R.string.current_upload)}:$currentUploadSpeedString ${R.string.current_upload_total}:$currentUploadTotalString")
                 delay(delayGap)
             }
         }
@@ -337,10 +333,20 @@ fun ResourceView() {
                 val currentDiskWriteSpeedString =
                     toStringWithSpeedUnit(diskReadAndWrite.write.speed)
                 val currentDiskWriteTotalString = toStringWithUnit(diskReadAndWrite.write.total)
-                currentDiskAnnotationsState
-                    .add("当前读盘: $currentDiskReadSpeedString 读盘总计:$currentDiskReadTotalString")
-                currentDiskAnnotationsState
-                    .add("当前写入: $currentDiskWriteSpeedString 写入总计:$currentDiskWriteTotalString")
+                currentDiskAnnotationsState.add(
+                    "${context.getString(R.string.current_read_disk)}: $currentDiskReadSpeedString ${
+                        context.getString(
+                            R.string.current_read_disk_total
+                        )
+                    }:$currentDiskReadTotalString"
+                )
+                currentDiskAnnotationsState.add(
+                    "${context.getString(R.string.current_write_disk)}: $currentDiskWriteSpeedString ${
+                        context.getString(
+                            R.string.current_write_disk_total
+                        )
+                    }:$currentDiskWriteTotalString"
+                )
                 delay(delayGap)
             }
         }
@@ -360,11 +366,10 @@ fun ResourceView() {
                 minValue = 0f
             )
             CPUUsagesAnnotationsLine(
-                colors = cpuColors,
-                annotations = currentCPUAnnotationsState
+                colors = cpuColors, annotations = currentCPUAnnotationsState
             )
         }
-        FoldableBox("内存和交换") {
+        FoldableBox(context.getString(R.string.memory_and_swap)) {
             SmoothBezierLineChart(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -382,7 +387,7 @@ fun ResourceView() {
                 capcities = currentMemoryAndSwapCapcityState
             )
         }
-        FoldableBox("网络") {
+        FoldableBox(context.getString(R.string.network)) {
             SmoothBezierLineChart(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -403,11 +408,10 @@ fun ResourceView() {
                 maxValue = 100 * 1024f
             )
             NetworkAnnotationsLine(
-                colors = networkColors,
-                annotations = currentNetworkAnnotationsState
+                colors = networkColors, annotations = currentNetworkAnnotationsState
             )
         }
-        FoldableBox("磁盘") {
+        FoldableBox(context.getString(R.string.disk)) {
             SmoothBezierLineChart(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -415,12 +419,7 @@ fun ResourceView() {
                     .padding(10.dp),
                 allValues = diskReadAndWriteState,
                 yAxisLabels = listOf(
-                    "0MB/s",
-                    "20MB/s",
-                    "40MB/s",
-                    "60MB/s",
-                    "80MB/s",
-                    "100MB/s"
+                    "0MB/s", "20MB/s", "40MB/s", "60MB/s", "80MB/s", "100MB/s"
                 ),
                 colors = diskColors,
                 strokeWidth = 1f,
@@ -428,8 +427,7 @@ fun ResourceView() {
                 maxValue = 100 * 1024 * 1024f
             )
             DiskAnnotationsLine(
-                colors = diskColors,
-                annotations = currentDiskAnnotationsState
+                colors = diskColors, annotations = currentDiskAnnotationsState
             )
         }
     }
@@ -471,10 +469,8 @@ fun SmoothBezierLineChart(
 
             val textWidth = labelPaint.measureText("${(ratio * 100).toInt()}%")
             drawContext.canvas.nativeCanvas.drawText(
-                yAxisLabels[i],
-                size.width - textWidth - 4f, // 右侧对齐，距离右边留4f间距
-                y,
-                labelPaint
+                yAxisLabels[i], size.width - textWidth - 4f, // 右侧对齐，距离右边留4f间距
+                y, labelPaint
             )
         }
         val lineBrushes = colors.map { it -> SolidColor(it) }
@@ -489,8 +485,7 @@ fun SmoothBezierLineChart(
             val xStep = width / (values.size - 1f)
             val points = values.mapIndexed { i, v ->
                 Offset(
-                    x = i * xStep,
-                    y = height - (v - minValue) / range * height
+                    x = i * xStep, y = height - (v - minValue) / range * height
                 )
             }
 
@@ -500,12 +495,10 @@ fun SmoothBezierLineChart(
                     val p0 = points[i]
                     val p3 = points[i + 1]
                     val cp1 = Offset(
-                        x = p0.x + (p3.x - p0.x) / 2f,
-                        y = p0.y
+                        x = p0.x + (p3.x - p0.x) / 2f, y = p0.y
                     )
                     val cp2 = Offset(
-                        x = p0.x + (p3.x - p0.x) / 2f,
-                        y = p3.y
+                        x = p0.x + (p3.x - p0.x) / 2f, y = p3.y
                     )
                     cubicTo(cp1.x, cp1.y, cp2.x, cp2.y, p3.x, p3.y)
                 }

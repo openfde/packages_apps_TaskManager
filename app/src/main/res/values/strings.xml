@@ -1,25 +1,37 @@
 <resources>
-    <string name="app_name">任务管理器</string>
-    <string-array name="tasks_headers_name">
-        <item>name</item>
-        <item>user</item>
-        <item>vmsize</item>
-        <item>cpuUsage</item>
-        <item>pid</item>
-        <item>rss</item>
-        <item>readBytes</item>
-        <item>writeBytes</item>
-        <item>readIssued</item>
-        <item>writeIssued</item>
-    </string-array>
-    <array name="disk_item_weights">
-        <item>166</item>
-        <item>266</item>
-        <item>199</item>
-        <item>199</item>
-        <item>166</item>
-        <item>166</item>
-    </array>
+    <string name="app_name">Task Manager</string>
+    <string name="processes_tab">Processes</string>
+    <string name="resources_tab">Resources</string>
+    <string name="filesystems_tab">File System</string>
+    <string name="process_name">Process Name</string>
+    <string name="user">User</string>
+    <string name="virtual_memory">Virtual Memory</string>
+    <string name="memory">Memory</string>
+    <string name="disk_read_storage">Disk Read Storage</string>
+    <string name="disk_write_storage">Disk Write Storage</string>
+    <string name="disk_read">Disk Read</string>
+    <string name="disk_write">Disk Write</string>
+    <string name="memory_and_swap">Memory And Swap</string>
+    <string name="network">Network</string>
+    <string name="disk">Disk</string>
+    <string name="memory_usage">Memory Usage</string>
+    <string name="cache">Cache</string>
+    <string name="swap">Swap</string>
+    <string name="current_download">Current Download Speed</string>
+    <string name="current_download_total">Download Total</string>
+    <string name="current_upload">Current Upload Speed</string>
+    <string name="current_upload_total">Upload Total</string>
+    <string name="current_read_disk">Current Disk Read Speed</string>
+    <string name="current_read_disk_total">Disk Read Total</string>
+    <string name="current_write_disk">Current Disk Write Speed</string>
+    <string name="current_write_disk_total">Disk Write Total</string>
+    <string name="used">Used</string>
+    <string name="catalogue">Catalogue</string>
+    <string name="device">Device</string>
+    <string name="type">Type</string>
+    <string name="total_storage">Total Storage</string>
+    <string name="available_storage">Available Storage</string>
+
     <array name="task_dropdown_menu_items">
         <item>属性</item>
         <item>__DIVIDER__</item>
