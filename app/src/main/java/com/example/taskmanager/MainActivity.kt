@@ -1,17 +1,18 @@
 package com.example.taskmanager
 
+import android.os.Build
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import cafe.adriel.lyricist.Lyricist
+import androidx.annotation.RequiresApi
 import com.example.taskmanager.ui.NavigationView
 
 
 class MainActivity : ComponentActivity() {
 
 
+    @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val systemLanguageTag: String =
