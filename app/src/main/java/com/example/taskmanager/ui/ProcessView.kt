@@ -109,6 +109,7 @@ fun TasksTableHeader(
     val nameSortedReverseState = remember { mutableStateOf(false) }
     val idSortedReverseState = remember { mutableStateOf(false) }
     val context = LocalContext.current
+    val vectorIconSize = 16.dp
 
     HorizontalDivider(modifier = Modifier.fillMaxWidth(), color = Color(0xFFE8E9EB))
     Row(
@@ -120,7 +121,7 @@ fun TasksTableHeader(
             verticalAlignment = Alignment.CenterVertically, modifier = Modifier.height(24.dp)
         ) {
             Row(
-                modifier = Modifier.weight(weights[0]),
+                modifier = Modifier.weight(weights[0]).padding(end=8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
@@ -134,7 +135,7 @@ fun TasksTableHeader(
                 Image(
                     painter = painterResource(id = R.drawable.task_header_down_vector),
                     modifier = Modifier
-                        .size(28.dp)
+                        .size(vectorIconSize)
                         .graphicsLayer {
                             rotationX = when (sortMode) {
                                 SortMode.BY_NAME_SEQUENTIAL -> 0f
@@ -205,7 +206,9 @@ fun TasksTableHeader(
                 clickAction = { onWeightChange(3, weights[3] + 0.05f) },
                 doubleClickAction = { onWeightChange(3, 0.09f) })
             Row(
-                modifier = Modifier.weight(weights[4]),
+                modifier = Modifier
+                    .weight(weights[4])
+                    .padding(horizontal = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
@@ -219,7 +222,7 @@ fun TasksTableHeader(
                 Image(
                     painter = painterResource(id = R.drawable.task_header_down_vector),
                     modifier = Modifier
-                        .size(28.dp)
+                        .size(vectorIconSize)
                         .graphicsLayer {
                             rotationX = when (sortMode) {
                                 SortMode.BY_NAME_SEQUENTIAL -> 0f
@@ -477,6 +480,7 @@ fun TaskItem(
     var iconBitmap: ImageBitmap? = null
     var iconDrawable: Drawable? = null
     var iconType: IconType? = null
+    val iconSize = 24.dp
 
     when {
         taskInfo.isAndroidApp -> {
@@ -643,9 +647,9 @@ fun TaskItem(
     if (allProcessBoolean || myProcessBoolean || searchBarFilteredBoolean) {
         Row(
             modifier = Modifier
-                .height(30.dp)
+                .height(34.dp)
                 .fillMaxWidth()
-                .padding(horizontal = 10.dp)
+                .padding(horizontal = 8.dp)
                 .clickable(onClick = {})
                 .onGloballyPositioned { coordinates ->
                     globalPositionState.value = coordinates.positionInRoot()
@@ -693,21 +697,21 @@ fun TaskItem(
                             // android bitmap
                             Image(
                                 bitmap = iconBitmap,
-                                modifier = Modifier.size(28.dp),
+                                modifier = Modifier.size(iconSize),
                                 contentDescription = null
                             )
                         } else if (iconType == IconType.ANDROID_DRAWABLE_ICON && iconDrawable != null) {
                             // android drawable
                             Image(
                                 bitmap = iconDrawable.toBitmap().asImageBitmap(),
-                                modifier = Modifier.size(28.dp),
+                                modifier = Modifier.size(iconSize),
                                 contentDescription = null
                             )
                         } else if (iconType == IconType.ANDROID_NULL_ICON) {
                             // not found
                             Image(
                                 painter = painterResource(id = R.drawable.ic_android),
-                                modifier = Modifier.size(28.dp),
+                                modifier = Modifier.size(iconSize),
                                 contentDescription = null
                             )
                         }
@@ -716,13 +720,13 @@ fun TaskItem(
                         if (iconType == IconType.LINUX_BITMAP_ICON && iconBitmap != null) {
                             Image(
                                 bitmap = iconBitmap,
-                                modifier = Modifier.size(28.dp),
+                                modifier = Modifier.size(iconSize),
                                 contentDescription = null
                             )
                         } else if (iconType == IconType.LINUX_NULL_ICON) {
                             Image(
                                 painter = painterResource(id = R.drawable.ic_linux),
-                                modifier = Modifier.size(28.dp),
+                                modifier = Modifier.size(iconSize),
                                 contentDescription = null
                             )
                         }
