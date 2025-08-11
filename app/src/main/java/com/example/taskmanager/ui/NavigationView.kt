@@ -23,6 +23,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.taskmanager.R
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -64,7 +65,8 @@ fun NavigationView() {
     val navController = rememberNavController()
     val displayModeState = remember { mutableStateOf(DisplayMode.ALL_PROCESSES) }
     val searchBarValue = remember { mutableStateOf("") }
-    Column {
+    val isTitleBarHidden = remember { mutableStateOf(true) }
+    Column(modifier = Modifier.padding(top=35.dp)) {
         Row(
             modifier = Modifier
                 .height(50.dp)
@@ -73,9 +75,14 @@ fun NavigationView() {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            LogoBar()
+            if (isTitleBarHidden.value) {
+                Spacer(Modifier.width(20.dp))
+            } else {
+                LogoBar()
+            }
             NavOuterBox(navController)
             WindowButtonsBar(
+                isTitleBarHidden.value,
                 onDisplayModeChange = { displayModeState.value = it },
                 onSearchBarChange = { searchBarValue.value = it },
                 searchBarValue.value
@@ -174,6 +181,7 @@ fun WindowOptionsDisplayProcessSubDropdownMenu(
 
 @Composable
 fun WindowButtonsBar(
+    isTitleBarHidden: Boolean,
     onDisplayModeChange: (DisplayMode) -> Unit,
     onSearchBarChange: (String) -> Unit,
     searchBarValue: String
@@ -191,7 +199,7 @@ fun WindowButtonsBar(
         mutableStateOf<Boolean>(false)
     }
     Row(
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.padding(start = 12.dp, end = 8.dp)
     ) {
@@ -306,27 +314,28 @@ fun WindowButtonsBar(
                 },
             contentDescription = null,
         )
-
-        Image(
-            painter = painterResource(id = R.drawable.window_max_button),
-            modifier = Modifier.size(28.dp),
-            contentDescription = null
-        )
-        Image(
-            painter = painterResource(id = R.drawable.window_mini_button),
-            modifier = Modifier.size(28.dp),
-            contentDescription = null
-        )
-        Image(
-            painter = painterResource(id = R.drawable.window_normal_button),
-            modifier = Modifier.size(28.dp),
-            contentDescription = null
-        )
-        Image(
-            painter = painterResource(id = R.drawable.window_close_button),
-            modifier = Modifier.size(28.dp),
-            contentDescription = null
-        )
+        if (!isTitleBarHidden) {
+            Image(
+                painter = painterResource(id = R.drawable.window_max_button),
+                modifier = Modifier.size(28.dp),
+                contentDescription = null
+            )
+            Image(
+                painter = painterResource(id = R.drawable.window_mini_button),
+                modifier = Modifier.size(28.dp),
+                contentDescription = null
+            )
+            Image(
+                painter = painterResource(id = R.drawable.window_normal_button),
+                modifier = Modifier.size(28.dp),
+                contentDescription = null
+            )
+            Image(
+                painter = painterResource(id = R.drawable.window_close_button),
+                modifier = Modifier.size(28.dp),
+                contentDescription = null
+            )
+        }
     }
 }
 

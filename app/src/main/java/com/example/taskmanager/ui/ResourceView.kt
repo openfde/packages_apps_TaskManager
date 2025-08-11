@@ -15,7 +15,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -236,7 +238,9 @@ fun ResourceView() {
     val currentDiskAnnotationsState = remember { mutableStateListOf<String>("", "") }
     val initialLoad = remember { mutableStateOf(false) }
     val delayGap: Long = 1000
-    Column(modifier = Modifier.fillMaxWidth()) {
+    Column(
+        modifier = Modifier.fillMaxWidth().verticalScroll((rememberScrollState()))
+    ) {
         FoldableBox("CPU") {
             LaunchedEffect(Unit) {
                 coroutineScope.launch {
