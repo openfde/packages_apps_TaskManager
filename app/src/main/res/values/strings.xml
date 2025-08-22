@@ -31,28 +31,26 @@
     <string name="type">Type</string>
     <string name="total_storage">Total Storage</string>
     <string name="available_storage">Available Storage</string>
+    <string name="properties">Properties</string>
+    <string name="memory_mapping">Memory Mapping</string>
+    <string name="open_file">Open File</string>
+    <string name="change_priority">Change Priority</string>
+    <string name="set_association">Set Association</string>
+    <string name="stop_process">Stop Process</string>
+    <string name="resume">Resume</string>
+    <string name="stop">Stop</string>
+    <string name="force_stop">Force Stop</string>
 
-    <array name="task_dropdown_menu_items">
-        <item>属性</item>
-        <item>__DIVIDER__</item>
-        <item>内存映射</item>
-        <item>打开文件</item>
-        <item>__DIVIDER__</item>
-        <item>更改优先级</item>
-        <item>设置关联</item>
-        <item>__DIVIDER__</item>
-        <item>停止进程</item>
-        <item>继续</item>
-        <item>终止</item>
-        <item>__DIVIDER__</item>
-        <item>强制终止</item>
-    </array>
-    <string-array name="disks_headers_chinese">
-        <item>已使用</item>
-        <item>目录</item>
-        <item>设备</item>
-        <item>类型</item>
-        <item>总容量</item>
-        <item>可用容量</item>
-    </string-array>
+    <string name="menu_refresh">Refresh</string>
+    <string name="menu_process_display">Process Display</string>
+    <string name="menu_show_dependencies">Show Dependencies</string>
+    <string name="menu_search_open_files">Search Open Files</string>
+    <string name="menu_preferences">Preferences</string>
+    <string name="menu_help">Help</string>
+    <string name="menu_shortcuts">Shortcuts</string>
+    <string name="menu_about">About</string>
+
+    <string name="submenu_all_processes">All Processes</string>
+    <string name="submenu_active_processes">Active Processes</string>
+    <string name="submenu_my_processes">My Processes</string>
 </resources>
