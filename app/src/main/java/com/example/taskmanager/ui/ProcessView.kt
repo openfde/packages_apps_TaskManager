@@ -762,22 +762,22 @@ fun TaskItem(
                 .height(32.dp)
                 .width(192.dp)
         )
-//        HorizontalDivider()
+        HorizontalDivider()
         // 内存映射
-//        DropdownMenuItem(
-//            text = { Text(text= stringResource(R.string.memory_mapping)) }, onClick = {
-//            }, modifier = Modifier
-//                .height(32.dp)
-//                .width(192.dp)
-//        )
+        DropdownMenuItem(
+            text = { Text(text= stringResource(R.string.memory_mapping)) }, onClick = {
+            }, modifier = Modifier
+                .height(32.dp)
+                .width(192.dp)
+        )
         // 打开文件
-//        DropdownMenuItem(
-//            text = { Text(text= stringResource(R.string.open_file)) }, onClick = {
-//            }, modifier = Modifier
-//                .height(32.dp)
-//                .width(192.dp)
-//        )
-//        HorizontalDivider()
+        DropdownMenuItem(
+            text = { Text(text= stringResource(R.string.open_file)) }, onClick = {
+            }, modifier = Modifier
+                .height(32.dp)
+                .width(192.dp)
+        )
+        HorizontalDivider()
         // 更改优先级
         DropdownMenuItem(
             text = { Text(text= stringResource(R.string.change_priority)) }, onClick = {
@@ -788,13 +788,13 @@ fun TaskItem(
                 .width(192.dp)
         )
         // 设置关联
-//        DropdownMenuItem(
-//            text = { Text(text= stringResource(R.string.set_association)) }, onClick = {
-//            }, modifier = Modifier
-//                .height(32.dp)
-//                .width(192.dp)
-//        )
-//        HorizontalDivider()
+        DropdownMenuItem(
+            text = { Text(text= stringResource(R.string.set_association)) }, onClick = {
+            }, modifier = Modifier
+                .height(32.dp)
+                .width(192.dp)
+        )
+        HorizontalDivider()
         // 停止进程
         DropdownMenuItem(
             text = { Text(text= stringResource(R.string.stop_process)) }, onClick = {
@@ -804,29 +804,29 @@ fun TaskItem(
                 .width(192.dp)
         )
         //继续
-//        DropdownMenuItem(
-//            text = { Text(text= stringResource(R.string.resume)) }, onClick = {
-//            }, modifier = Modifier
-//                .height(32.dp)
-//                .width(192.dp)
-//        )
+        DropdownMenuItem(
+            text = { Text(text= stringResource(R.string.resume)) }, onClick = {
+            }, modifier = Modifier
+                .height(32.dp)
+                .width(192.dp)
+        )
         //终止
-//        DropdownMenuItem(
-//            text = { Text(text= stringResource(R.string.stop)) }, onClick = {
-//                TaskManagerBinder.killTaskByPid(taskInfo.pid)
-//            }, modifier = Modifier
-//                .height(32.dp)
-//                .width(192.dp)
-//        )
-//        HorizontalDivider()
+        DropdownMenuItem(
+            text = { Text(text= stringResource(R.string.stop)) }, onClick = {
+                TaskManagerBinder.killTaskByPid(taskInfo.pid)
+            }, modifier = Modifier
+                .height(32.dp)
+                .width(192.dp)
+        )
+        HorizontalDivider()
         // 强制终止
-//        DropdownMenuItem(
-//            text = { Text(text= stringResource(R.string.force_stop)) }, onClick = {
-//                TaskManagerBinder.killTaskByPid(taskInfo.pid)
-//            }, modifier = Modifier
-//                .height(32.dp)
-//                .width(192.dp)
-//        )
+        DropdownMenuItem(
+            text = { Text(text= stringResource(R.string.force_stop)) }, onClick = {
+                TaskManagerBinder.killTaskByPid(taskInfo.pid)
+            }, modifier = Modifier
+                .height(32.dp)
+                .width(192.dp)
+        )
     }
 }
 
