@@ -48,6 +48,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.DpOffset
 import androidx.navigation.NavController
 
@@ -155,21 +156,21 @@ fun WindowOptionsDisplayProcessSubDropdownMenu(
     }, modifier = Modifier.clip(RoundedCornerShape(8.dp))
     ) {
         DropdownMenuItem(
-            text = { Text("所有进程") }, onClick = {
+            text = { Text(stringResource(R.string.submenu_all_processes)) }, onClick = {
             onDisplayModeChange(DisplayMode.ALL_PROCESSES)
         }, modifier = Modifier
                 .height(32.dp)
                 .width(192.dp)
         )
         DropdownMenuItem(
-            text = { Text("活动进程") }, onClick = {
+            text = { Text(stringResource(R.string.submenu_active_processes)) }, onClick = {
             onDisplayModeChange(DisplayMode.ACTIVE_PROCESSES)
         }, modifier = Modifier
                 .height(32.dp)
                 .width(192.dp)
         )
         DropdownMenuItem(
-            text = { Text("我的进程") }, onClick = {
+            text = { Text(stringResource(R.string.submenu_my_processes)) }, onClick = {
             onDisplayModeChange(DisplayMode.MY_PROCESSES)
         }, modifier = Modifier
                 .height(32.dp)
@@ -224,7 +225,7 @@ fun WindowButtonsBar(
             modifier = Modifier.clip(RoundedCornerShape(8.dp))
         ) {
             DropdownMenuItem(
-                text = { Text("刷新") }, onClick = {
+                text = { Text(stringResource(R.string.menu_refresh)) }, onClick = {
 
             }, modifier = Modifier
                     .height(32.dp)
@@ -241,51 +242,55 @@ fun WindowButtonsBar(
                         }
                     }
                 }
-            }, onClick = {}, text = { Text("进程显示") })
-            HorizontalDivider()
-            DropdownMenuItem(
-                text = { Text("显示依赖项") }, onClick = {
+            }, onClick = {}, text = { Text(stringResource(R.string.menu_process_display)) })
+//            HorizontalDivider()
+//            显示依赖项
+//            DropdownMenuItem(
+//                text = { Text(stringResource(R.string.menu_show_dependencies)) }, onClick = {
+//
+//            }, modifier = Modifier
+//                    .height(32.dp)
+//                    .width(192.dp)
+//            )
 
-            }, modifier = Modifier
-                    .height(32.dp)
-                    .width(192.dp)
-            )
-            DropdownMenuItem(
-                text = { Text("搜索打开的文件") }, onClick = {
-
-            }, modifier = Modifier
-                    .height(32.dp)
-                    .width(192.dp)
-            )
-            HorizontalDivider()
-            DropdownMenuItem(
-                text = { Text("偏好设置") }, onClick = {
-
-            }, modifier = Modifier
-                    .height(32.dp)
-                    .width(192.dp)
-            )
-            DropdownMenuItem(
-                text = { Text("帮助") }, onClick = {
-
-            }, modifier = Modifier
-                    .height(32.dp)
-                    .width(192.dp)
-            )
-            DropdownMenuItem(
-                text = { Text("快捷键") }, onClick = {
-
-            }, modifier = Modifier
-                    .height(32.dp)
-                    .width(192.dp)
-            )
-            DropdownMenuItem(
-                text = { Text("关于") }, onClick = {
-
-            }, modifier = Modifier
-                    .height(32.dp)
-                    .width(192.dp)
-            )
+//            搜索打开的文件
+//            DropdownMenuItem(
+//                text = { Text(stringResource(R.string.menu_search_open_files)) }, onClick = {
+//            }, modifier = Modifier
+//                    .height(32.dp)
+//                    .width(192.dp)
+//            )
+//            HorizontalDivider()
+//            偏好设置
+//            DropdownMenuItem(
+//                text = { Text(stringResource(R.string.menu_preferences)) }, onClick = {
+//
+//            }, modifier = Modifier
+//                    .height(32.dp)
+//                    .width(192.dp)
+//            )
+//            帮助
+//            DropdownMenuItem(
+//                text = { Text(stringResource(R.string.menu_help)) }, onClick = {
+//            }, modifier = Modifier
+//                    .height(32.dp)
+//                    .width(192.dp)
+//            )
+//            快捷键
+//            DropdownMenuItem(
+//                text = { Text(stringResource(R.string.menu_shortcuts)) }, onClick = {
+//            }, modifier = Modifier
+//                    .height(32.dp)
+//                    .width(192.dp)
+//            )
+//            关于
+//            DropdownMenuItem(
+//                text = { Text(stringResource(R.string.menu_about)) }, onClick = {
+//
+//            }, modifier = Modifier
+//                    .height(32.dp)
+//                    .width(192.dp)
+//            )
         }
         SearchBar(
             text = searchBarValue, onValueChange = { it ->

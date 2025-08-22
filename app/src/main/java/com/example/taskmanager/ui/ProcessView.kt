@@ -61,6 +61,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.DpOffset
 import androidx.core.graphics.drawable.toBitmap
@@ -469,7 +470,6 @@ fun TaskItem(
     weights: MutableFloatList,
 ) {
     val context = LocalContext.current
-    val taskDropdownMenuItems = context.resources.getStringArray(R.array.task_dropdown_menu_items)
     val floatingMenuPosition = remember { mutableStateOf(Offset.Zero) }
     val floatingMenuExpanded = remember { mutableStateOf(false) }
     val floatingPropertiesWindowShow = remember { mutableStateOf(false) }
@@ -753,53 +753,80 @@ fun TaskItem(
         },
         modifier = Modifier.clip(RoundedCornerShape(8.dp))
     ) {
-        val callbackFunctionsMap = mapOf<String, () -> Unit>(
-            "属性" to {
+        // 属性
+        DropdownMenuItem(
+            text = { Text(text= stringResource(R.string.properties)) }, onClick = {
                 floatingMenuExpanded.value = false
                 floatingPropertiesWindowShow.value = true
-            },
-            "内存映射" to {
-                // TODO: 内存映射
-            },
-            "打开文件" to {
-                // TODO: 打开文件
-            },
-            "更改优先级" to {
+            }, modifier = Modifier
+                .height(32.dp)
+                .width(192.dp)
+        )
+//        HorizontalDivider()
+        // 内存映射
+//        DropdownMenuItem(
+//            text = { Text(text= stringResource(R.string.memory_mapping)) }, onClick = {
+//            }, modifier = Modifier
+//                .height(32.dp)
+//                .width(192.dp)
+//        )
+        // 打开文件
+//        DropdownMenuItem(
+//            text = { Text(text= stringResource(R.string.open_file)) }, onClick = {
+//            }, modifier = Modifier
+//                .height(32.dp)
+//                .width(192.dp)
+//        )
+//        HorizontalDivider()
+        // 更改优先级
+        DropdownMenuItem(
+            text = { Text(text= stringResource(R.string.change_priority)) }, onClick = {
                 floatingMenuExpanded.value = false
                 floatingPriorityModificationWindowShow.value = true
-            },
-            "设置关联" to {
-                // TODO: 设置关联
-            },
-            "停止进程" to {
-                TaskManagerBinder.killTaskByPid(taskInfo.pid)
-            },
-            "继续" to {
-                // TODO: 继续
-            },
-            "终止" to {
-                TaskManagerBinder.killTaskByPid(taskInfo.pid)
-            },
-            "强制终止" to {
-                TaskManagerBinder.killTaskByPid(taskInfo.pid)
-            },
-            "__DIVIDER__" to {
-                //  TODO: 分割线
-            },
+            }, modifier = Modifier
+                .height(32.dp)
+                .width(192.dp)
         )
-
-        taskDropdownMenuItems.map { it ->
-            if (it == "__DIVIDER__") HorizontalDivider()
-            else {
-                DropdownMenuItem(
-                    text = { Text(it) }, onClick = {
-                        callbackFunctionsMap[it]?.let { it1 -> it1() }
-                    }, modifier = Modifier
-                        .height(32.dp)
-                        .width(192.dp)
-                )
-            }
-        }
+        // 设置关联
+//        DropdownMenuItem(
+//            text = { Text(text= stringResource(R.string.set_association)) }, onClick = {
+//            }, modifier = Modifier
+//                .height(32.dp)
+//                .width(192.dp)
+//        )
+//        HorizontalDivider()
+        // 停止进程
+        DropdownMenuItem(
+            text = { Text(text= stringResource(R.string.stop_process)) }, onClick = {
+                TaskManagerBinder.killTaskByPid(taskInfo.pid)
+            }, modifier = Modifier
+                .height(32.dp)
+                .width(192.dp)
+        )
+        //继续
+//        DropdownMenuItem(
+//            text = { Text(text= stringResource(R.string.resume)) }, onClick = {
+//            }, modifier = Modifier
+//                .height(32.dp)
+//                .width(192.dp)
+//        )
+        //终止
+//        DropdownMenuItem(
+//            text = { Text(text= stringResource(R.string.stop)) }, onClick = {
+//                TaskManagerBinder.killTaskByPid(taskInfo.pid)
+//            }, modifier = Modifier
+//                .height(32.dp)
+//                .width(192.dp)
+//        )
+//        HorizontalDivider()
+        // 强制终止
+//        DropdownMenuItem(
+//            text = { Text(text= stringResource(R.string.force_stop)) }, onClick = {
+//                TaskManagerBinder.killTaskByPid(taskInfo.pid)
+//            }, modifier = Modifier
+//                .height(32.dp)
+//                .width(192.dp)
+//        )
     }
 }
 
