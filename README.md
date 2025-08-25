@@ -1,7 +1,8 @@
 # 编译步骤
 
-需要确保编译JDK版本为17，然后执行
+确保编译JDK版本为17再编译，执行：
 ```
+export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
 sudo chmod +x ./gradlew
 ./gradlew :app:assembleRelease
 ```
