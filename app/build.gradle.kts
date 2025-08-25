@@ -11,6 +11,16 @@ android {
     namespace = "com.example.taskmanager"
     compileSdk = 35
 
+
+    signingConfigs {
+        create("release") {
+            storeFile = file("my-upload-key.jks")
+            storePassword = "feiteng123"
+            keyAlias = "my-key-alias"
+            keyPassword = "feiteng123"
+        }
+    }
+
     defaultConfig {
         applicationId = "com.example.taskmanager"
         minSdk = 34
@@ -23,7 +33,7 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -44,42 +54,9 @@ android {
     }
 }
 
-//configurations {
-//    all {
-//        exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib")
-//        exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib-jdk7")
-//        exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib-jdk8")
-//        exclude(group = "org.jetbrains", module = "annotations")
-//        exclude(group = "org.jspecify", module = "jspecify")
-//        exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib-common")
-//        exclude(group = "com.google.errorprone", module = "error_prone_annotations")
-//        exclude(group = "androidx.annotation", module = "annotation-jvm")
-//        exclude(group = "androidx.collection", module = "collection-jvm")
-//        exclude(group = "androidx.arch.core", module = "core-common")
-//        exclude(group = "com.google.code.gson", module = "gson")
-//        exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-android")
-//        exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-serialization-core-jvm")
-//        exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-serialization-json-jvm")
-//        exclude(group = "androidx.lifecycle", module = "lifecycle-common-jvm")
-//        exclude(group = "org.jetbrains.kotlin", module = "kotlin-android-extensions")
-//        exclude(group = "androidx.core", module = "core")
-//        exclude(group = "androidx.core", module = "core-ktx")
-//        exclude(group = "androidx.appcompat", module = "appcompat")
-//        exclude(group = "androidx.constraintlayout", module = "constraintlayout")
-//        exclude(group = "org.jetbrains.kotlin", module = "kotlin-reflect")
-//        exclude(group = "org.jetbrains.kotlin", module = "kotlin-android-extensions-runtime")
-//        exclude(group = "androidx.compose.ui", module = "ui-tooling")
-//        exclude(group = "org.jetbrains.kotlin", module = "annotation-experimental")
-//        exclude(group = "androidx.compose", module = "ui-tooling-release-api")
-//        exclude(group = "com.android", module = "android")
-//    }
-//}
-
 dependencies {
     val versionNav = "2.9.0"
     val versionSer = "1.6.0"
-//    implementation(files("libs/SystemUISharedLib.jar"))
-//    compileOnly(files("libs/framework.jar"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
