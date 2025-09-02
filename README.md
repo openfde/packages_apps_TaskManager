@@ -1,9 +1,14 @@
+# 成果展示
+
+![](./.assets/shot1.png)
+![](./.assets/shot2.png)
+![](./.assets/shot3.png)
+
 # 编译步骤
 
 确保编译JDK版本为17再编译，执行：
 ```
 export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
-sudo chmod +x ./gradlew
 ./gradlew :app:assembleRelease
 ```
 

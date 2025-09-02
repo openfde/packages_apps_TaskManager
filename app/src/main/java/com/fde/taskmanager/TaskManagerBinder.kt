@@ -1,10 +1,9 @@
-package com.example.taskmanager
+package com.fde.taskmanager
 
 import android.graphics.BitmapFactory
 import android.openfde.ITaskManager
 import android.os.IBinder
 import android.util.Base64
-import android.util.Log
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import kotlin.collections.List

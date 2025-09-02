@@ -1,8 +1,7 @@
-package com.example.taskmanager
+package com.fde.taskmanager
 
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import java.util.stream.LongStream
 
 object Adapters {
     private val gson = Gson()

@@ -1,4 +1,4 @@
-package com.example.taskmanager.ui.theme
+package com.fde.taskmanager.ui.theme
 
 import androidx.compose.ui.graphics.Color
 

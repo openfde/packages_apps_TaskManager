@@ -1,4 +1,4 @@
-package com.example.taskmanager.ui
+package com.fde.taskmanager.ui
 
 import android.os.Build
 import androidx.annotation.RequiresApi
@@ -41,8 +41,8 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import com.example.taskmanager.R
-import com.example.taskmanager.TaskManagerBinder
+import com.fde.taskmanager.R
+import com.fde.taskmanager.TaskManagerBinder
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
