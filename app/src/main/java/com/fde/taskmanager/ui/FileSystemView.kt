@@ -1,7 +1,5 @@
-package com.example.taskmanager.ui
+package com.fde.taskmanager.ui
 
-import android.util.Log
-import androidx.collection.FloatList
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -31,9 +29,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.taskmanager.Adapters
-import com.example.taskmanager.R
-import com.example.taskmanager.TaskManagerBinder
+import com.fde.taskmanager.Adapters
+import com.fde.taskmanager.R
+import com.fde.taskmanager.TaskManagerBinder
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 

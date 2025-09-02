@@ -1,6 +1,5 @@
-package com.example.taskmanager.ui.theme
+package com.fde.taskmanager.ui.theme
 
-import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme

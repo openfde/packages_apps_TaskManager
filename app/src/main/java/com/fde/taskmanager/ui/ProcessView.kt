@@ -1,4 +1,4 @@
-package com.example.taskmanager.ui
+package com.fde.taskmanager.ui
 
 import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
@@ -30,9 +30,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.taskmanager.Adapters
-import com.example.taskmanager.R
-import com.example.taskmanager.TaskManagerBinder
+import com.fde.taskmanager.Adapters
+import com.fde.taskmanager.R
+import com.fde.taskmanager.TaskManagerBinder
 import kotlinx.coroutines.launch
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow

@@ -1,4 +1,4 @@
-package com.example.taskmanager
+package com.fde.taskmanager
 
 import android.os.Build
 import android.os.Bundle
@@ -6,7 +6,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.annotation.RequiresApi
-import com.example.taskmanager.ui.NavigationView
+import com.fde.taskmanager.ui.NavigationView
 
 
 class MainActivity : ComponentActivity() {

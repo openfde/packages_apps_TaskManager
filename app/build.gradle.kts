@@ -1,5 +1,3 @@
-import org.gradle.internal.impldep.org.junit.experimental.categories.Categories.CategoryFilter.exclude
-
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -8,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.taskmanager"
+    namespace = "com.fde.taskmanager"
     compileSdk = 35
 
 
@@ -22,7 +20,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.taskmanager"
+        applicationId = "com.fde.taskmanager"
         minSdk = 34
         targetSdk = 36
         versionCode = 1
