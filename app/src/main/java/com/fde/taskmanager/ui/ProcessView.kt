@@ -65,10 +65,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.DpOffset
 import androidx.core.graphics.drawable.toBitmap
-import io.ktor.client.*
-import io.ktor.client.call.body
-import io.ktor.client.engine.android.Android
-import io.ktor.client.request.*
+
+import java.net.HttpURLConnection
+import java.net.URL
+import java.io.BufferedReader
+import java.io.InputStreamReader
+
+
 
 @Composable
 fun TaskHeaderDivider(
@@ -351,13 +354,25 @@ fun ProcessView(displayMode: DisplayMode, searchBarValue: String) {
         }
         coroutineScope.launch {
             try {
-                val client = HttpClient(Android)
-                val response = client.get("http://127.0.0.1:18080/api/v1/apps?page=1&page_size=100")
-                appResponseState.value = Adapters.AppsResponseAdapt(response.body())
-            } catch (e: Exception) {
+                val url = URL("http://127.0.0.1:18080/api/v1/apps?page=1&page_size=100")
+                val connection = url.openConnection() as HttpURLConnection
+                connection.requestMethod = "GET"
+                connection.connectTimeout = 5000
+                connection.readTimeout = 5000
+                connection.setRequestProperty("Content-Type", "application/json")
 
+                val responseCode = connection.responseCode
+                if (responseCode == HttpURLConnection.HTTP_OK) {
+                    val inputStream = connection.inputStream
+                    val responseString = inputStream.bufferedReader().use { it.readText() }
+                    appResponseState.value = Adapters.AppsResponseAdapt(responseString)
+                }
+                connection.disconnect()
+            } catch (e: Exception) {
+                // 错误处理保持不变
             }
         }
+
         coroutineScope.launch {
             val allTasks = TaskManagerBinder.getTasks()
             taskInfoList.clear()

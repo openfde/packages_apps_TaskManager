@@ -72,13 +72,8 @@ dependencies {
     debugImplementation(libs.androidx.ui.test.manifest)
 
     implementation("androidx.navigation:navigation-compose:$versionNav")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$versionSer")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4")
     implementation("com.google.code.gson:gson:2.13.1")
-    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.3")
-    implementation("io.ktor:ktor-client-core:2.3.4")
-    implementation("io.ktor:ktor-client-android:2.3.4")
-    implementation("cafe.adriel.lyricist:lyricist:1.7.0")
 
 }
