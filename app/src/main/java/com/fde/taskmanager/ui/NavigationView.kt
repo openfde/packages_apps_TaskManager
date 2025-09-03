@@ -49,6 +49,12 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.DpOffset
 import androidx.navigation.NavController
+import android.content.Intent
+import android.view.KeyEvent
+import android.app.Instrumentation
+import android.content.Context
+import android.app.ActivityManager
+import android.app.ActivityManager.AppTask
 
 
 sealed class AppRoute(val route: String) {
@@ -64,8 +70,11 @@ fun NavigationView() {
     val navController = rememberNavController()
     val displayModeState = remember { mutableStateOf(DisplayMode.ALL_PROCESSES) }
     val searchBarValue = remember { mutableStateOf("") }
-    val isTitleBarHidden = remember { mutableStateOf(true) }
-    Column(modifier = Modifier.padding(top=35.dp)) {
+
+    // `isTitleBarHidden` should be synchronized with 
+    // `setWindowDecorationStatus` method in MainActivity
+    val isTitleBarHidden = remember { mutableStateOf(false) }
+    Column(modifier = Modifier.padding(top=if (isTitleBarHidden.value) 35.dp else 0.dp)) {
         Row(
             modifier = Modifier
                 .height(50.dp)
@@ -87,18 +96,19 @@ fun NavigationView() {
                 searchBarValue.value
             )
         }
-        NavHost(navController, startDestination = AppRoute.Process.route) {
-            listOf(
-                AppRoute.Process to @Composable {
-                ProcessView(
-                    displayModeState.value, searchBarValue.value
-                )
-            },
-                AppRoute.Resource to @Composable { ResourceView() },
-                AppRoute.FileSystem to @Composable { FileSystemView() }).forEach { (route, content) ->
-                composable(route.route) { content() }
+            NavHost(navController, startDestination = AppRoute.Process.route) {
+                composable(AppRoute.Process.route) {
+                    ProcessView(
+                        displayModeState.value, searchBarValue.value
+                    )
+                }
+                composable(AppRoute.Resource.route) {
+                    ResourceView()
+                }
+                composable(AppRoute.FileSystem.route) {
+                    FileSystemView()
+                }
             }
-        }
     }
 }
 
@@ -177,6 +187,17 @@ fun WindowOptionsDisplayProcessSubDropdownMenu(
     }
 }
 
+private fun simulateKeyPress(keyCode: Int) {
+    Thread {
+        try {
+            val instrumentation = Instrumentation()
+            instrumentation.sendKeyDownUpSync(keyCode)
+        } catch (e: SecurityException) {
+            e.printStackTrace()
+        }
+    }.start()
+}
+
 
 @Composable
 fun WindowButtonsBar(
@@ -197,6 +218,10 @@ fun WindowButtonsBar(
     val windowOptionsDropdownSubMenuShow = remember {
         mutableStateOf<Boolean>(false)
     }
+
+    val context = LocalContext.current
+    var isFullScreen = remember { mutableStateOf(false) }
+
     Row(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -317,25 +342,48 @@ fun WindowButtonsBar(
                 },
             contentDescription = null,
         )
+
         if (!isTitleBarHidden) {
+            // fullscreen
             Image(
                 painter = painterResource(id = R.drawable.window_max_button),
-                modifier = Modifier.size(28.dp),
+                modifier = Modifier.size(28.dp).clickable {
+                   simulateKeyPress(KeyEvent.KEYCODE_F11);
+                },
                 contentDescription = null
             )
+            // minimize
             Image(
                 painter = painterResource(id = R.drawable.window_mini_button),
-                modifier = Modifier.size(28.dp),
+                modifier = Modifier.size(28.dp).clickable {
+                    simulateKeyPress(KeyEvent.KEYCODE_F9)
+                },
                 contentDescription = null
             )
+            // normal/maximize
             Image(
                 painter = painterResource(id = R.drawable.window_normal_button),
-                modifier = Modifier.size(28.dp),
+                modifier = Modifier.size(28.dp).clickable {
+                    val intent = Intent("com.fde.fullscreen.ENABLE_OR_DISABLE")
+                    if(isFullScreen.value)
+                        intent.putExtra("mode", 0)
+                    else
+                        intent.putExtra("mode", 1)
+                    isFullScreen.value = !(isFullScreen.value)
+                    context.sendBroadcast(intent)
+                },
                 contentDescription = null
             )
+            // close
             Image(
                 painter = painterResource(id = R.drawable.window_close_button),
-                modifier = Modifier.size(28.dp),
+                modifier = Modifier.size(28.dp).clickable {
+                    val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+                    val tasks = activityManager.appTasks
+                    if (tasks.isNotEmpty()){
+                        tasks[0].finishAndRemoveTask()
+                    }
+                },
                 contentDescription = null
             )
         }

@@ -34,6 +34,7 @@ import com.fde.taskmanager.R
 import com.fde.taskmanager.TaskManagerBinder
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import android.util.Log
 
 @Composable
 fun FileSystemView() {
@@ -172,6 +173,9 @@ fun DiskPartitionItem(
             .clickable(onClick = {}),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        LaunchedEffect(Unit) {
+            Log.d("TaskManager","DiskPartition view is launched")
+        }
         val m = listOf<String>(
             "${diskPartition.used}B",
             diskPartition.catalogue,
@@ -204,12 +208,13 @@ fun DiskPartitionItem(
                     ) {
                         Box(
                             modifier = Modifier
-                                .width(180.dp * (diskPartition.percent / 100f))
+                                .width((180 * diskPartition.percent / 100f).dp)
                                 .fillMaxHeight()
                                 .background(color)
+                                .clip(RoundedCornerShape(8.dp))
                         )
                         Text(
-                            "${diskPartition.percent / 100f}%",
+                            "${diskPartition.percent}%",
                             modifier = Modifier.align(Alignment.Center),
                             color = Color.White
                         )
