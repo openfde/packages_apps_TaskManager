@@ -55,61 +55,13 @@ import android.app.Instrumentation
 import android.content.Context
 import android.app.ActivityManager
 import android.app.ActivityManager.AppTask
-
+import androidx.lifecycle.ViewModel
+import com.fde.taskmanager.MainActivity.NavigationViewModel
 
 sealed class AppRoute(val route: String) {
     object Process : AppRoute("process")
     object Resource : AppRoute("resource")
     object FileSystem : AppRoute("file_system")
-}
-
-
-@RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
-@Composable
-fun NavigationView() {
-    val navController = rememberNavController()
-    val displayModeState = remember { mutableStateOf(DisplayMode.ALL_PROCESSES) }
-    val searchBarValue = remember { mutableStateOf("") }
-
-    // `isTitleBarHidden` should be synchronized with 
-    // `setWindowDecorationStatus` method in MainActivity
-    val isTitleBarHidden = remember { mutableStateOf(false) }
-    Column(modifier = Modifier.padding(top=if (isTitleBarHidden.value) 35.dp else 0.dp)) {
-        Row(
-            modifier = Modifier
-                .height(50.dp)
-                .fillMaxWidth()
-                .background(Color(0xFFF7F7F7)),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            if (isTitleBarHidden.value) {
-                Spacer(Modifier.width(20.dp))
-            } else {
-                LogoBar()
-            }
-            NavOuterBox(navController)
-            WindowButtonsBar(
-                isTitleBarHidden.value,
-                onDisplayModeChange = { displayModeState.value = it },
-                onSearchBarChange = { searchBarValue.value = it },
-                searchBarValue.value
-            )
-        }
-            NavHost(navController, startDestination = AppRoute.Process.route) {
-                composable(AppRoute.Process.route) {
-                    ProcessView(
-                        displayModeState.value, searchBarValue.value
-                    )
-                }
-                composable(AppRoute.Resource.route) {
-                    ResourceView()
-                }
-                composable(AppRoute.FileSystem.route) {
-                    FileSystemView()
-                }
-            }
-    }
 }
 
 @Composable
@@ -201,7 +153,7 @@ private fun simulateKeyPress(keyCode: Int) {
 
 @Composable
 fun WindowButtonsBar(
-    isTitleBarHidden: Boolean,
+    isToolbarHidden: Boolean,
     onDisplayModeChange: (DisplayMode) -> Unit,
     onSearchBarChange: (String) -> Unit,
     searchBarValue: String
@@ -343,7 +295,7 @@ fun WindowButtonsBar(
             contentDescription = null,
         )
 
-        if (!isTitleBarHidden) {
+        if (!isToolbarHidden) {
             // fullscreen
             Image(
                 painter = painterResource(id = R.drawable.window_max_button),
@@ -429,7 +381,7 @@ fun NavInnerBox(name: String, selected: Boolean, onClick: () -> Unit) {
 }
 
 @Composable
-fun NavOuterBox(navController: NavController) {
+fun NavOuterBox(navViewModel: NavigationViewModel) {
     val selectedItem = remember { mutableStateOf(AppRoute.Process.route) }
     val context = LocalContext.current
 
@@ -455,10 +407,11 @@ fun NavOuterBox(navController: NavController) {
                 name = context.getString(R.string.processes_tab),
                 selected = selectedItem.value == AppRoute.Process.route,
                 onClick = {
-                    navController.navigate(AppRoute.Process.route) {
-                        popUpTo(navController.graph.startDestinationId)
-                        launchSingleTop = true
-                    }
+                    // navController.navigate(AppRoute.Process.route) {
+                    //     popUpTo(navController.graph.startDestinationId)
+                    //     launchSingleTop = true
+                    // }
+                    navViewModel.navigateTo(AppRoute.Process.route)
                     selectedItem.value = AppRoute.Process.route
                 })
             VerticalDivider(
@@ -468,10 +421,11 @@ fun NavOuterBox(navController: NavController) {
                 name = context.getString(R.string.resources_tab),
                 selected = selectedItem.value == AppRoute.Resource.route,
                 onClick = {
-                    navController.navigate(AppRoute.Resource.route) {
-                        popUpTo(navController.graph.startDestinationId)
-                        launchSingleTop = true
-                    }
+                    // navController.navigate(AppRoute.Resource.route) {
+                    //     popUpTo(navController.graph.startDestinationId)
+                    //     launchSingleTop = true
+                    // }
+                    navViewModel.navigateTo(AppRoute.Resource.route)
                     selectedItem.value = AppRoute.Resource.route
                 })
             VerticalDivider(
@@ -481,10 +435,11 @@ fun NavOuterBox(navController: NavController) {
                 name = context.getString(R.string.filesystems_tab),
                 selected = selectedItem.value == AppRoute.FileSystem.route,
                 onClick = {
-                    navController.navigate(AppRoute.FileSystem.route) {
-                        popUpTo(navController.graph.startDestinationId)
-                        launchSingleTop = true
-                    }
+                    // navController.navigate(AppRoute.FileSystem.route) {
+                    //     popUpTo(navController.graph.startDestinationId)
+                    //     launchSingleTop = true
+                    // }
+                    navViewModel.navigateTo(AppRoute.FileSystem.route)
                     selectedItem.value = AppRoute.FileSystem.route
                 })
         }

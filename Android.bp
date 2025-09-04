@@ -49,6 +49,7 @@ android_app {
         "org.jetbrains.kotlinx_kotlinx-coroutines-core",
         "org.jetbrains.kotlinx_kotlinx-coroutines-android",
         "com.google.code.gson_gson",
+        "com.google.android.material_material",
         "ITaskManager",
         "SystemUISharedLib",
     ],
