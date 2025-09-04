@@ -132,11 +132,15 @@ class MainActivity : ComponentActivity() {
                         launchSingleTop = true
                     }
                 }
+            }
 
+            LaunchedEffect(displayModeViewModel) {
                 displayModeViewModel.displayModeChangeEvents.collect { displayMode ->
                     displayModeState.value = displayMode
                 }
+            }
 
+            LaunchedEffect(searchBarViewModel) {
                 searchBarViewModel.searchBarValueChangeEvents.collect { value ->
                     searchBarValueState.value = value
                 }
