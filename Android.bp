@@ -31,6 +31,7 @@ android_app {
     srcs: [
         "app/src/main/java/**/*.kt",
         "app/src/main/java/**/*.java",
+        "app/src/main/java/**/*.aidl",
         "app/src/main/aidl/android/openfde/ITaskManager.aidl"
     ],
     resource_dirs: [
