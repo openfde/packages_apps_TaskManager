@@ -1,0 +1,68 @@
+android_library_import {
+    name: "androidx.navigation_navigation-compose",
+    aars: ["app/libs/navigation-compose-2.9.3.aar"],
+}
+
+java_import {
+    name: "com.google.code.gson_gson",
+    jars: ["app/libs/gson-2.13.1.jar"],
+}
+
+java_import {
+    name: "org.jetbrains.kotlinx_kotlinx-coroutines-core",
+    jars: ["app/libs/kotlinx-coroutines-core-1.7.3.jar"],
+}
+
+java_import {
+    name: "org.jetbrains.kotlinx_kotlinx-coroutines-android",
+    jars: ["app/libs/kotlinx-coroutines-android-1.7.3.jar"],
+}
+
+java_library {
+    name: "ITaskManager",
+    srcs: [
+        "app/src/**/*.java",
+        "app/src/main/aidl/android/openfde/ITaskManager.aidl",
+    ],
+}
+
+android_app {
+    name: "TaskManager",
+    srcs: [
+        "app/src/main/java/**/*.kt",
+        "app/src/main/java/**/*.java",
+        "app/src/main/aidl/android/openfde/ITaskManager.aidl"
+    ],
+    resource_dirs: [
+        "app/src/main/res",
+    ],
+    static_libs: [
+        "androidx.core_core-ktx", 
+        "androidx.lifecycle_lifecycle-runtime-ktx",
+        "androidx.activity_activity-compose",
+        "androidx.compose.ui_ui",
+        "androidx.compose.ui_ui-graphics",
+        "androidx.compose.ui_ui-tooling-preview",
+        "androidx.compose.material3_material3",
+        "androidx.compose.runtime_runtime",
+        "androidx.navigation_navigation-compose",
+        "org.jetbrains.kotlinx_kotlinx-coroutines-core",
+        "org.jetbrains.kotlinx_kotlinx-coroutines-android",
+        "com.google.code.gson_gson",
+        "com.google.android.material_material",
+        "ITaskManager",
+        "SystemUISharedLib",
+    ],
+    manifest: "app/src/main/AndroidManifest.xml",
+
+    platform_apis: true,
+    system_ext_specific: true,
+    certificate: "platform",
+    privileged: true,
+    required: [
+        "privapp_whitelist_com.android.settings",
+    ],
+    optimize: {
+        enabled: false,
+    },
+}
