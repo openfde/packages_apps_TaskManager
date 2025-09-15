@@ -64,6 +64,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.DpOffset
+import androidx.compose.ui.util.fastCbrt
 import androidx.core.graphics.drawable.toBitmap
 
 import java.net.HttpURLConnection
@@ -112,6 +113,7 @@ fun TasksTableHeader(
 ) {
     val nameSortedReverseState = remember { mutableStateOf(false) }
     val idSortedReverseState = remember { mutableStateOf(false) }
+    val memorySortedReverseState = remember { mutableStateOf(false) }
     val context = LocalContext.current
     val vectorIconSize = 16.dp
 
@@ -151,7 +153,8 @@ fun TasksTableHeader(
                         }
                         .clickable(onClick = {
                             when (sortMode) {
-                                SortMode.BY_ID_SEQUENTIAL, SortMode.BY_ID_REVERSE -> {
+                                SortMode.BY_ID_SEQUENTIAL, SortMode.BY_ID_REVERSE,
+                                SortMode.BY_MEMORY_REVERSE, SortMode.BY_MEMORY_SEQUENTIAL -> {
                                     // 进一步看
                                     if (nameSortedReverseState.value) {
                                         // 名称顺序
@@ -238,7 +241,8 @@ fun TasksTableHeader(
                         }
                         .clickable(onClick = {
                             when (sortMode) {
-                                SortMode.BY_NAME_SEQUENTIAL, SortMode.BY_NAME_REVERSE -> {
+                                SortMode.BY_NAME_SEQUENTIAL, SortMode.BY_NAME_REVERSE,
+                                SortMode.BY_MEMORY_SEQUENTIAL,SortMode.BY_MEMORY_REVERSE -> {
                                     if (idSortedReverseState.value) {
                                         onSortModeChange(SortMode.BY_ID_SEQUENTIAL)
                                         idSortedReverseState.value = false
@@ -258,15 +262,55 @@ fun TasksTableHeader(
             TaskHeaderDivider(
                 clickAction = { onWeightChange(4, weights[4] + 0.05f) },
                 doubleClickAction = { onWeightChange(4, 0.09f) })
-            Text(
-                text = context.getString(R.string.memory),
+            Row(
                 modifier = Modifier
                     .weight(weights[5])
-                    .padding(horizontal = 10.dp),
-                fontSize = 14.sp,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+                    .padding(horizontal = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = context.getString(R.string.memory),
+                    modifier = Modifier
+                        .padding(horizontal = 10.dp),
+                    fontSize = 14.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Image(
+                    painter = painterResource(id = R.drawable.task_header_down_vector),
+                    modifier = Modifier
+                        .size(vectorIconSize)
+                        .graphicsLayer {
+                            rotationX = when (sortMode) {
+                                SortMode.BY_NAME_SEQUENTIAL,
+                                SortMode.BY_NAME_REVERSE,
+                                SortMode.BY_ID_SEQUENTIAL,
+                                SortMode.BY_ID_REVERSE,
+                                SortMode.BY_MEMORY_SEQUENTIAL -> 0f
+                                SortMode.BY_MEMORY_REVERSE -> 180f
+                            }
+                        }
+                        .clickable(onClick = {
+                            when (sortMode) {
+                                SortMode.BY_NAME_SEQUENTIAL, SortMode.BY_NAME_REVERSE,
+                                SortMode.BY_ID_SEQUENTIAL,SortMode.BY_ID_REVERSE -> {
+                                    if (memorySortedReverseState.value) {
+                                        onSortModeChange(SortMode.BY_MEMORY_SEQUENTIAL)
+                                        memorySortedReverseState.value = false
+                                    } else {
+                                        onSortModeChange(SortMode.BY_MEMORY_REVERSE)
+                                        memorySortedReverseState.value = true
+                                    }
+                                }
+
+                                SortMode.BY_MEMORY_SEQUENTIAL -> onSortModeChange(SortMode.BY_MEMORY_REVERSE)
+                                SortMode.BY_MEMORY_REVERSE -> onSortModeChange(SortMode.BY_MEMORY_SEQUENTIAL)
+                            }
+                        }),
+                    contentDescription = null
+                )
+            }
             TaskHeaderDivider(
                 clickAction = { onWeightChange(5, weights[5] + 0.05f) },
                 doubleClickAction = { onWeightChange(5, 0.09f) })
@@ -329,6 +373,7 @@ enum class DisplayMode {
 
 enum class SortMode {
     BY_NAME_SEQUENTIAL, BY_NAME_REVERSE, BY_ID_SEQUENTIAL, BY_ID_REVERSE,
+    BY_MEMORY_SEQUENTIAL, BY_MEMORY_REVERSE
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -421,7 +466,8 @@ fun ProcessView(displayMode: DisplayMode, searchBarValue: String) {
                     SortMode.BY_NAME_REVERSE -> taskInfoList.sortedByDescending { it.name }
                     SortMode.BY_ID_SEQUENTIAL -> taskInfoList.sortedBy { it.pid }
                     SortMode.BY_ID_REVERSE -> taskInfoList.sortedByDescending { it.pid }
-                    else -> taskInfoList
+                    SortMode.BY_MEMORY_SEQUENTIAL -> taskInfoList.sortedBy { it.rss }
+                    SortMode.BY_MEMORY_REVERSE ->  taskInfoList.sortedByDescending{ it.rss }
                 }, key = { it.pid }) {
                 TaskItem(
                     it,
