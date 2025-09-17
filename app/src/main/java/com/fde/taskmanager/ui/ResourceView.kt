@@ -1,6 +1,7 @@
 package com.fde.taskmanager.ui
 
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
@@ -213,8 +214,17 @@ fun DiskAnnotationsLine(
 @Composable
 fun ResourceView() {
     val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
+
+    val cpuCount = TaskManagerBinder.getEachCPUPercent(10).size
+    val allCpuColors = context.resources.getIntArray(R.array.cpu_color_array).map { Color(it) }
+    val cpuColors = if (cpuCount <= allCpuColors.size) {
+        allCpuColors.take(cpuCount)
+    } else {
+        List(cpuCount) { index -> allCpuColors[index % allCpuColors.size] }
+    }
     val cpuPercentState = remember {
-        List(4) { mutableStateListOf<Float>() }.toMutableStateList()
+        List(cpuCount) { mutableStateListOf<Float>() }.toMutableStateList()
     }
     val memoryAndSwapState = remember {
         List(2) { mutableStateListOf<Float>() }.toMutableStateList()
@@ -225,8 +235,7 @@ fun ResourceView() {
     val diskReadAndWriteState = remember {
         List(2) { mutableStateListOf<Float>() }.toMutableStateList()
     }
-    val context = LocalContext.current
-    val cpuColors = context.resources.getIntArray(R.array.cpu_color_array).map { Color(it) }
+
     val memoryAndSwapColors =
         context.resources.getIntArray(R.array.memory_swap_color_array).map { Color(it) }
     val networkColors = context.resources.getIntArray(R.array.network_color_array).map { Color(it) }
@@ -236,19 +245,18 @@ fun ResourceView() {
     val currentMemoryAndSwapCapcityState = remember { mutableStateListOf<Float>(0f, 0f) }
     val currentNetworkAnnotationsState = remember { mutableStateListOf<String>("", "") }
     val currentDiskAnnotationsState = remember { mutableStateListOf<String>("", "") }
-    val initialLoad = remember { mutableStateOf(false) }
     val delayGap: Long = 1000
     Column(
         modifier = Modifier.fillMaxWidth().verticalScroll((rememberScrollState()))
     ) {
         FoldableBox("CPU") {
             LaunchedEffect(Unit) {
+
                 coroutineScope.launch {
                     while (true) {
 //                1
                         val eachCPUPercent = TaskManagerBinder.getEachCPUPercent(200) // [0,1,2,3]
                         currentCPUAnnotationsState.clear()
-                        currentMemoryAndSwapAnnotationsState.clear()
                         eachCPUPercent.forEachIndexed { index, it ->
                             if (cpuPercentState[index].size > 100) cpuPercentState[index].removeFirst()
                             cpuPercentState[index].add(it)
@@ -279,6 +287,7 @@ fun ResourceView() {
                     while (true) {
 //                2
                         val memoryAndMemoryInfo = TaskManagerBinder.getMemoryAndSwap()
+                        currentMemoryAndSwapAnnotationsState.clear()
                         currentMemoryAndSwapAnnotationsState.add(
                             "${context.getString(R.string.memory_usage)}: %03.1f%%    %s/%s    ${
                                 context.getString(
