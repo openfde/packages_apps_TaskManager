@@ -15,7 +15,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
-import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateListOf
@@ -34,10 +33,7 @@ import com.fde.taskmanager.R
 import com.fde.taskmanager.TaskManagerBinder
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import android.util.Log
-import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.runtime.toMutableStateList
-import androidx.compose.ui.input.pointer.pointerInput
 
 @Composable
 fun FileSystemView() {
@@ -101,22 +97,7 @@ fun DiskPartitionsTableHeader(diskHeaderWeights: MutableList<Float>) {
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            VerticalDivider(
-                modifier = Modifier.height(18.dp).pointerInput(Unit) {
-                    detectDragGestures { change, dragAmount ->
-                        change.consume()
-                        val delta = dragAmount.x / 200
-                        val targetIndex = 0
-                        for (index in diskHeaderWeights.indices) {
-                            if(index == targetIndex) continue
-                            val eachDelta = delta / (diskHeaderWeights.size - targetIndex)
-                            if (diskHeaderWeights[index] - eachDelta < 0f) return@detectDragGestures
-                            diskHeaderWeights[index] -= eachDelta
-                        }
-                        diskHeaderWeights[targetIndex] += delta
-                    }
-                }, color = Color(0x0D000000)
-            )
+            HeaderDivider(0,diskHeaderWeights)
             Text(
                 text = context.getString(R.string.catalogue),
                 modifier = Modifier
@@ -126,25 +107,7 @@ fun DiskPartitionsTableHeader(diskHeaderWeights: MutableList<Float>) {
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            VerticalDivider(
-                modifier = Modifier
-                    .height(18.dp)
-                    .pointerInput(Unit) {
-                        detectDragGestures { change, dragAmount ->
-                            change.consume()
-                            val delta = dragAmount.x / 200
-                            val targetIndex = 1
-                            for (index in diskHeaderWeights.indices) {
-                                if (index < targetIndex) continue
-                                val eachDelta = delta / (diskHeaderWeights.size - targetIndex)
-                                if (diskHeaderWeights[index] - eachDelta < 0f) return@detectDragGestures
-                                diskHeaderWeights[index] -= eachDelta
-                            }
-                            diskHeaderWeights[targetIndex] += delta
-                        }
-                    },
-                color = Color(0x0D000000)
-            )
+            HeaderDivider(1,diskHeaderWeights)
             Text(
                 text = context.getString(R.string.device),
                 modifier = Modifier
@@ -154,22 +117,7 @@ fun DiskPartitionsTableHeader(diskHeaderWeights: MutableList<Float>) {
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            VerticalDivider(
-                modifier = Modifier.height(18.dp).pointerInput(Unit) {
-                    detectDragGestures { change, dragAmount ->
-                        change.consume()
-                        val delta = dragAmount.x / 200
-                        val targetIndex = 2
-                        for (index in diskHeaderWeights.indices) {
-                            if(index < targetIndex) continue
-                            val eachDelta = delta / (diskHeaderWeights.size - targetIndex)
-                            if (diskHeaderWeights[index] - eachDelta < 0f) return@detectDragGestures
-                            diskHeaderWeights[index] -= eachDelta
-                        }
-                        diskHeaderWeights[targetIndex] += delta
-                    }
-                }, color = Color(0x0D000000)
-            )
+            HeaderDivider(2,diskHeaderWeights)
             Text(
                 text = context.getString(R.string.type),
                 modifier = Modifier
@@ -179,22 +127,7 @@ fun DiskPartitionsTableHeader(diskHeaderWeights: MutableList<Float>) {
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            VerticalDivider(
-                modifier = Modifier.height(18.dp).pointerInput(Unit) {
-                    detectDragGestures { change, dragAmount ->
-                        change.consume()
-                        val delta = dragAmount.x / 200
-                        val targetIndex = 3
-                        for (index in diskHeaderWeights.indices) {
-                            if(index == targetIndex) continue
-                            val eachDelta = delta / (diskHeaderWeights.size - targetIndex)
-                            if (diskHeaderWeights[index] - eachDelta < 0f) return@detectDragGestures
-                            diskHeaderWeights[index] -= eachDelta
-                        }
-                        diskHeaderWeights[targetIndex] += delta
-                    }
-                }, color = Color(0x0D000000)
-            )
+            HeaderDivider(3,diskHeaderWeights)
             Text(
                 text = context.getString(R.string.total_storage),
                 modifier = Modifier
@@ -204,22 +137,7 @@ fun DiskPartitionsTableHeader(diskHeaderWeights: MutableList<Float>) {
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            VerticalDivider(
-                modifier = Modifier.height(18.dp).pointerInput(Unit) {
-                    detectDragGestures { change, dragAmount ->
-                        change.consume()
-                        val delta = dragAmount.x / 200
-                        val targetIndex = 4
-                        for (index in diskHeaderWeights.indices) {
-                            if(index == targetIndex) continue
-                            val eachDelta = delta / (diskHeaderWeights.size - targetIndex)
-                            if (diskHeaderWeights[index] - eachDelta < 0f) return@detectDragGestures
-                            diskHeaderWeights[index] -= eachDelta
-                        }
-                        diskHeaderWeights[targetIndex] += delta
-                    }
-                }, color = Color(0x0D000000)
-            )
+            HeaderDivider(4,diskHeaderWeights)
             Text(
                 text = context.getString(R.string.available_storage),
                 modifier = Modifier

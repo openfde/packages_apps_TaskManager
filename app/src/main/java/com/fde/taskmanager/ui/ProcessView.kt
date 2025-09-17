@@ -4,11 +4,10 @@ import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
 import android.graphics.drawable.Drawable
 import android.util.Base64
-import androidx.collection.MutableFloatList
-import androidx.collection.mutableFloatListOf
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -64,52 +63,38 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.DpOffset
-import androidx.compose.ui.util.fastCbrt
 import androidx.core.graphics.drawable.toBitmap
 
 import java.net.HttpURLConnection
 import java.net.URL
-import java.io.BufferedReader
-import java.io.InputStreamReader
+
 
 
 
 @Composable
-fun TaskHeaderDivider(
-    clickAction: () -> Unit, doubleClickAction: () -> Unit
-) {
+fun HeaderDivider(targetIndex: Int, weights: MutableList<Float>) {
     VerticalDivider(
-        modifier = Modifier
-            .height(18.dp)
-            .pointerInput(Unit) {
-                var lastClickTime = 0L
-                awaitPointerEventScope {
-                    while (true) {
-                        val event = awaitPointerEvent()/*
-                        if (event.type == PointerEventType.Press) {
-                            val currentTime = System.currentTimeMillis()
-                            if (currentTime - lastClickTime < 300) {
-                                doubleClickAction()
-                            } else {
-                                clickAction()
-                            }
-                            lastClickTime = currentTime
-                        }
-                        */
-                    }
+        modifier = Modifier.height(18.dp).pointerInput(Unit) {
+            detectDragGestures { change, dragAmount ->
+                change.consume()
+                val delta = dragAmount.x / 200
+                for (index in weights.indices) {
+                    if(index < targetIndex) continue
+                    val eachDelta = delta / (weights.size - targetIndex)
+                    if (weights[index] - eachDelta < 0f) return@detectDragGestures
+                    weights[index] -= eachDelta
                 }
+                weights[targetIndex] += delta
             }
-
+        }, color = Color(0x0D000000)
     )
 }
-
 
 @Composable
 fun TasksTableHeader(
     sortMode: SortMode,
     onSortModeChange: (SortMode) -> Unit,
-    weights: MutableFloatList,
-    onWeightChange: (Int, Float) -> Unit
+    weights: MutableList<Float>
 ) {
     val nameSortedReverseState = remember { mutableStateOf(false) }
     val idSortedReverseState = remember { mutableStateOf(false) }
@@ -173,9 +158,7 @@ fun TasksTableHeader(
                     contentDescription = null,
                 )
             }
-            TaskHeaderDivider(
-                clickAction = { onWeightChange(0, weights[0] + 0.05f) },
-                doubleClickAction = { onWeightChange(0, 0.23f) })
+            HeaderDivider(0, weights)
             Text(
                 text = context.getString(R.string.user),
                 modifier = Modifier
@@ -185,9 +168,7 @@ fun TasksTableHeader(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            TaskHeaderDivider(
-                clickAction = { onWeightChange(1, weights[1] + 0.05f) },
-                doubleClickAction = { onWeightChange(0, 0.08f) })
+            HeaderDivider(1, weights)
             Text(
                 text = context.getString(R.string.virtual_memory),
                 modifier = Modifier
@@ -197,9 +178,7 @@ fun TasksTableHeader(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            TaskHeaderDivider(
-                clickAction = { onWeightChange(2, weights[2] + 0.05f) },
-                doubleClickAction = { onWeightChange(0, 0.09f) })
+            HeaderDivider(2,weights)
             Text(
                 text = "% CPU",
                 modifier = Modifier
@@ -209,9 +188,7 @@ fun TasksTableHeader(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            TaskHeaderDivider(
-                clickAction = { onWeightChange(3, weights[3] + 0.05f) },
-                doubleClickAction = { onWeightChange(3, 0.09f) })
+            HeaderDivider(3,weights)
             Row(
                 modifier = Modifier
                     .weight(weights[4])
@@ -259,9 +236,7 @@ fun TasksTableHeader(
                     contentDescription = null
                 )
             }
-            TaskHeaderDivider(
-                clickAction = { onWeightChange(4, weights[4] + 0.05f) },
-                doubleClickAction = { onWeightChange(4, 0.09f) })
+            HeaderDivider(4, weights)
             Row(
                 modifier = Modifier
                     .weight(weights[5])
@@ -311,9 +286,7 @@ fun TasksTableHeader(
                     contentDescription = null
                 )
             }
-            TaskHeaderDivider(
-                clickAction = { onWeightChange(5, weights[5] + 0.05f) },
-                doubleClickAction = { onWeightChange(5, 0.09f) })
+            HeaderDivider(5,weights)
             Text(
                 text = context.getString(R.string.disk_read_storage),
                 modifier = Modifier
@@ -323,9 +296,7 @@ fun TasksTableHeader(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            TaskHeaderDivider(
-                clickAction = { onWeightChange(6, weights[6] + 0.05f) },
-                doubleClickAction = { onWeightChange(6, 0.09f) })
+            HeaderDivider(6,weights)
             Text(
                 text = context.getString(R.string.disk_write_storage),
                 modifier = Modifier
@@ -335,9 +306,7 @@ fun TasksTableHeader(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            TaskHeaderDivider(
-                clickAction = { onWeightChange(7, weights[7] + 0.05f) },
-                doubleClickAction = { onWeightChange(7, 0.09f) })
+            HeaderDivider(7,weights)
             Text(
                 text = context.getString(R.string.disk_read),
                 modifier = Modifier
@@ -347,9 +316,7 @@ fun TasksTableHeader(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            TaskHeaderDivider(
-                clickAction = { onWeightChange(8, weights[8] + 0.05f) },
-                doubleClickAction = { onWeightChange(8, 0.09f) })
+            HeaderDivider(8,weights)
             Text(
                 text = context.getString(R.string.disk_write),
                 modifier = Modifier
@@ -386,8 +353,8 @@ fun ProcessView(displayMode: DisplayMode, searchBarValue: String) {
     val sortModeState = remember { mutableStateOf(SortMode.BY_NAME_SEQUENTIAL) }
     val appResponseState = remember { mutableStateOf<Adapters.AppsResponse?>(null) }
     val taskHeaderItemWeightsState = remember {
-        mutableFloatListOf(
-            0.23f, 0.08f, 0.09f, 0.09f, 0.09f, 0.09f, 0.09f, 0.09f, 0.09f, 0.09f
+        mutableStateListOf<Float>(
+            0.20f, 0.08f, 0.09f, 0.09f, 0.09f, 0.09f, 0.09f, 0.09f, 0.09f, 0.09f
         )
     }
 
@@ -456,9 +423,7 @@ fun ProcessView(displayMode: DisplayMode, searchBarValue: String) {
     Column(modifier = Modifier.background(Color(0xFFFCFDFF))) {
         TasksTableHeader(sortModeState.value, onSortModeChange = {
             sortModeState.value = it
-        }, taskHeaderItemWeightsState, onWeightChange = { index, value ->
-            taskHeaderItemWeightsState[index] = value
-        })
+        }, taskHeaderItemWeightsState)
         LazyColumn {
             items(
                 when (sortModeState.value) {
@@ -528,7 +493,7 @@ fun TaskItem(
     userName: String,
     searchBarValue: String,
     appResponse: Adapters.AppsResponse?,
-    weights: MutableFloatList,
+    weights: MutableList<Float>,
 ) {
     val context = LocalContext.current
     val floatingMenuPosition = remember { mutableStateOf(Offset.Zero) }
