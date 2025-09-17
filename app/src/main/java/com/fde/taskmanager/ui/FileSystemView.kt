@@ -185,6 +185,9 @@ fun DiskPartitionItem(
             diskPartition.available
         )
         diskHeaderWeights.forEachIndexed { index, taskItemWeight ->
+            val proportion1 = diskPartition.percent / 100f
+            val proportion2 = 1 - proportion1
+
             Row(
                 modifier = Modifier
                     .weight(taskItemWeight)
@@ -199,20 +202,28 @@ fun DiskPartitionItem(
                     overflow = TextOverflow.Ellipsis,
                 )
                 if (index == 0) {
-                    Box(
-                        modifier = Modifier
-                            .width(180.dp)
-                            .height(22.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(Color(0xffEBEBEB))
+                    Box(modifier = Modifier
+                        .width(180.dp)
+                        .height(22.dp)
+                        .clip(RoundedCornerShape(3.dp))
+                        .background(Color(0xffEBEBEB))
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .width((180 * diskPartition.percent / 100f).dp)
-                                .fillMaxHeight()
-                                .background(color)
-                                .clip(RoundedCornerShape(8.dp))
-                        )
+                        Row {
+                            if(proportion1 != 0f) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxHeight()
+                                        .weight(proportion1)
+                                        .background(color)
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxHeight()
+                                        .weight(proportion2)
+                                        .background(Color(0xffEBEBEB))
+                                )
+                            }
+                        }
                         Text(
                             "${diskPartition.percent}%",
                             modifier = Modifier.align(Alignment.Center),
