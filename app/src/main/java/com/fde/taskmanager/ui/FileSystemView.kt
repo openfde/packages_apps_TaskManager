@@ -15,7 +15,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
-import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateListOf
@@ -34,7 +33,7 @@ import com.fde.taskmanager.R
 import com.fde.taskmanager.TaskManagerBinder
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import android.util.Log
+import androidx.compose.runtime.toMutableStateList
 
 @Composable
 fun FileSystemView() {
@@ -45,9 +44,11 @@ fun FileSystemView() {
     val context = LocalContext.current
     val diskPartitionColors =
         context.resources.getIntArray(R.array.disk_partition_colors).map { Color(it) }
-    val diskHeaderWeights = listOf<Float>(
-        166f, 266f, 199f, 199f, 166f, 166f,
-    ).map { it / 1000f }
+    val diskHeaderWeightsMini = listOf<Float>(0.14f, 0.23f, 0.17f, 0.17f, 0.14f, 0.14f)
+    val diskHeaderWeights = remember {
+        diskHeaderWeightsMini.toMutableStateList()
+    }
+
 
     LaunchedEffect(Unit) {
         coroutineScope.launch {
@@ -75,7 +76,7 @@ fun FileSystemView() {
 }
 
 @Composable
-fun DiskPartitionsTableHeader(diskHeaderWeights: List<Float>) {
+fun DiskPartitionsTableHeader(diskHeaderWeights: MutableList<Float>) {
     HorizontalDivider(modifier = Modifier.fillMaxWidth(), color = Color(0xFFE8E9EB))
     Row(
         modifier = Modifier
@@ -96,9 +97,7 @@ fun DiskPartitionsTableHeader(diskHeaderWeights: List<Float>) {
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            VerticalDivider(
-                modifier = Modifier.height(18.dp), color = Color(0x0D000000)
-            )
+            HeaderDivider(0,diskHeaderWeights)
             Text(
                 text = context.getString(R.string.catalogue),
                 modifier = Modifier
@@ -108,9 +107,7 @@ fun DiskPartitionsTableHeader(diskHeaderWeights: List<Float>) {
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            VerticalDivider(
-                modifier = Modifier.height(18.dp), color = Color(0x0D000000)
-            )
+            HeaderDivider(1,diskHeaderWeights)
             Text(
                 text = context.getString(R.string.device),
                 modifier = Modifier
@@ -120,9 +117,7 @@ fun DiskPartitionsTableHeader(diskHeaderWeights: List<Float>) {
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            VerticalDivider(
-                modifier = Modifier.height(18.dp), color = Color(0x0D000000)
-            )
+            HeaderDivider(2,diskHeaderWeights)
             Text(
                 text = context.getString(R.string.type),
                 modifier = Modifier
@@ -132,9 +127,7 @@ fun DiskPartitionsTableHeader(diskHeaderWeights: List<Float>) {
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            VerticalDivider(
-                modifier = Modifier.height(18.dp), color = Color(0x0D000000)
-            )
+            HeaderDivider(3,diskHeaderWeights)
             Text(
                 text = context.getString(R.string.total_storage),
                 modifier = Modifier
@@ -144,9 +137,7 @@ fun DiskPartitionsTableHeader(diskHeaderWeights: List<Float>) {
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            VerticalDivider(
-                modifier = Modifier.height(18.dp), color = Color(0x0D000000)
-            )
+            HeaderDivider(4,diskHeaderWeights)
             Text(
                 text = context.getString(R.string.available_storage),
                 modifier = Modifier
@@ -173,9 +164,6 @@ fun DiskPartitionItem(
             .clickable(onClick = {}),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        LaunchedEffect(Unit) {
-            Log.d("TaskManager","DiskPartition view is launched")
-        }
         val m = listOf<String>(
             "${diskPartition.used}B",
             diskPartition.catalogue,
@@ -185,6 +173,9 @@ fun DiskPartitionItem(
             diskPartition.available
         )
         diskHeaderWeights.forEachIndexed { index, taskItemWeight ->
+            val proportion1 = diskPartition.percent / 100f
+            val proportion2 = 1 - proportion1
+
             Row(
                 modifier = Modifier
                     .weight(taskItemWeight)
@@ -199,20 +190,28 @@ fun DiskPartitionItem(
                     overflow = TextOverflow.Ellipsis,
                 )
                 if (index == 0) {
-                    Box(
-                        modifier = Modifier
-                            .width(180.dp)
-                            .height(22.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(Color(0xffEBEBEB))
+                    Box(modifier = Modifier
+                        .width(180.dp)
+                        .height(22.dp)
+                        .clip(RoundedCornerShape(3.dp))
+                        .background(Color(0xffEBEBEB))
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .width((180 * diskPartition.percent / 100f).dp)
-                                .fillMaxHeight()
-                                .background(color)
-                                .clip(RoundedCornerShape(8.dp))
-                        )
+                        Row {
+                            if(proportion1 != 0f) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxHeight()
+                                        .weight(proportion1)
+                                        .background(color)
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxHeight()
+                                        .weight(proportion2)
+                                        .background(Color(0xffEBEBEB))
+                                )
+                            }
+                        }
                         Text(
                             "${diskPartition.percent}%",
                             modifier = Modifier.align(Alignment.Center),
