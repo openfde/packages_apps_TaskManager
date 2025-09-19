@@ -78,6 +78,9 @@ fun HeaderDivider(targetIndex: Int, weights: MutableList<Float>) {
             detectDragGestures { change, dragAmount ->
                 change.consume()
                 val delta = dragAmount.x / 200
+                if(weights[targetIndex] + delta > 0.5f ||
+                    weights[targetIndex] + delta < 0.1f)
+                    return@detectDragGestures
                 for (index in weights.indices) {
                     if(index < targetIndex) continue
                     val eachDelta = delta / (weights.size - targetIndex)
