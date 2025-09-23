@@ -68,28 +68,38 @@ import androidx.core.graphics.drawable.toBitmap
 import java.net.HttpURLConnection
 import java.net.URL
 
-
-
+import androidx.compose.ui.input.pointer.pointerHoverIcon
+import androidx.compose.ui.layout.onSizeChanged
+import android.view.PointerIcon as PointerIcon1
+import androidx.compose.ui.input.pointer.PointerIcon as PointerIcon2
 
 @Composable
-fun HeaderDivider(targetIndex: Int, weights: MutableList<Float>) {
+fun HeaderDivider(targetIndex: Int,
+        weights: MutableList<Float>,
+        headerWidth: Int) {
+    val context = LocalContext.current
+    val icon: PointerIcon1 = PointerIcon1.getSystemIcon(context, PointerIcon1.TYPE_HORIZONTAL_DOUBLE_ARROW)
     VerticalDivider(
-        modifier = Modifier.height(18.dp).pointerInput(Unit) {
-            detectDragGestures { change, dragAmount ->
-                change.consume()
-                val delta = dragAmount.x / 200
-                if(weights[targetIndex] + delta > 0.5f ||
-                    weights[targetIndex] + delta < 0.1f)
-                    return@detectDragGestures
-                for (index in weights.indices) {
-                    if(index < targetIndex) continue
-                    val eachDelta = delta / (weights.size - targetIndex)
-                    if (weights[index] - eachDelta < 0f) return@detectDragGestures
-                    weights[index] -= eachDelta
+        modifier = Modifier
+            .pointerHoverIcon(PointerIcon2(icon))
+            .height(21.dp)
+            .pointerInput(Unit) {
+                detectDragGestures { change, dragAmount ->
+                    change.consume()
+                    val delta = dragAmount.x.toDp() / headerWidth.toDp()
+                    if (weights[targetIndex] + delta > 0.5f ||
+                        weights[targetIndex] + delta < 0.1f
+                    )
+                        return@detectDragGestures
+                    for (index in weights.indices) {
+                        if (index < targetIndex) continue
+                        val eachDelta = delta / (weights.size - targetIndex)
+                        if (weights[index] - eachDelta < 0f) return@detectDragGestures
+                        weights[index] -= eachDelta
+                    }
+                    weights[targetIndex] += delta
                 }
-                weights[targetIndex] += delta
-            }
-        }, color = Color(0x0D000000)
+            }, color = Color(0x0D000000)
     )
 }
 
@@ -104,18 +114,24 @@ fun TasksTableHeader(
     val memorySortedReverseState = remember { mutableStateOf(false) }
     val context = LocalContext.current
     val vectorIconSize = 16.dp
+    val headerWidthState = remember { mutableStateOf(0) }
 
     HorizontalDivider(modifier = Modifier.fillMaxWidth(), color = Color(0xFFE8E9EB))
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 5.dp, horizontal = 10.dp)
+            .onSizeChanged({ it->
+                headerWidthState.value = it.width
+            })
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically, modifier = Modifier.height(24.dp)
         ) {
             Row(
-                modifier = Modifier.weight(weights[0]).padding(end=8.dp),
+                modifier = Modifier
+                    .weight(weights[0])
+                    .padding(end = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
@@ -161,7 +177,7 @@ fun TasksTableHeader(
                     contentDescription = null,
                 )
             }
-            HeaderDivider(0, weights)
+            HeaderDivider(0, weights,headerWidthState.value)
             Text(
                 text = context.getString(R.string.user),
                 modifier = Modifier
@@ -171,7 +187,7 @@ fun TasksTableHeader(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            HeaderDivider(1, weights)
+            HeaderDivider(1, weights,headerWidthState.value)
             Text(
                 text = context.getString(R.string.virtual_memory),
                 modifier = Modifier
@@ -181,7 +197,7 @@ fun TasksTableHeader(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            HeaderDivider(2,weights)
+            HeaderDivider(2,weights,headerWidthState.value)
             Text(
                 text = "% CPU",
                 modifier = Modifier
@@ -191,7 +207,7 @@ fun TasksTableHeader(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            HeaderDivider(3,weights)
+            HeaderDivider(3,weights,headerWidthState.value)
             Row(
                 modifier = Modifier
                     .weight(weights[4])
@@ -222,7 +238,7 @@ fun TasksTableHeader(
                         .clickable(onClick = {
                             when (sortMode) {
                                 SortMode.BY_NAME_SEQUENTIAL, SortMode.BY_NAME_REVERSE,
-                                SortMode.BY_MEMORY_SEQUENTIAL,SortMode.BY_MEMORY_REVERSE -> {
+                                SortMode.BY_MEMORY_SEQUENTIAL, SortMode.BY_MEMORY_REVERSE -> {
                                     if (idSortedReverseState.value) {
                                         onSortModeChange(SortMode.BY_ID_SEQUENTIAL)
                                         idSortedReverseState.value = false
@@ -239,7 +255,7 @@ fun TasksTableHeader(
                     contentDescription = null
                 )
             }
-            HeaderDivider(4, weights)
+            HeaderDivider(4, weights,headerWidthState.value)
             Row(
                 modifier = Modifier
                     .weight(weights[5])
@@ -266,13 +282,14 @@ fun TasksTableHeader(
                                 SortMode.BY_ID_SEQUENTIAL,
                                 SortMode.BY_ID_REVERSE,
                                 SortMode.BY_MEMORY_SEQUENTIAL -> 0f
+
                                 SortMode.BY_MEMORY_REVERSE -> 180f
                             }
                         }
                         .clickable(onClick = {
                             when (sortMode) {
                                 SortMode.BY_NAME_SEQUENTIAL, SortMode.BY_NAME_REVERSE,
-                                SortMode.BY_ID_SEQUENTIAL,SortMode.BY_ID_REVERSE -> {
+                                SortMode.BY_ID_SEQUENTIAL, SortMode.BY_ID_REVERSE -> {
                                     if (memorySortedReverseState.value) {
                                         onSortModeChange(SortMode.BY_MEMORY_SEQUENTIAL)
                                         memorySortedReverseState.value = false
@@ -289,7 +306,7 @@ fun TasksTableHeader(
                     contentDescription = null
                 )
             }
-            HeaderDivider(5,weights)
+            HeaderDivider(5,weights,headerWidthState.value)
             Text(
                 text = context.getString(R.string.disk_read_storage),
                 modifier = Modifier
@@ -299,7 +316,7 @@ fun TasksTableHeader(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            HeaderDivider(6,weights)
+            HeaderDivider(6,weights,headerWidthState.value)
             Text(
                 text = context.getString(R.string.disk_write_storage),
                 modifier = Modifier
@@ -309,7 +326,7 @@ fun TasksTableHeader(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            HeaderDivider(7,weights)
+            HeaderDivider(7,weights,headerWidthState.value)
             Text(
                 text = context.getString(R.string.disk_read),
                 modifier = Modifier
@@ -319,7 +336,7 @@ fun TasksTableHeader(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            HeaderDivider(8,weights)
+            HeaderDivider(8,weights,headerWidthState.value)
             Text(
                 text = context.getString(R.string.disk_write),
                 modifier = Modifier

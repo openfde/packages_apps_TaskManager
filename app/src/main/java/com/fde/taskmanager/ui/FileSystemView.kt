@@ -18,6 +18,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -34,6 +35,7 @@ import com.fde.taskmanager.TaskManagerBinder
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.toMutableStateList
+import androidx.compose.ui.layout.onSizeChanged
 
 @Composable
 fun FileSystemView() {
@@ -77,11 +79,15 @@ fun FileSystemView() {
 
 @Composable
 fun DiskPartitionsTableHeader(diskHeaderWeights: MutableList<Float>) {
+    val headerWidthState = remember { mutableStateOf(0) }
     HorizontalDivider(modifier = Modifier.fillMaxWidth(), color = Color(0xFFE8E9EB))
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 5.dp, horizontal = 10.dp)
+            .onSizeChanged({
+                headerWidthState.value = it.width
+            })
     ) {
         val context = LocalContext.current
 
@@ -97,7 +103,7 @@ fun DiskPartitionsTableHeader(diskHeaderWeights: MutableList<Float>) {
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            HeaderDivider(0,diskHeaderWeights)
+            HeaderDivider(0,diskHeaderWeights,headerWidthState.value)
             Text(
                 text = context.getString(R.string.catalogue),
                 modifier = Modifier
@@ -107,7 +113,7 @@ fun DiskPartitionsTableHeader(diskHeaderWeights: MutableList<Float>) {
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            HeaderDivider(1,diskHeaderWeights)
+            HeaderDivider(1,diskHeaderWeights,headerWidthState.value)
             Text(
                 text = context.getString(R.string.device),
                 modifier = Modifier
@@ -117,7 +123,7 @@ fun DiskPartitionsTableHeader(diskHeaderWeights: MutableList<Float>) {
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            HeaderDivider(2,diskHeaderWeights)
+            HeaderDivider(2,diskHeaderWeights,headerWidthState.value)
             Text(
                 text = context.getString(R.string.type),
                 modifier = Modifier
@@ -127,7 +133,7 @@ fun DiskPartitionsTableHeader(diskHeaderWeights: MutableList<Float>) {
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            HeaderDivider(3,diskHeaderWeights)
+            HeaderDivider(3,diskHeaderWeights,headerWidthState.value)
             Text(
                 text = context.getString(R.string.total_storage),
                 modifier = Modifier
@@ -137,7 +143,7 @@ fun DiskPartitionsTableHeader(diskHeaderWeights: MutableList<Float>) {
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            HeaderDivider(4,diskHeaderWeights)
+            HeaderDivider(4,diskHeaderWeights,headerWidthState.value)
             Text(
                 text = context.getString(R.string.available_storage),
                 modifier = Modifier
