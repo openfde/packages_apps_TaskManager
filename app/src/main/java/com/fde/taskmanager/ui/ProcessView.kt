@@ -4,6 +4,7 @@ import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
 import android.graphics.drawable.Drawable
 import android.util.Base64
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -49,6 +50,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Slider
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
@@ -121,7 +123,7 @@ fun TasksTableHeader(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 5.dp, horizontal = 10.dp)
-            .onSizeChanged({ it->
+            .onSizeChanged({ it ->
                 headerWidthState.value = it.width
             })
     ) {
@@ -377,6 +379,8 @@ fun ProcessView(displayMode: DisplayMode, searchBarValue: String) {
             0.20f, 0.08f, 0.09f, 0.09f, 0.09f, 0.09f, 0.09f, 0.09f, 0.09f, 0.09f
         )
     }
+    val drawablesMap = remember { mutableStateMapOf<String, Drawable?>() }
+    val bitmapsMap = remember { mutableStateMapOf<String, ImageBitmap?>() }
 
     LaunchedEffect(Unit) {
         if (!initialLoad.value) {
@@ -460,7 +464,9 @@ fun ProcessView(displayMode: DisplayMode, searchBarValue: String) {
                     userName,
                     searchBarValue,
                     appResponseState.value,
-                    taskHeaderItemWeightsState
+                    taskHeaderItemWeightsState,
+                    drawablesMap,
+                    bitmapsMap
                 )
             }
         }
@@ -514,60 +520,68 @@ fun TaskItem(
     searchBarValue: String,
     appResponse: Adapters.AppsResponse?,
     weights: MutableList<Float>,
+    drawablesMap: MutableMap<String, Drawable?>,
+    bitmapsMap: MutableMap<String, ImageBitmap?>
 ) {
     val context = LocalContext.current
     val floatingMenuPosition = remember { mutableStateOf(Offset.Zero) }
     val floatingMenuExpanded = remember { mutableStateOf(false) }
     val floatingPropertiesWindowShow = remember { mutableStateOf(false) }
     val floatingPriorityModificationWindowShow = remember { mutableStateOf(false) }
-    var priorityModificationSliderValue = remember { mutableIntStateOf(taskInfo.nice) }
+    val priorityModificationSliderValue = remember { mutableIntStateOf(taskInfo.nice) }
 
-
-    var iconBitmap: ImageBitmap? = null
-    var iconDrawable: Drawable? = null
-    var iconType: IconType? = null
     val iconSize = 24.dp
 
-    when {
-        taskInfo.isAndroidApp -> {
-            // 首先尝试使用packageManager获取图标
-            val pm: PackageManager = context.packageManager
-            try {
-                iconDrawable = pm.getApplicationIcon(taskInfo.name.toString())
-                iconType = IconType.ANDROID_DRAWABLE_ICON
-            } catch (e: PackageManager.NameNotFoundException) {
-                // 再尝试用local图标
-                val bitMap =
-                    TaskManagerBinder.getIconBitmapByTaskName(taskInfo.name.toString(), true)
-                if (bitMap != null) {
-                    iconBitmap = bitMap
-                    iconType = IconType.ANDROID_BITMAP_ICON
+    val (iconDrawable,iconBitmap, iconType) =
+        remember(taskInfo.name, taskInfo.isAndroidApp) {
+            if(taskInfo.isAndroidApp) {
+                try {
+                    val iconType = IconType.ANDROID_DRAWABLE_ICON
+                    if(!drawablesMap.containsKey(taskInfo.name.toString())) {
+                        val pm: PackageManager = context.packageManager
+                        val iconDrawable = pm.getApplicationIcon(taskInfo.name.toString())
+                        drawablesMap.put(taskInfo.name.toString(), iconDrawable)
+                        Triple(iconDrawable, null, iconType)
+                    } else if (drawablesMap.get(taskInfo.name.toString()) == null) {
+                        Triple(null, null, IconType.ANDROID_NULL_ICON)
+                    } else {
+                        val iconDrawableCache = drawablesMap.get(taskInfo.name.toString())
+                        Triple(iconDrawableCache, null, iconType)
+                    }
+                } catch(e: PackageManager.NameNotFoundException) {
+                    drawablesMap.put(taskInfo.name.toString(), null)
+                    Triple(null, null, IconType.ANDROID_NULL_ICON)
+                }
+            } else {
+                val iconType = IconType.LINUX_BITMAP_ICON
+                if (appResponse == null) {
+                    Triple(null, null, IconType.LINUX_NULL_ICON)
                 } else {
-                    iconType = IconType.ANDROID_NULL_ICON
+                    if(!bitmapsMap.containsKey(taskInfo.name.toString())) {
+                        val appInfoIndex = appResponse.data.data.indexOfFirst {
+                            taskInfo.name!!.lowercase().contains(it.Name.lowercase())
+                        }
+                        if (appInfoIndex == -1) {
+                            bitmapsMap.put(taskInfo.name.toString(), null)
+                            Triple(null, null, IconType.LINUX_NULL_ICON)
+                        } else {
+                            val iconB64String = appResponse.data.data[appInfoIndex].Icon
+                            val imageBytes = Base64.decode(iconB64String, Base64.DEFAULT)
+                            val iconBitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+                                .asImageBitmap()
+                            bitmapsMap.put(taskInfo.name.toString(), iconBitmap)
+                            Triple(null, iconBitmap, iconType)
+                        }
+                    } else if(bitmapsMap.get(taskInfo.name.toString()) == null) {
+                        Triple(null, null, IconType.LINUX_NULL_ICON)
+                    } else {
+                        val iconBitmapCache = bitmapsMap.get(taskInfo.name.toString())
+                        Triple(null, iconBitmapCache, iconType)
+                    }
                 }
             }
         }
 
-        else -> {
-            // linux app
-            if (appResponse == null) {
-                iconType = IconType.LINUX_NULL_ICON
-            } else {
-                val appInfoIndex = appResponse.data.data.indexOfFirst {
-                    taskInfo.name!!.lowercase().contains(it.Name.lowercase())
-                }
-                if (appInfoIndex == -1) {
-                    iconType = IconType.LINUX_NULL_ICON
-                } else {
-                    val iconB64String = appResponse.data.data[appInfoIndex].Icon
-                    val imageBytes = Base64.decode(iconB64String, Base64.DEFAULT)
-                    iconBitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
-                        .asImageBitmap()
-                    iconType = IconType.LINUX_BITMAP_ICON
-                }
-            }
-        }
-    }
 
     if (floatingPropertiesWindowShow.value) {
         AlertDialog(onDismissRequest = {
