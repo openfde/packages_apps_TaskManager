@@ -114,6 +114,7 @@ fun TasksTableHeader(
     val nameSortedReverseState = remember { mutableStateOf(false) }
     val idSortedReverseState = remember { mutableStateOf(false) }
     val memorySortedReverseState = remember { mutableStateOf(false) }
+    val cpuSortedReverseState = remember { mutableStateOf(false) }
     val context = LocalContext.current
     val vectorIconSize = 16.dp
     val headerWidthState = remember { mutableStateOf(0) }
@@ -160,7 +161,8 @@ fun TasksTableHeader(
                         .clickable(onClick = {
                             when (sortMode) {
                                 SortMode.BY_ID_SEQUENTIAL, SortMode.BY_ID_REVERSE,
-                                SortMode.BY_MEMORY_REVERSE, SortMode.BY_MEMORY_SEQUENTIAL -> {
+                                SortMode.BY_MEMORY_REVERSE, SortMode.BY_MEMORY_SEQUENTIAL,
+                                SortMode.BY_CPU_SEQUENTIAL, SortMode.BY_CPU_REVERSE -> {
                                     // 进一步看
                                     if (nameSortedReverseState.value) {
                                         // 名称顺序
@@ -200,15 +202,60 @@ fun TasksTableHeader(
                 overflow = TextOverflow.Ellipsis,
             )
             HeaderDivider(2,weights,headerWidthState.value)
-            Text(
-                text = "% CPU",
+            Row(
                 modifier = Modifier
                     .weight(weights[3])
-                    .padding(horizontal = 10.dp),
-                fontSize = 14.sp,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+                    .padding(horizontal = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = "% CPU",
+                    modifier = Modifier
+                        .padding(horizontal = 10.dp),
+                    fontSize = 14.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Image(
+                    painter = painterResource(id = R.drawable.task_header_down_vector),
+                    modifier = Modifier
+                        .size(vectorIconSize)
+                        .graphicsLayer {
+                            rotationX = when (sortMode) {
+                                SortMode.BY_NAME_SEQUENTIAL,
+                                SortMode.BY_NAME_REVERSE,
+                                SortMode.BY_ID_SEQUENTIAL,
+                                SortMode.BY_ID_REVERSE,
+                                SortMode.BY_MEMORY_SEQUENTIAL,
+                                SortMode.BY_MEMORY_REVERSE,
+                                SortMode.BY_CPU_SEQUENTIAL -> 0f
+
+                                SortMode.BY_CPU_REVERSE -> 180f
+                            }
+                        }
+                        .clickable(onClick = {
+                            when (sortMode) {
+                                SortMode.BY_NAME_SEQUENTIAL, SortMode.BY_NAME_REVERSE,
+                                SortMode.BY_ID_SEQUENTIAL, SortMode.BY_ID_REVERSE,
+                                SortMode.BY_MEMORY_SEQUENTIAL, SortMode.BY_MEMORY_REVERSE -> {
+                                    if (cpuSortedReverseState.value) {
+                                        onSortModeChange(SortMode.BY_CPU_SEQUENTIAL)
+                                        cpuSortedReverseState.value = false
+                                    } else {
+                                        onSortModeChange(SortMode.BY_CPU_REVERSE)
+                                        cpuSortedReverseState.value = true
+                                    }
+                                }
+
+                                SortMode.BY_CPU_SEQUENTIAL -> onSortModeChange(SortMode.BY_CPU_REVERSE)
+                                SortMode.BY_CPU_REVERSE -> onSortModeChange(SortMode.BY_CPU_SEQUENTIAL)
+                            }
+                        }),
+                    contentDescription = null
+                )
+            }
+
             HeaderDivider(3,weights,headerWidthState.value)
             Row(
                 modifier = Modifier
@@ -240,7 +287,8 @@ fun TasksTableHeader(
                         .clickable(onClick = {
                             when (sortMode) {
                                 SortMode.BY_NAME_SEQUENTIAL, SortMode.BY_NAME_REVERSE,
-                                SortMode.BY_MEMORY_SEQUENTIAL, SortMode.BY_MEMORY_REVERSE -> {
+                                SortMode.BY_MEMORY_SEQUENTIAL, SortMode.BY_MEMORY_REVERSE,
+                                SortMode.BY_CPU_SEQUENTIAL, SortMode.BY_CPU_REVERSE -> {
                                     if (idSortedReverseState.value) {
                                         onSortModeChange(SortMode.BY_ID_SEQUENTIAL)
                                         idSortedReverseState.value = false
@@ -283,7 +331,9 @@ fun TasksTableHeader(
                                 SortMode.BY_NAME_REVERSE,
                                 SortMode.BY_ID_SEQUENTIAL,
                                 SortMode.BY_ID_REVERSE,
-                                SortMode.BY_MEMORY_SEQUENTIAL -> 0f
+                                SortMode.BY_MEMORY_SEQUENTIAL,
+                                SortMode.BY_CPU_REVERSE,
+                                SortMode.BY_CPU_SEQUENTIAL -> 0f
 
                                 SortMode.BY_MEMORY_REVERSE -> 180f
                             }
@@ -291,7 +341,8 @@ fun TasksTableHeader(
                         .clickable(onClick = {
                             when (sortMode) {
                                 SortMode.BY_NAME_SEQUENTIAL, SortMode.BY_NAME_REVERSE,
-                                SortMode.BY_ID_SEQUENTIAL, SortMode.BY_ID_REVERSE -> {
+                                SortMode.BY_ID_SEQUENTIAL, SortMode.BY_ID_REVERSE,
+                                SortMode.BY_CPU_SEQUENTIAL, SortMode.BY_CPU_REVERSE -> {
                                     if (memorySortedReverseState.value) {
                                         onSortModeChange(SortMode.BY_MEMORY_SEQUENTIAL)
                                         memorySortedReverseState.value = false
@@ -362,7 +413,7 @@ enum class DisplayMode {
 
 enum class SortMode {
     BY_NAME_SEQUENTIAL, BY_NAME_REVERSE, BY_ID_SEQUENTIAL, BY_ID_REVERSE,
-    BY_MEMORY_SEQUENTIAL, BY_MEMORY_REVERSE
+    BY_MEMORY_SEQUENTIAL, BY_MEMORY_REVERSE,BY_CPU_SEQUENTIAL, BY_CPU_REVERSE
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -376,7 +427,7 @@ fun ProcessView(displayMode: DisplayMode, searchBarValue: String) {
     val appResponseState = remember { mutableStateOf<Adapters.AppsResponse?>(null) }
     val taskHeaderItemWeightsState = remember {
         mutableStateListOf<Float>(
-            0.20f, 0.08f, 0.09f, 0.09f, 0.09f, 0.09f, 0.09f, 0.09f, 0.09f, 0.09f
+            0.16f, 0.08f, 0.09f, 0.12f, 0.09f, 0.09f, 0.09f, 0.09f, 0.09f, 0.09f
         )
     }
     val drawablesMap = remember { mutableStateMapOf<String, Drawable?>() }
@@ -457,6 +508,8 @@ fun ProcessView(displayMode: DisplayMode, searchBarValue: String) {
                     SortMode.BY_ID_REVERSE -> taskInfoList.sortedByDescending { it.pid }
                     SortMode.BY_MEMORY_SEQUENTIAL -> taskInfoList.sortedBy { it.rss }
                     SortMode.BY_MEMORY_REVERSE ->  taskInfoList.sortedByDescending{ it.rss }
+                    SortMode.BY_CPU_REVERSE -> taskInfoList.sortedByDescending { it.cpuUsage }
+                    SortMode.BY_CPU_SEQUENTIAL -> taskInfoList.sortedBy { it.cpuUsage }
                 }, key = { it.pid }) {
                 TaskItem(
                     it,
@@ -823,21 +876,20 @@ fun TaskItem(
                 .width(192.dp)
         )
         HorizontalDivider()
-        // 内存映射
-        DropdownMenuItem(
-            text = { Text(text= stringResource(R.string.memory_mapping)) }, onClick = {
-            }, modifier = Modifier
-                .height(32.dp)
-                .width(192.dp)
-        )
-        // 打开文件
-        DropdownMenuItem(
-            text = { Text(text= stringResource(R.string.open_file)) }, onClick = {
-            }, modifier = Modifier
-                .height(32.dp)
-                .width(192.dp)
-        )
-        HorizontalDivider()
+        // 内存映射（隐藏）
+//        DropdownMenuItem(
+//            text = { Text(text= stringResource(R.string.memory_mapping)) }, onClick = {
+//            }, modifier = Modifier
+//                .height(32.dp)
+//                .width(192.dp)
+//        )
+        // 打开文件（隐藏）
+//        DropdownMenuItem(
+//            text = { Text(text= stringResource(R.string.open_file)) }, onClick = {
+//            }, modifier = Modifier
+//                .height(32.dp)
+//                .width(192.dp)
+//        )
         // 更改优先级
         DropdownMenuItem(
             text = { Text(text= stringResource(R.string.change_priority)) }, onClick = {
@@ -847,13 +899,13 @@ fun TaskItem(
                 .height(32.dp)
                 .width(192.dp)
         )
-        // 设置关联
-        DropdownMenuItem(
-            text = { Text(text= stringResource(R.string.set_association)) }, onClick = {
-            }, modifier = Modifier
-                .height(32.dp)
-                .width(192.dp)
-        )
+        // 设置关联（隐藏）
+//        DropdownMenuItem(
+//            text = { Text(text= stringResource(R.string.set_association)) }, onClick = {
+//            }, modifier = Modifier
+//                .height(32.dp)
+//                .width(192.dp)
+//        )
         HorizontalDivider()
         // 停止进程
         DropdownMenuItem(
@@ -863,13 +915,13 @@ fun TaskItem(
                 .height(32.dp)
                 .width(192.dp)
         )
-        //继续
-        DropdownMenuItem(
-            text = { Text(text= stringResource(R.string.resume)) }, onClick = {
-            }, modifier = Modifier
-                .height(32.dp)
-                .width(192.dp)
-        )
+        //继续（隐藏）
+//        DropdownMenuItem(
+//            text = { Text(text= stringResource(R.string.resume)) }, onClick = {
+//            }, modifier = Modifier
+//                .height(32.dp)
+//                .width(192.dp)
+//        )
         //终止
         DropdownMenuItem(
             text = { Text(text= stringResource(R.string.stop)) }, onClick = {
