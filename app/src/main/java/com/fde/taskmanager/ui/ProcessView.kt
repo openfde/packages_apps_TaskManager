@@ -4,6 +4,7 @@ import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
 import android.graphics.drawable.Drawable
 import android.util.Base64
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -49,6 +50,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Slider
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
@@ -68,28 +70,38 @@ import androidx.core.graphics.drawable.toBitmap
 import java.net.HttpURLConnection
 import java.net.URL
 
-
-
+import androidx.compose.ui.input.pointer.pointerHoverIcon
+import androidx.compose.ui.layout.onSizeChanged
+import android.view.PointerIcon as PointerIcon1
+import androidx.compose.ui.input.pointer.PointerIcon as PointerIcon2
 
 @Composable
-fun HeaderDivider(targetIndex: Int, weights: MutableList<Float>) {
+fun HeaderDivider(targetIndex: Int,
+        weights: MutableList<Float>,
+        headerWidth: Int) {
+    val context = LocalContext.current
+    val icon: PointerIcon1 = PointerIcon1.getSystemIcon(context, PointerIcon1.TYPE_HORIZONTAL_DOUBLE_ARROW)
     VerticalDivider(
-        modifier = Modifier.height(18.dp).pointerInput(Unit) {
-            detectDragGestures { change, dragAmount ->
-                change.consume()
-                val delta = dragAmount.x / 200
-                if(weights[targetIndex] + delta > 0.5f ||
-                    weights[targetIndex] + delta < 0.1f)
-                    return@detectDragGestures
-                for (index in weights.indices) {
-                    if(index < targetIndex) continue
-                    val eachDelta = delta / (weights.size - targetIndex)
-                    if (weights[index] - eachDelta < 0f) return@detectDragGestures
-                    weights[index] -= eachDelta
+        modifier = Modifier
+            .pointerHoverIcon(PointerIcon2(icon))
+            .height(21.dp)
+            .pointerInput(Unit) {
+                detectDragGestures { change, dragAmount ->
+                    change.consume()
+                    val delta = dragAmount.x.toDp() / headerWidth.toDp()
+                    if (weights[targetIndex] + delta > 0.5f ||
+                        weights[targetIndex] + delta < 0.1f
+                    )
+                        return@detectDragGestures
+                    for (index in weights.indices) {
+                        if (index < targetIndex) continue
+                        val eachDelta = delta / (weights.size - targetIndex)
+                        if (weights[index] - eachDelta < 0f) return@detectDragGestures
+                        weights[index] -= eachDelta
+                    }
+                    weights[targetIndex] += delta
                 }
-                weights[targetIndex] += delta
-            }
-        }, color = Color(0x0D000000)
+            }, color = Color(0x0D000000)
     )
 }
 
@@ -102,20 +114,27 @@ fun TasksTableHeader(
     val nameSortedReverseState = remember { mutableStateOf(false) }
     val idSortedReverseState = remember { mutableStateOf(false) }
     val memorySortedReverseState = remember { mutableStateOf(false) }
+    val cpuSortedReverseState = remember { mutableStateOf(false) }
     val context = LocalContext.current
     val vectorIconSize = 16.dp
+    val headerWidthState = remember { mutableStateOf(0) }
 
     HorizontalDivider(modifier = Modifier.fillMaxWidth(), color = Color(0xFFE8E9EB))
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 5.dp, horizontal = 10.dp)
+            .onSizeChanged({ it ->
+                headerWidthState.value = it.width
+            })
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically, modifier = Modifier.height(24.dp)
         ) {
             Row(
-                modifier = Modifier.weight(weights[0]).padding(end=8.dp),
+                modifier = Modifier
+                    .weight(weights[0])
+                    .padding(end = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
@@ -142,7 +161,8 @@ fun TasksTableHeader(
                         .clickable(onClick = {
                             when (sortMode) {
                                 SortMode.BY_ID_SEQUENTIAL, SortMode.BY_ID_REVERSE,
-                                SortMode.BY_MEMORY_REVERSE, SortMode.BY_MEMORY_SEQUENTIAL -> {
+                                SortMode.BY_MEMORY_REVERSE, SortMode.BY_MEMORY_SEQUENTIAL,
+                                SortMode.BY_CPU_SEQUENTIAL, SortMode.BY_CPU_REVERSE -> {
                                     // 进一步看
                                     if (nameSortedReverseState.value) {
                                         // 名称顺序
@@ -161,7 +181,7 @@ fun TasksTableHeader(
                     contentDescription = null,
                 )
             }
-            HeaderDivider(0, weights)
+            HeaderDivider(0, weights,headerWidthState.value)
             Text(
                 text = context.getString(R.string.user),
                 modifier = Modifier
@@ -171,7 +191,7 @@ fun TasksTableHeader(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            HeaderDivider(1, weights)
+            HeaderDivider(1, weights,headerWidthState.value)
             Text(
                 text = context.getString(R.string.virtual_memory),
                 modifier = Modifier
@@ -181,17 +201,62 @@ fun TasksTableHeader(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            HeaderDivider(2,weights)
-            Text(
-                text = "% CPU",
+            HeaderDivider(2,weights,headerWidthState.value)
+            Row(
                 modifier = Modifier
                     .weight(weights[3])
-                    .padding(horizontal = 10.dp),
-                fontSize = 14.sp,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            HeaderDivider(3,weights)
+                    .padding(horizontal = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = "% CPU",
+                    modifier = Modifier
+                        .padding(horizontal = 10.dp),
+                    fontSize = 14.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Image(
+                    painter = painterResource(id = R.drawable.task_header_down_vector),
+                    modifier = Modifier
+                        .size(vectorIconSize)
+                        .graphicsLayer {
+                            rotationX = when (sortMode) {
+                                SortMode.BY_NAME_SEQUENTIAL,
+                                SortMode.BY_NAME_REVERSE,
+                                SortMode.BY_ID_SEQUENTIAL,
+                                SortMode.BY_ID_REVERSE,
+                                SortMode.BY_MEMORY_SEQUENTIAL,
+                                SortMode.BY_MEMORY_REVERSE,
+                                SortMode.BY_CPU_SEQUENTIAL -> 0f
+
+                                SortMode.BY_CPU_REVERSE -> 180f
+                            }
+                        }
+                        .clickable(onClick = {
+                            when (sortMode) {
+                                SortMode.BY_NAME_SEQUENTIAL, SortMode.BY_NAME_REVERSE,
+                                SortMode.BY_ID_SEQUENTIAL, SortMode.BY_ID_REVERSE,
+                                SortMode.BY_MEMORY_SEQUENTIAL, SortMode.BY_MEMORY_REVERSE -> {
+                                    if (cpuSortedReverseState.value) {
+                                        onSortModeChange(SortMode.BY_CPU_SEQUENTIAL)
+                                        cpuSortedReverseState.value = false
+                                    } else {
+                                        onSortModeChange(SortMode.BY_CPU_REVERSE)
+                                        cpuSortedReverseState.value = true
+                                    }
+                                }
+
+                                SortMode.BY_CPU_SEQUENTIAL -> onSortModeChange(SortMode.BY_CPU_REVERSE)
+                                SortMode.BY_CPU_REVERSE -> onSortModeChange(SortMode.BY_CPU_SEQUENTIAL)
+                            }
+                        }),
+                    contentDescription = null
+                )
+            }
+
+            HeaderDivider(3,weights,headerWidthState.value)
             Row(
                 modifier = Modifier
                     .weight(weights[4])
@@ -222,7 +287,8 @@ fun TasksTableHeader(
                         .clickable(onClick = {
                             when (sortMode) {
                                 SortMode.BY_NAME_SEQUENTIAL, SortMode.BY_NAME_REVERSE,
-                                SortMode.BY_MEMORY_SEQUENTIAL,SortMode.BY_MEMORY_REVERSE -> {
+                                SortMode.BY_MEMORY_SEQUENTIAL, SortMode.BY_MEMORY_REVERSE,
+                                SortMode.BY_CPU_SEQUENTIAL, SortMode.BY_CPU_REVERSE -> {
                                     if (idSortedReverseState.value) {
                                         onSortModeChange(SortMode.BY_ID_SEQUENTIAL)
                                         idSortedReverseState.value = false
@@ -239,7 +305,7 @@ fun TasksTableHeader(
                     contentDescription = null
                 )
             }
-            HeaderDivider(4, weights)
+            HeaderDivider(4, weights,headerWidthState.value)
             Row(
                 modifier = Modifier
                     .weight(weights[5])
@@ -265,14 +331,18 @@ fun TasksTableHeader(
                                 SortMode.BY_NAME_REVERSE,
                                 SortMode.BY_ID_SEQUENTIAL,
                                 SortMode.BY_ID_REVERSE,
-                                SortMode.BY_MEMORY_SEQUENTIAL -> 0f
+                                SortMode.BY_MEMORY_SEQUENTIAL,
+                                SortMode.BY_CPU_REVERSE,
+                                SortMode.BY_CPU_SEQUENTIAL -> 0f
+
                                 SortMode.BY_MEMORY_REVERSE -> 180f
                             }
                         }
                         .clickable(onClick = {
                             when (sortMode) {
                                 SortMode.BY_NAME_SEQUENTIAL, SortMode.BY_NAME_REVERSE,
-                                SortMode.BY_ID_SEQUENTIAL,SortMode.BY_ID_REVERSE -> {
+                                SortMode.BY_ID_SEQUENTIAL, SortMode.BY_ID_REVERSE,
+                                SortMode.BY_CPU_SEQUENTIAL, SortMode.BY_CPU_REVERSE -> {
                                     if (memorySortedReverseState.value) {
                                         onSortModeChange(SortMode.BY_MEMORY_SEQUENTIAL)
                                         memorySortedReverseState.value = false
@@ -289,7 +359,7 @@ fun TasksTableHeader(
                     contentDescription = null
                 )
             }
-            HeaderDivider(5,weights)
+            HeaderDivider(5,weights,headerWidthState.value)
             Text(
                 text = context.getString(R.string.disk_read_storage),
                 modifier = Modifier
@@ -299,7 +369,7 @@ fun TasksTableHeader(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            HeaderDivider(6,weights)
+            HeaderDivider(6,weights,headerWidthState.value)
             Text(
                 text = context.getString(R.string.disk_write_storage),
                 modifier = Modifier
@@ -309,7 +379,7 @@ fun TasksTableHeader(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            HeaderDivider(7,weights)
+            HeaderDivider(7,weights,headerWidthState.value)
             Text(
                 text = context.getString(R.string.disk_read),
                 modifier = Modifier
@@ -319,7 +389,7 @@ fun TasksTableHeader(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            HeaderDivider(8,weights)
+            HeaderDivider(8,weights,headerWidthState.value)
             Text(
                 text = context.getString(R.string.disk_write),
                 modifier = Modifier
@@ -343,7 +413,7 @@ enum class DisplayMode {
 
 enum class SortMode {
     BY_NAME_SEQUENTIAL, BY_NAME_REVERSE, BY_ID_SEQUENTIAL, BY_ID_REVERSE,
-    BY_MEMORY_SEQUENTIAL, BY_MEMORY_REVERSE
+    BY_MEMORY_SEQUENTIAL, BY_MEMORY_REVERSE,BY_CPU_SEQUENTIAL, BY_CPU_REVERSE
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -357,9 +427,11 @@ fun ProcessView(displayMode: DisplayMode, searchBarValue: String) {
     val appResponseState = remember { mutableStateOf<Adapters.AppsResponse?>(null) }
     val taskHeaderItemWeightsState = remember {
         mutableStateListOf<Float>(
-            0.20f, 0.08f, 0.09f, 0.09f, 0.09f, 0.09f, 0.09f, 0.09f, 0.09f, 0.09f
+            0.16f, 0.08f, 0.09f, 0.12f, 0.09f, 0.09f, 0.09f, 0.09f, 0.09f, 0.09f
         )
     }
+    val drawablesMap = remember { mutableStateMapOf<String, Drawable?>() }
+    val bitmapsMap = remember { mutableStateMapOf<String, ImageBitmap?>() }
 
     LaunchedEffect(Unit) {
         if (!initialLoad.value) {
@@ -436,6 +508,8 @@ fun ProcessView(displayMode: DisplayMode, searchBarValue: String) {
                     SortMode.BY_ID_REVERSE -> taskInfoList.sortedByDescending { it.pid }
                     SortMode.BY_MEMORY_SEQUENTIAL -> taskInfoList.sortedBy { it.rss }
                     SortMode.BY_MEMORY_REVERSE ->  taskInfoList.sortedByDescending{ it.rss }
+                    SortMode.BY_CPU_REVERSE -> taskInfoList.sortedByDescending { it.cpuUsage }
+                    SortMode.BY_CPU_SEQUENTIAL -> taskInfoList.sortedBy { it.cpuUsage }
                 }, key = { it.pid }) {
                 TaskItem(
                     it,
@@ -443,7 +517,9 @@ fun ProcessView(displayMode: DisplayMode, searchBarValue: String) {
                     userName,
                     searchBarValue,
                     appResponseState.value,
-                    taskHeaderItemWeightsState
+                    taskHeaderItemWeightsState,
+                    drawablesMap,
+                    bitmapsMap
                 )
             }
         }
@@ -497,60 +573,68 @@ fun TaskItem(
     searchBarValue: String,
     appResponse: Adapters.AppsResponse?,
     weights: MutableList<Float>,
+    drawablesMap: MutableMap<String, Drawable?>,
+    bitmapsMap: MutableMap<String, ImageBitmap?>
 ) {
     val context = LocalContext.current
     val floatingMenuPosition = remember { mutableStateOf(Offset.Zero) }
     val floatingMenuExpanded = remember { mutableStateOf(false) }
     val floatingPropertiesWindowShow = remember { mutableStateOf(false) }
     val floatingPriorityModificationWindowShow = remember { mutableStateOf(false) }
-    var priorityModificationSliderValue = remember { mutableIntStateOf(taskInfo.nice) }
+    val priorityModificationSliderValue = remember { mutableIntStateOf(taskInfo.nice) }
 
-
-    var iconBitmap: ImageBitmap? = null
-    var iconDrawable: Drawable? = null
-    var iconType: IconType? = null
     val iconSize = 24.dp
 
-    when {
-        taskInfo.isAndroidApp -> {
-            // 首先尝试使用packageManager获取图标
-            val pm: PackageManager = context.packageManager
-            try {
-                iconDrawable = pm.getApplicationIcon(taskInfo.name.toString())
-                iconType = IconType.ANDROID_DRAWABLE_ICON
-            } catch (e: PackageManager.NameNotFoundException) {
-                // 再尝试用local图标
-                val bitMap =
-                    TaskManagerBinder.getIconBitmapByTaskName(taskInfo.name.toString(), true)
-                if (bitMap != null) {
-                    iconBitmap = bitMap
-                    iconType = IconType.ANDROID_BITMAP_ICON
+    val (iconDrawable,iconBitmap, iconType) =
+        remember(taskInfo.name, taskInfo.isAndroidApp) {
+            if(taskInfo.isAndroidApp) {
+                try {
+                    val iconType = IconType.ANDROID_DRAWABLE_ICON
+                    if(!drawablesMap.containsKey(taskInfo.name.toString())) {
+                        val pm: PackageManager = context.packageManager
+                        val iconDrawable = pm.getApplicationIcon(taskInfo.name.toString())
+                        drawablesMap.put(taskInfo.name.toString(), iconDrawable)
+                        Triple(iconDrawable, null, iconType)
+                    } else if (drawablesMap.get(taskInfo.name.toString()) == null) {
+                        Triple(null, null, IconType.ANDROID_NULL_ICON)
+                    } else {
+                        val iconDrawableCache = drawablesMap.get(taskInfo.name.toString())
+                        Triple(iconDrawableCache, null, iconType)
+                    }
+                } catch(e: PackageManager.NameNotFoundException) {
+                    drawablesMap.put(taskInfo.name.toString(), null)
+                    Triple(null, null, IconType.ANDROID_NULL_ICON)
+                }
+            } else {
+                val iconType = IconType.LINUX_BITMAP_ICON
+                if (appResponse == null) {
+                    Triple(null, null, IconType.LINUX_NULL_ICON)
                 } else {
-                    iconType = IconType.ANDROID_NULL_ICON
+                    if(!bitmapsMap.containsKey(taskInfo.name.toString())) {
+                        val appInfoIndex = appResponse.data.data.indexOfFirst {
+                            taskInfo.name!!.lowercase().contains(it.Name.lowercase())
+                        }
+                        if (appInfoIndex == -1) {
+                            bitmapsMap.put(taskInfo.name.toString(), null)
+                            Triple(null, null, IconType.LINUX_NULL_ICON)
+                        } else {
+                            val iconB64String = appResponse.data.data[appInfoIndex].Icon
+                            val imageBytes = Base64.decode(iconB64String, Base64.DEFAULT)
+                            val iconBitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+                                .asImageBitmap()
+                            bitmapsMap.put(taskInfo.name.toString(), iconBitmap)
+                            Triple(null, iconBitmap, iconType)
+                        }
+                    } else if(bitmapsMap.get(taskInfo.name.toString()) == null) {
+                        Triple(null, null, IconType.LINUX_NULL_ICON)
+                    } else {
+                        val iconBitmapCache = bitmapsMap.get(taskInfo.name.toString())
+                        Triple(null, iconBitmapCache, iconType)
+                    }
                 }
             }
         }
 
-        else -> {
-            // linux app
-            if (appResponse == null) {
-                iconType = IconType.LINUX_NULL_ICON
-            } else {
-                val appInfoIndex = appResponse.data.data.indexOfFirst {
-                    taskInfo.name!!.lowercase().contains(it.Name.lowercase())
-                }
-                if (appInfoIndex == -1) {
-                    iconType = IconType.LINUX_NULL_ICON
-                } else {
-                    val iconB64String = appResponse.data.data[appInfoIndex].Icon
-                    val imageBytes = Base64.decode(iconB64String, Base64.DEFAULT)
-                    iconBitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
-                        .asImageBitmap()
-                    iconType = IconType.LINUX_BITMAP_ICON
-                }
-            }
-        }
-    }
 
     if (floatingPropertiesWindowShow.value) {
         AlertDialog(onDismissRequest = {
@@ -792,21 +876,20 @@ fun TaskItem(
                 .width(192.dp)
         )
         HorizontalDivider()
-        // 内存映射
-        DropdownMenuItem(
-            text = { Text(text= stringResource(R.string.memory_mapping)) }, onClick = {
-            }, modifier = Modifier
-                .height(32.dp)
-                .width(192.dp)
-        )
-        // 打开文件
-        DropdownMenuItem(
-            text = { Text(text= stringResource(R.string.open_file)) }, onClick = {
-            }, modifier = Modifier
-                .height(32.dp)
-                .width(192.dp)
-        )
-        HorizontalDivider()
+        // 内存映射（隐藏）
+//        DropdownMenuItem(
+//            text = { Text(text= stringResource(R.string.memory_mapping)) }, onClick = {
+//            }, modifier = Modifier
+//                .height(32.dp)
+//                .width(192.dp)
+//        )
+        // 打开文件（隐藏）
+//        DropdownMenuItem(
+//            text = { Text(text= stringResource(R.string.open_file)) }, onClick = {
+//            }, modifier = Modifier
+//                .height(32.dp)
+//                .width(192.dp)
+//        )
         // 更改优先级
         DropdownMenuItem(
             text = { Text(text= stringResource(R.string.change_priority)) }, onClick = {
@@ -816,13 +899,13 @@ fun TaskItem(
                 .height(32.dp)
                 .width(192.dp)
         )
-        // 设置关联
-        DropdownMenuItem(
-            text = { Text(text= stringResource(R.string.set_association)) }, onClick = {
-            }, modifier = Modifier
-                .height(32.dp)
-                .width(192.dp)
-        )
+        // 设置关联（隐藏）
+//        DropdownMenuItem(
+//            text = { Text(text= stringResource(R.string.set_association)) }, onClick = {
+//            }, modifier = Modifier
+//                .height(32.dp)
+//                .width(192.dp)
+//        )
         HorizontalDivider()
         // 停止进程
         DropdownMenuItem(
@@ -832,13 +915,13 @@ fun TaskItem(
                 .height(32.dp)
                 .width(192.dp)
         )
-        //继续
-        DropdownMenuItem(
-            text = { Text(text= stringResource(R.string.resume)) }, onClick = {
-            }, modifier = Modifier
-                .height(32.dp)
-                .width(192.dp)
-        )
+        //继续（隐藏）
+//        DropdownMenuItem(
+//            text = { Text(text= stringResource(R.string.resume)) }, onClick = {
+//            }, modifier = Modifier
+//                .height(32.dp)
+//                .width(192.dp)
+//        )
         //终止
         DropdownMenuItem(
             text = { Text(text= stringResource(R.string.stop)) }, onClick = {
