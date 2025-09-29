@@ -53,4 +53,5 @@
     <string name="submenu_all_processes">All Processes</string>
     <string name="submenu_active_processes">Active Processes</string>
     <string name="submenu_my_processes">My Processes</string>
+    <string name="service_not_available">Service is not available</string>
 </resources>
