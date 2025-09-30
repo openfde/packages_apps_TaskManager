@@ -5,6 +5,7 @@ import android.graphics.BitmapFactory
 import android.graphics.drawable.Drawable
 import android.util.Base64
 import android.util.Log
+import android.widget.Toolbar
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -72,6 +73,9 @@ import java.net.URL
 
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.layout.onSizeChanged
+import com.fde.taskmanager.MainActivity
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
 import android.view.PointerIcon as PointerIcon1
 import androidx.compose.ui.input.pointer.PointerIcon as PointerIcon2
 
@@ -418,7 +422,7 @@ enum class SortMode {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProcessView(displayMode: DisplayMode, searchBarValue: String) {
+fun ProcessView(displayMode: DisplayMode, searchBarValue: String, toolbarViewModel: MainActivity.ToolbarViewModel) {
     val taskInfoList = remember { mutableStateListOf<Adapters.TaskInfo>() }
     val coroutineScope = rememberCoroutineScope()
     val initialLoad = remember { mutableStateOf(false) }
@@ -432,6 +436,55 @@ fun ProcessView(displayMode: DisplayMode, searchBarValue: String) {
     }
     val drawablesMap = remember { mutableStateMapOf<String, Drawable?>() }
     val bitmapsMap = remember { mutableStateMapOf<String, ImageBitmap?>() }
+    val updateTaskInfoListCoroutine = remember { mutableStateOf<Job?>(null) }
+
+    fun launchUpdateTaskInfoListCoroutine() {
+        updateTaskInfoListCoroutine.value = coroutineScope.launch {
+            while (true) {
+                val tasks = TaskManagerBinder.getTasks()
+                val currentPids = TaskManagerBinder.getTaskPids().toSet()
+
+                val batchSize = 20 // 每个批次的大小
+                val totalTasks = tasks.size
+                var currentIndex = 0
+
+                val toRemove = taskInfoList.filter { it.pid !in currentPids }
+                toRemove.forEach { taskInfoList.remove(it) }
+
+                while (currentIndex < totalTasks) {
+                    val endIndex = minOf(currentIndex + batchSize, totalTasks)
+                    val batch = tasks.subList(currentIndex, endIndex)
+                    for (task in batch) {
+                        val index = taskInfoList.indexOfFirst { it.pid == task.pid }
+                        if (index != -1) {
+                            // 存在，只需要更新
+                            taskInfoList[index] = task
+                        } else {
+                            // 不存在，需要添加
+                            taskInfoList.add(task)
+                        }
+                    }
+                    currentIndex = endIndex
+                    delay(100)
+                }
+            }
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        toolbarViewModel.refreshTaskInfoListEvents.collect {
+            Log.d("cold","refresh")
+            updateTaskInfoListCoroutine.value!!.cancel()
+            taskInfoList.clear()
+            Log.d("cold","clear")
+            coroutineScope.launch {
+                delay(250)
+                val allTasks = TaskManagerBinder.getTasks()
+                taskInfoList.addAll(allTasks)
+                launchUpdateTaskInfoListCoroutine()
+            }
+        }
+    }
 
     LaunchedEffect(Unit) {
         if (!initialLoad.value) {
@@ -464,34 +517,7 @@ fun ProcessView(displayMode: DisplayMode, searchBarValue: String) {
             val allTasks = TaskManagerBinder.getTasks()
             taskInfoList.clear()
             taskInfoList.addAll(allTasks)
-            while (true) {
-                val tasks = TaskManagerBinder.getTasks()
-                val currentPids = TaskManagerBinder.getTaskPids().toSet()
-
-                val batchSize = 20 // 每个批次的大小
-                val totalTasks = tasks.size
-                var currentIndex = 0
-
-                val toRemove = taskInfoList.filter { it.pid !in currentPids }
-                toRemove.forEach { taskInfoList.remove(it) }
-
-                while (currentIndex < totalTasks) {
-                    val endIndex = minOf(currentIndex + batchSize, totalTasks)
-                    val batch = tasks.subList(currentIndex, endIndex)
-                    for (task in batch) {
-                        val index = taskInfoList.indexOfFirst { it.pid == task.pid }
-                        if (index != -1) {
-                            // 存在，只需要更新
-                            taskInfoList[index] = task
-                        } else {
-                            // 不存在，需要添加
-                            taskInfoList.add(task)
-                        }
-                    }
-                    currentIndex = endIndex
-                    delay(100) // 每批次延迟100ms
-                }
-            }
+            launchUpdateTaskInfoListCoroutine()
         }
     }
 

@@ -55,8 +55,9 @@ import android.app.Instrumentation
 import android.content.Context
 import android.app.ActivityManager
 import android.app.ActivityManager.AppTask
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.lifecycle.ViewModel
-import com.fde.taskmanager.MainActivity.NavigationViewModel
+import com.fde.taskmanager.MainActivity.ToolbarViewModel
 
 sealed class AppRoute(val route: String) {
     object Process : AppRoute("process")
@@ -153,10 +154,7 @@ private fun simulateKeyPress(keyCode: Int) {
 
 @Composable
 fun WindowButtonsBar(
-    isToolbarHidden: Boolean,
-    onDisplayModeChange: (DisplayMode) -> Unit,
-    onSearchBarChange: (String) -> Unit,
-    searchBarValue: String
+    toolbarViewModel: ToolbarViewModel
 ) {
     val windowOptionsDropdownMenuOffset = remember {
         mutableStateOf<Offset>(Offset.Zero)
@@ -170,6 +168,7 @@ fun WindowButtonsBar(
     val windowOptionsDropdownSubMenuShow = remember {
         mutableStateOf<Boolean>(false)
     }
+    val searchBarValueState = remember { mutableStateOf("") }
 
     val context = LocalContext.current
     var isFullScreen = remember { mutableStateOf(false) }
@@ -186,7 +185,7 @@ fun WindowButtonsBar(
             },
             offset = windowOptionsDropdownMenuOffset.value,
             onDisplayModeChange = { mode ->
-                onDisplayModeChange(mode)
+                toolbarViewModel.changeDisplayMode(mode)
             })
         DropdownMenu(
             expanded = windowOptionsDropdownMenuShow.value,
@@ -199,13 +198,13 @@ fun WindowButtonsBar(
             },
             modifier = Modifier.clip(RoundedCornerShape(8.dp))
         ) {
-//            DropdownMenuItem(
-//                text = { Text(stringResource(R.string.menu_refresh)) }, onClick = {
-//
-//            }, modifier = Modifier
-//                    .height(32.dp)
-//                    .width(192.dp)
-//            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.menu_refresh)) }, onClick = {
+                    toolbarViewModel.refreshTaskInfoList()
+            }, modifier = Modifier
+                    .height(32.dp)
+                    .width(192.dp)
+            )
             DropdownMenuItem(modifier = Modifier.pointerInput(Unit) {
                 awaitPointerEventScope {
                     while (true) {
@@ -268,10 +267,11 @@ fun WindowButtonsBar(
 //            )
         }
         SearchBar(
-            text = searchBarValue, onValueChange = { it ->
-                onSearchBarChange(it)
-                if (searchBarValue != "") {
-                    onDisplayModeChange(DisplayMode.SEARCH_FILTERED_PROCESSES)
+            text = searchBarValueState.value, onValueChange = { it ->
+                toolbarViewModel.changeSearchBarValue(it)
+                searchBarValueState.value = it
+                if (it != "") {
+                    toolbarViewModel.changeDisplayMode(DisplayMode.SEARCH_FILTERED_PROCESSES)
                 }
             })
         Image(
@@ -295,7 +295,6 @@ fun WindowButtonsBar(
             contentDescription = null,
         )
 
-        if (!isToolbarHidden) {
             // fullscreen
             Image(
                 painter = painterResource(id = R.drawable.window_max_button),
@@ -338,7 +337,6 @@ fun WindowButtonsBar(
                 },
                 contentDescription = null
             )
-        }
     }
 }
 
@@ -381,7 +379,7 @@ fun NavInnerBox(name: String, selected: Boolean, onClick: () -> Unit) {
 }
 
 @Composable
-fun NavOuterBox(navViewModel: NavigationViewModel) {
+fun NavOuterBox(navViewModel: ToolbarViewModel) {
     val selectedItem = remember { mutableStateOf(AppRoute.Process.route) }
     val context = LocalContext.current
 
