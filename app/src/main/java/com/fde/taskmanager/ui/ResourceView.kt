@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -44,6 +45,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import com.fde.taskmanager.R
 import com.fde.taskmanager.TaskManagerBinder
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -124,22 +126,28 @@ fun MemoryAndSwapAnnotationsLine(
             Row(
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(width = 58.dp, height = barHeight)
-                        .background(
-                            color = Color(0x14000000), shape = RoundedCornerShape(3.dp)
-                        )
-                        .clip(RoundedCornerShape(3.dp))
+                Box(modifier = Modifier
+                    .width(barWidthTotal)
+                    .height(barHeight)
+                    .clip(RoundedCornerShape(3.dp))
+                    .background(Color(0xffEBEBEB))
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(
-                                if (capcities.getOrNull(i) != null) barWidthTotal * capcities[0] else 0.dp,
-                                height = barHeight
+                    Row {
+                        if(capcities[i] != 0f) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxHeight()
+                                    .weight(capcities[i])
+                                    .background(colors[i])
                             )
-                            .background(color = colors[i]),
-                    )
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxHeight()
+                                    .weight(1 - capcities[i])
+                                    .background(Color(0xffEBEBEB))
+                            )
+                        }
+                    }
                 }
                 Spacer(modifier = Modifier.width(4.dp))
                 val annotation = annotations.getOrNull(i)
@@ -247,7 +255,9 @@ fun ResourceView() {
     val currentDiskAnnotationsState = remember { mutableStateListOf<String>("", "") }
     val delayGap: Long = 1000
     Column(
-        modifier = Modifier.fillMaxWidth().verticalScroll((rememberScrollState()))
+        modifier = Modifier
+            .fillMaxWidth()
+            .verticalScroll((rememberScrollState()))
     ) {
         FoldableBox("CPU") {
             LaunchedEffect(Unit) {
@@ -302,14 +312,13 @@ fun ResourceView() {
                         )
                         currentMemoryAndSwapAnnotationsState.add(
                             "${context.getString(R.string.swap)}: %03.1f%%    %s/%s".format(
-                                memoryAndMemoryInfo.memory.percent,
+                                memoryAndMemoryInfo.swap.percent,
                                 toStringWithUnit(memoryAndMemoryInfo.swap.used),
                                 toStringWithUnit(memoryAndMemoryInfo.swap.total)
                             )
                         )
-                        currentMemoryAndSwapCapcityState.clear()
-                        currentMemoryAndSwapCapcityState.add(memoryAndMemoryInfo.memory.percent / 100f)
-                        currentMemoryAndSwapCapcityState.add(memoryAndMemoryInfo.swap.percent / 100f)
+                        currentMemoryAndSwapCapcityState[0] = (memoryAndMemoryInfo.memory.percent / 100f)
+                        currentMemoryAndSwapCapcityState[1] = (memoryAndMemoryInfo.swap.percent / 100f)
                         val memoryList = memoryAndSwapState[0]
                         val swapList = memoryAndSwapState[1]
                         if (swapList.size > 100) swapList.removeFirst()
@@ -367,7 +376,7 @@ fun ResourceView() {
                                 )
                             }:$currentDownloadTotalString"
                         )
-                        currentNetworkAnnotationsState.add("${context.getString(R.string.current_upload)}:$currentUploadSpeedString ${R.string.current_upload_total}:$currentUploadTotalString")
+                        currentNetworkAnnotationsState.add("${context.getString(R.string.current_upload)}:$currentUploadSpeedString ${context.getString(R.string.current_upload_total)}:$currentUploadTotalString")
                         delay(delayGap)
                     }
                 }
