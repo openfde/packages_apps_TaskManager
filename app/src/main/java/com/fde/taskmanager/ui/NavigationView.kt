@@ -1,7 +1,5 @@
 package com.fde.taskmanager.ui
 
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -16,15 +14,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
 import com.fde.taskmanager.R
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -32,7 +25,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.mutableStateOf
@@ -48,15 +40,17 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.DpOffset
-import androidx.navigation.NavController
 import android.content.Intent
 import android.view.KeyEvent
 import android.app.Instrumentation
 import android.content.Context
 import android.app.ActivityManager
-import android.app.ActivityManager.AppTask
-import androidx.lifecycle.ViewModel
-import com.fde.taskmanager.MainActivity.NavigationViewModel
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.text.font.FontWeight
+import com.fde.taskmanager.MainActivity.ToolbarViewModel
 
 sealed class AppRoute(val route: String) {
     object Process : AppRoute("process")
@@ -153,10 +147,7 @@ private fun simulateKeyPress(keyCode: Int) {
 
 @Composable
 fun WindowButtonsBar(
-    isToolbarHidden: Boolean,
-    onDisplayModeChange: (DisplayMode) -> Unit,
-    onSearchBarChange: (String) -> Unit,
-    searchBarValue: String
+    toolbarViewModel: ToolbarViewModel
 ) {
     val windowOptionsDropdownMenuOffset = remember {
         mutableStateOf<Offset>(Offset.Zero)
@@ -170,9 +161,16 @@ fun WindowButtonsBar(
     val windowOptionsDropdownSubMenuShow = remember {
         mutableStateOf<Boolean>(false)
     }
+    val searchBarValueState = remember { mutableStateOf("") }
 
     val context = LocalContext.current
-    var isFullScreen = remember { mutableStateOf(false) }
+    val isFullScreen = remember { mutableStateOf(false) }
+    val isAboutShow = remember { mutableStateOf(false) }
+    val (versionName,packageName) = remember {
+        val packageManager = context.packageManager
+        packageManager.getPackageInfo(context.packageName, 0).versionName to
+        packageManager.getPackageInfo(context.packageName, 0).packageName
+    }
 
     Row(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -186,7 +184,7 @@ fun WindowButtonsBar(
             },
             offset = windowOptionsDropdownMenuOffset.value,
             onDisplayModeChange = { mode ->
-                onDisplayModeChange(mode)
+                toolbarViewModel.changeDisplayMode(mode)
             })
         DropdownMenu(
             expanded = windowOptionsDropdownMenuShow.value,
@@ -199,13 +197,13 @@ fun WindowButtonsBar(
             },
             modifier = Modifier.clip(RoundedCornerShape(8.dp))
         ) {
-//            DropdownMenuItem(
-//                text = { Text(stringResource(R.string.menu_refresh)) }, onClick = {
-//
-//            }, modifier = Modifier
-//                    .height(32.dp)
-//                    .width(192.dp)
-//            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.menu_refresh)) }, onClick = {
+                    toolbarViewModel.refreshTaskInfoList()
+            }, modifier = Modifier
+                    .height(32.dp)
+                    .width(192.dp)
+            )
             DropdownMenuItem(modifier = Modifier.pointerInput(Unit) {
                 awaitPointerEventScope {
                     while (true) {
@@ -259,19 +257,66 @@ fun WindowButtonsBar(
 //                    .width(192.dp)
 //            )
 //            关于
-//            DropdownMenuItem(
-//                text = { Text(stringResource(R.string.menu_about)) }, onClick = {
-//
-//            }, modifier = Modifier
-//                    .height(32.dp)
-//                    .width(192.dp)
-//            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.menu_about)) }, onClick = {
+                    isAboutShow.value = true
+            }, modifier = Modifier
+                    .height(32.dp)
+                    .width(192.dp)
+            )
         }
+
+        if (isAboutShow.value) {
+            AlertDialog(onDismissRequest = {
+                isAboutShow.value = false
+            }, title = {
+                Text(
+                    text = context.getString(R.string.menu_about),
+                    fontWeight = FontWeight.W700,
+                )
+            }, text = {
+                Column {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.ic_launcher_foreground),
+                            modifier = Modifier.size(64.dp),
+                            contentDescription = null
+                        )
+                    }
+                    Row {
+                        Text("${context.getString(R.string.app_name_title)}:")
+                        Spacer(modifier = Modifier.weight(1f))
+                        Text(packageName.toString())
+                    }
+                    Row {
+                        Text("${context.getString(R.string.app_version)}:")
+                        Spacer(modifier = Modifier.weight(1f))
+                        Text(versionName.toString())
+                    }
+                }
+            }, confirmButton = {}, dismissButton = {
+                TextButton(
+                    onClick = {
+                        isAboutShow.value = false
+                    }) {
+                    Text(
+                        context.getString(R.string.cancel),
+                        fontWeight = FontWeight.W700,
+                    )
+                }
+            })
+        }
+
         SearchBar(
-            text = searchBarValue, onValueChange = { it ->
-                onSearchBarChange(it)
-                if (searchBarValue != "") {
-                    onDisplayModeChange(DisplayMode.SEARCH_FILTERED_PROCESSES)
+            text = searchBarValueState.value, onValueChange = { it ->
+                toolbarViewModel.changeSearchBarValue(it)
+                searchBarValueState.value = it
+                if (it != "") {
+                    toolbarViewModel.changeDisplayMode(DisplayMode.SEARCH_FILTERED_PROCESSES)
                 }
             })
         Image(
@@ -295,7 +340,6 @@ fun WindowButtonsBar(
             contentDescription = null,
         )
 
-        if (!isToolbarHidden) {
             // fullscreen
             Image(
                 painter = painterResource(id = R.drawable.window_max_button),
@@ -338,7 +382,6 @@ fun WindowButtonsBar(
                 },
                 contentDescription = null
             )
-        }
     }
 }
 
@@ -381,7 +424,7 @@ fun NavInnerBox(name: String, selected: Boolean, onClick: () -> Unit) {
 }
 
 @Composable
-fun NavOuterBox(navViewModel: NavigationViewModel) {
+fun NavOuterBox(navViewModel: ToolbarViewModel) {
     val selectedItem = remember { mutableStateOf(AppRoute.Process.route) }
     val context = LocalContext.current
 
