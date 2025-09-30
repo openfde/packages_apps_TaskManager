@@ -199,13 +199,13 @@ fun WindowButtonsBar(
             },
             modifier = Modifier.clip(RoundedCornerShape(8.dp))
         ) {
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.menu_refresh)) }, onClick = {
-
-            }, modifier = Modifier
-                    .height(32.dp)
-                    .width(192.dp)
-            )
+//            DropdownMenuItem(
+//                text = { Text(stringResource(R.string.menu_refresh)) }, onClick = {
+//
+//            }, modifier = Modifier
+//                    .height(32.dp)
+//                    .width(192.dp)
+//            )
             DropdownMenuItem(modifier = Modifier.pointerInput(Unit) {
                 awaitPointerEventScope {
                     while (true) {
@@ -218,54 +218,54 @@ fun WindowButtonsBar(
                     }
                 }
             }, onClick = {}, text = { Text(stringResource(R.string.menu_process_display)) })
-            HorizontalDivider()
+//            HorizontalDivider()
 //            显示依赖项
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.menu_show_dependencies)) }, onClick = {
-
-            }, modifier = Modifier
-                    .height(32.dp)
-                    .width(192.dp)
-            )
+//            DropdownMenuItem(
+//                text = { Text(stringResource(R.string.menu_show_dependencies)) }, onClick = {
+//
+//            }, modifier = Modifier
+//                    .height(32.dp)
+//                    .width(192.dp)
+//            )
 
 //            搜索打开的文件
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.menu_search_open_files)) }, onClick = {
-            }, modifier = Modifier
-                    .height(32.dp)
-                    .width(192.dp)
-            )
-            HorizontalDivider()
+//            DropdownMenuItem(
+//                text = { Text(stringResource(R.string.menu_search_open_files)) }, onClick = {
+//            }, modifier = Modifier
+//                    .height(32.dp)
+//                    .width(192.dp)
+//            )
+//            HorizontalDivider()
 //            偏好设置
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.menu_preferences)) }, onClick = {
-
-            }, modifier = Modifier
-                    .height(32.dp)
-                    .width(192.dp)
-            )
+//            DropdownMenuItem(
+//                text = { Text(stringResource(R.string.menu_preferences)) }, onClick = {
+//
+//            }, modifier = Modifier
+//                    .height(32.dp)
+//                    .width(192.dp)
+//            )
 //            帮助
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.menu_help)) }, onClick = {
-            }, modifier = Modifier
-                    .height(32.dp)
-                    .width(192.dp)
-            )
+//            DropdownMenuItem(
+//                text = { Text(stringResource(R.string.menu_help)) }, onClick = {
+//            }, modifier = Modifier
+//                    .height(32.dp)
+//                    .width(192.dp)
+//            )
 //            快捷键
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.menu_shortcuts)) }, onClick = {
-            }, modifier = Modifier
-                    .height(32.dp)
-                    .width(192.dp)
-            )
+//            DropdownMenuItem(
+//                text = { Text(stringResource(R.string.menu_shortcuts)) }, onClick = {
+//            }, modifier = Modifier
+//                    .height(32.dp)
+//                    .width(192.dp)
+//            )
 //            关于
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.menu_about)) }, onClick = {
-
-            }, modifier = Modifier
-                    .height(32.dp)
-                    .width(192.dp)
-            )
+//            DropdownMenuItem(
+//                text = { Text(stringResource(R.string.menu_about)) }, onClick = {
+//
+//            }, modifier = Modifier
+//                    .height(32.dp)
+//                    .width(192.dp)
+//            )
         }
         SearchBar(
             text = searchBarValue, onValueChange = { it ->

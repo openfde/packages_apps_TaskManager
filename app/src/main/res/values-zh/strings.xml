@@ -51,5 +51,5 @@
     <string name="submenu_all_processes">所有进程</string>
     <string name="submenu_active_processes">活动进程</string>
     <string name="submenu_my_processes">我的进程</string>
-
+    <string name="service_not_available">服务未启动</string>
 </resources>

@@ -61,15 +61,20 @@ import android.app.Instrumentation
 import android.content.Context
 import android.app.ActivityManager
 import android.app.ActivityManager.AppTask
+import android.util.Log
 import androidx.compose.ui.platform.ComposeView
 import androidx.lifecycle.ViewModel
 import androidx.activity.viewModels
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
 import androidx.lifecycle.viewModelScope
 import androidx.compose.runtime.LaunchedEffect
 import com.fde.taskmanager.ui.*
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.asSharedFlow
 
 
@@ -124,9 +129,19 @@ class MainActivity : ComponentActivity() {
             // `setWindowDecorationStatus` method in MainActivity
             val isToolbarHidden = false
             val searchBarValueState = remember { mutableStateOf("") }
+            val snackbarHostState = remember { SnackbarHostState() }
+            val isServiceAvailable = remember { mutableStateOf(false) }
 
              LaunchedEffect(Unit) {
                 navViewModel.navigationEvents.collect { route ->
+                    if(!isServiceAvailable.value) {
+                        launch {
+                            snackbarHostState.showSnackbar(
+                                message = getString(R.string.service_not_available),
+                            )
+                        }
+                        return@collect
+                    }
                     navController.navigate(route) {
                         popUpTo(navController.graph.startDestinationId)
                         launchSingleTop = true
@@ -136,27 +151,64 @@ class MainActivity : ComponentActivity() {
 
             LaunchedEffect(displayModeViewModel) {
                 displayModeViewModel.displayModeChangeEvents.collect { displayMode ->
+                    if(!isServiceAvailable.value) {
+                        launch {
+                            snackbarHostState.showSnackbar(
+                                message = getString(R.string.service_not_available),
+                            )
+                        }
+                        return@collect
+                    }
                     displayModeState.value = displayMode
                 }
             }
 
-            LaunchedEffect(searchBarViewModel) {
+            LaunchedEffect(searchBarViewModel) {1
                 searchBarViewModel.searchBarValueChangeEvents.collect { value ->
+                    if(!isServiceAvailable.value) {
+                        launch {
+                            snackbarHostState.showSnackbar(
+                                message = getString(R.string.service_not_available),
+                            )
+                        }
+                        return@collect
+                    }
                     searchBarValueState.value = value
                 }
             }
 
-            NavHost(navController, startDestination = AppRoute.Process.route) {
-                composable(AppRoute.Process.route) {
-                    ProcessView(
-                        displayModeState.value, searchBarValueState.value
-                    )
+            LaunchedEffect(Unit) {
+                coroutineScope {
+                    val userName = TaskManagerBinder.getUserName()
+                    if (userName == null) {
+                        isServiceAvailable.value = false
+                        launch {
+                            snackbarHostState.showSnackbar(
+                                message = getString(R.string.service_not_available),
+                            )
+                        }
+                    } else isServiceAvailable.value = true
                 }
-                composable(AppRoute.Resource.route) {
-                    ResourceView()
+            }
+            Scaffold(
+                snackbarHost = {
+                    SnackbarHost(hostState = snackbarHostState)
                 }
-                composable(AppRoute.FileSystem.route) {
-                    FileSystemView()
+            ) { _ ->
+                if (isServiceAvailable.value) {
+                    NavHost(navController, startDestination = AppRoute.Process.route) {
+                        composable(AppRoute.Process.route) {
+                            ProcessView(
+                                displayModeState.value, searchBarValueState.value
+                            )
+                        }
+                        composable(AppRoute.Resource.route) {
+                            ResourceView()
+                        }
+                        composable(AppRoute.FileSystem.route) {
+                            FileSystemView()
+                        }
+                    }
                 }
             }
         }

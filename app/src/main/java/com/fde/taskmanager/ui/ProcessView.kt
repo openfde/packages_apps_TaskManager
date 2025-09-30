@@ -514,7 +514,7 @@ fun ProcessView(displayMode: DisplayMode, searchBarValue: String) {
                 TaskItem(
                     it,
                     displayMode,
-                    userName,
+                    userName!!,
                     searchBarValue,
                     appResponseState.value,
                     taskHeaderItemWeightsState,
