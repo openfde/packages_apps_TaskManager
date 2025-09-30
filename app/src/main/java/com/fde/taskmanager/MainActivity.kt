@@ -206,7 +206,7 @@ class MainActivity : ComponentActivity() {
                             ResourceView()
                         }
                         composable(AppRoute.FileSystem.route) {
-                            FileSystemView()
+                            FileSystemView(searchBarValueState.value)
                         }
                     }
                 }
