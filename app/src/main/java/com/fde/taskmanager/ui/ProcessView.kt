@@ -5,7 +5,6 @@ import android.graphics.BitmapFactory
 import android.graphics.drawable.Drawable
 import android.util.Base64
 import android.util.Log
-import android.widget.Toolbar
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -673,17 +672,17 @@ fun TaskItem(
         }, text = {
             Column {
                 Row {
-                    Text("用户名:")
+                    Text("${context.getString(R.string.user_name)}:")
                     Spacer(modifier = Modifier.weight(1f))
                     Text(taskInfo.user.toString())
                 }
                 Row {
-                    Text("虚拟内存:")
+                    Text("${context.getString(R.string.virtual_memory)}:")
                     Spacer(modifier = Modifier.weight(1f))
                     Text(toStringWithUnit(taskInfo.vmsize))
                 }
                 Row {
-                    Text("CPU占用率:")
+                    Text("CPU:")
                     Spacer(modifier = Modifier.weight(1f))
                     Text(taskInfo.cpuUsage.toString() + "%")
                 }
@@ -693,12 +692,12 @@ fun TaskItem(
                     Text(taskInfo.pid.toString())
                 }
                 Row {
-                    Text("内存:")
+                    Text("${context.getString(R.string.memory)}:")
                     Spacer(modifier = Modifier.weight(1f))
                     Text(toStringWithUnit(taskInfo.rss))
                 }
                 Row {
-                    Text("读盘容量:")
+                    Text("${context.getString(R.string.disk_read_storage)}:")
                     Spacer(modifier = Modifier.weight(1f))
                     Text(toStringWithUnit(taskInfo.readBytes))
                 }
@@ -708,12 +707,12 @@ fun TaskItem(
                     Text(toStringWithUnit(taskInfo.writeBytes))
                 }
                 Row {
-                    Text("磁盘读取:")
+                    Text("${context.getString(R.string.disk_read)}:")
                     Spacer(modifier = Modifier.weight(1f))
                     Text(toStringWithUnit(taskInfo.readIssued))
                 }
                 Row {
-                    Text("磁盘写入:")
+                    Text("${context.getString(R.string.disk_write)}:")
                     Spacer(modifier = Modifier.weight(1f))
                     Text(toStringWithUnit(taskInfo.writeIssued))
                 }
@@ -724,7 +723,7 @@ fun TaskItem(
                     floatingPropertiesWindowShow.value = false
                 }) {
                 Text(
-                    "取消",
+                    context.getString(R.string.cancel),
                     fontWeight = FontWeight.W700,
                 )
             }

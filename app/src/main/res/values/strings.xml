@@ -54,4 +54,8 @@
     <string name="submenu_active_processes">Active Processes</string>
     <string name="submenu_my_processes">My Processes</string>
     <string name="service_not_available">Service is not available</string>
+    <string name="cancel">Quit</string>
+    <string name="user_name">User Name</string>
+    <string name="app_version">Version</string>
+    <string name="app_name_title">App Name</string>
 </resources>
