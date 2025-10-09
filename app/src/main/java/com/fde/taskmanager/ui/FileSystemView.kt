@@ -38,7 +38,7 @@ import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.layout.onSizeChanged
 
 @Composable
-fun FileSystemView() {
+fun FileSystemView(searchBarValue : String) {
     val fileSystemUsageState = remember {
         mutableStateListOf<Adapters.DiskPartition>()
     }
@@ -69,7 +69,7 @@ fun FileSystemView() {
                     DiskPartitionItem(
                         diskPartition,
                         diskPartitionColors[index % diskPartitionColors.size],
-                        diskHeaderWeights
+                        diskHeaderWeights,searchBarValue
                     )
                 }
             }
@@ -160,8 +160,12 @@ fun DiskPartitionsTableHeader(diskHeaderWeights: MutableList<Float>) {
 
 @Composable
 fun DiskPartitionItem(
-    diskPartition: Adapters.DiskPartition, color: Color, diskHeaderWeights: List<Float>
+    diskPartition: Adapters.DiskPartition,
+    color: Color, diskHeaderWeights: List<Float>,
+    searchBarValue: String
 ) {
+    val searchBarValueFiltered = diskPartition.catalogue.contains(searchBarValue)
+    if(searchBarValueFiltered)
     Row(
         modifier = Modifier
             .height(30.dp)
