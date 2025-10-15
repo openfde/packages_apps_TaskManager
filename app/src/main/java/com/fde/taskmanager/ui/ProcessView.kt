@@ -72,6 +72,8 @@ import java.net.URL
 
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.fde.taskmanager.BackgroundTask
 import com.fde.taskmanager.MainActivity
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
@@ -422,9 +424,7 @@ enum class SortMode {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProcessView(displayMode: DisplayMode, searchBarValue: String, toolbarViewModel: MainActivity.ToolbarViewModel) {
-    val taskInfoList = remember { mutableStateListOf<Adapters.TaskInfo>() }
-    val coroutineScope = rememberCoroutineScope()
-    val initialLoad = remember { mutableStateOf(false) }
+    val taskInfoList = BackgroundTask.taskInfoList.collectAsStateWithLifecycle()
     val userName = TaskManagerBinder.getUserName()
     val sortModeState = remember { mutableStateOf(SortMode.BY_NAME_SEQUENTIAL) }
     val appResponseState = remember { mutableStateOf<Adapters.AppsResponse?>(null) }
@@ -435,90 +435,6 @@ fun ProcessView(displayMode: DisplayMode, searchBarValue: String, toolbarViewMod
     }
     val drawablesMap = remember { mutableStateMapOf<String, Drawable?>() }
     val bitmapsMap = remember { mutableStateMapOf<String, ImageBitmap?>() }
-    val updateTaskInfoListCoroutine = remember { mutableStateOf<Job?>(null) }
-
-    fun launchUpdateTaskInfoListCoroutine() {
-        updateTaskInfoListCoroutine.value = coroutineScope.launch {
-            while (true) {
-                val tasks = TaskManagerBinder.getTasks()
-                val currentPids = TaskManagerBinder.getTaskPids().toSet()
-
-                val batchSize = 20 // 每个批次的大小
-                val totalTasks = tasks.size
-                var currentIndex = 0
-
-                val toRemove = taskInfoList.filter { it.pid !in currentPids }
-                toRemove.forEach { taskInfoList.remove(it) }
-
-                while (currentIndex < totalTasks) {
-                    val endIndex = minOf(currentIndex + batchSize, totalTasks)
-                    val batch = tasks.subList(currentIndex, endIndex)
-                    for (task in batch) {
-                        val index = taskInfoList.indexOfFirst { it.pid == task.pid }
-                        if (index != -1) {
-                            // 存在，只需要更新
-                            taskInfoList[index] = task
-                        } else {
-                            // 不存在，需要添加
-                            taskInfoList.add(task)
-                        }
-                    }
-                    currentIndex = endIndex
-                    delay(100)
-                }
-            }
-        }
-    }
-
-    LaunchedEffect(Unit) {
-        toolbarViewModel.refreshTaskInfoListEvents.collect {
-            Log.d("cold","refresh")
-            updateTaskInfoListCoroutine.value!!.cancel()
-            taskInfoList.clear()
-            Log.d("cold","clear")
-            coroutineScope.launch {
-                delay(250)
-                val allTasks = TaskManagerBinder.getTasks()
-                taskInfoList.addAll(allTasks)
-                launchUpdateTaskInfoListCoroutine()
-            }
-        }
-    }
-
-    LaunchedEffect(Unit) {
-        if (!initialLoad.value) {
-            initialLoad.value = true
-        } else {
-            return@LaunchedEffect
-        }
-        coroutineScope.launch {
-            try {
-                val url = URL("http://127.0.0.1:18080/api/v1/apps?page=1&page_size=100")
-                val connection = url.openConnection() as HttpURLConnection
-                connection.requestMethod = "GET"
-                connection.connectTimeout = 5000
-                connection.readTimeout = 5000
-                connection.setRequestProperty("Content-Type", "application/json")
-
-                val responseCode = connection.responseCode
-                if (responseCode == HttpURLConnection.HTTP_OK) {
-                    val inputStream = connection.inputStream
-                    val responseString = inputStream.bufferedReader().use { it.readText() }
-                    appResponseState.value = Adapters.AppsResponseAdapt(responseString)
-                }
-                connection.disconnect()
-            } catch (e: Exception) {
-                // 错误处理保持不变
-            }
-        }
-
-        coroutineScope.launch {
-            val allTasks = TaskManagerBinder.getTasks()
-            taskInfoList.clear()
-            taskInfoList.addAll(allTasks)
-            launchUpdateTaskInfoListCoroutine()
-        }
-    }
 
     Column(modifier = Modifier.background(Color(0xFFFCFDFF))) {
         TasksTableHeader(sortModeState.value, onSortModeChange = {
@@ -527,14 +443,14 @@ fun ProcessView(displayMode: DisplayMode, searchBarValue: String, toolbarViewMod
         LazyColumn {
             items(
                 when (sortModeState.value) {
-                    SortMode.BY_NAME_SEQUENTIAL -> taskInfoList.sortedBy { it.name }
-                    SortMode.BY_NAME_REVERSE -> taskInfoList.sortedByDescending { it.name }
-                    SortMode.BY_ID_SEQUENTIAL -> taskInfoList.sortedBy { it.pid }
-                    SortMode.BY_ID_REVERSE -> taskInfoList.sortedByDescending { it.pid }
-                    SortMode.BY_MEMORY_SEQUENTIAL -> taskInfoList.sortedBy { it.rss }
-                    SortMode.BY_MEMORY_REVERSE ->  taskInfoList.sortedByDescending{ it.rss }
-                    SortMode.BY_CPU_REVERSE -> taskInfoList.sortedByDescending { it.cpuUsage }
-                    SortMode.BY_CPU_SEQUENTIAL -> taskInfoList.sortedBy { it.cpuUsage }
+                    SortMode.BY_NAME_SEQUENTIAL -> taskInfoList.value.sortedBy { it.name }
+                    SortMode.BY_NAME_REVERSE -> taskInfoList.value.sortedByDescending { it.name }
+                    SortMode.BY_ID_SEQUENTIAL -> taskInfoList.value.sortedBy { it.pid }
+                    SortMode.BY_ID_REVERSE -> taskInfoList.value.sortedByDescending { it.pid }
+                    SortMode.BY_MEMORY_SEQUENTIAL -> taskInfoList.value.sortedBy { it.rss }
+                    SortMode.BY_MEMORY_REVERSE ->  taskInfoList.value.sortedByDescending{ it.rss }
+                    SortMode.BY_CPU_REVERSE -> taskInfoList.value.sortedByDescending { it.cpuUsage }
+                    SortMode.BY_CPU_SEQUENTIAL -> taskInfoList.value.sortedBy { it.cpuUsage }
                 }, key = { it.pid }) {
                 TaskItem(
                     it,
