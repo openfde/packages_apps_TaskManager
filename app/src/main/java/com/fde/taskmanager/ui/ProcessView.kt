@@ -77,15 +77,21 @@ import com.fde.taskmanager.BackgroundTask
 import com.fde.taskmanager.MainActivity
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
+import kotlin.math.abs
 import android.view.PointerIcon as PointerIcon1
 import androidx.compose.ui.input.pointer.PointerIcon as PointerIcon2
 
 @Composable
-fun HeaderDivider(targetIndex: Int,
-        weights: MutableList<Float>,
-        headerWidth: Int) {
+fun HeaderDivider(
+    targetIndex: Int,
+    weights: MutableList<Float>,
+    headerWidth: Int,
+    minWeight: Float = 0.02f
+) {
     val context = LocalContext.current
-    val icon: PointerIcon1 = PointerIcon1.getSystemIcon(context, PointerIcon1.TYPE_HORIZONTAL_DOUBLE_ARROW)
+    val icon: PointerIcon1 =
+        PointerIcon1.getSystemIcon(context, PointerIcon1.TYPE_HORIZONTAL_DOUBLE_ARROW)
+
     VerticalDivider(
         modifier = Modifier
             .pointerHoverIcon(PointerIcon2(icon))
@@ -93,20 +99,33 @@ fun HeaderDivider(targetIndex: Int,
             .pointerInput(Unit) {
                 detectDragGestures { change, dragAmount ->
                     change.consume()
-                    val delta = dragAmount.x.toDp() / headerWidth.toDp()
-                    if (weights[targetIndex] + delta > 0.5f ||
-                        weights[targetIndex] + delta < 0.1f
-                    )
-                        return@detectDragGestures
-                    for (index in weights.indices) {
-                        if (index < targetIndex) continue
-                        val eachDelta = delta / (weights.size - targetIndex)
-                        if (weights[index] - eachDelta < 0f) return@detectDragGestures
-                        weights[index] -= eachDelta
+                    val delta = dragAmount.x / headerWidth.toFloat()
+                    val leftIndex = targetIndex
+                    if (leftIndex >= weights.size - 1) return@detectDragGestures
+                    val rightIndices = (leftIndex + 1) until weights.size
+                    val sumRight = rightIndices.sumOf { weights[it].toDouble() }.toFloat()
+                    if (sumRight <= 0f) return@detectDragGestures
+                    val newLeft = (weights[leftIndex] + delta).coerceAtLeast(minWeight)
+                    val actualDelta = newLeft - weights[leftIndex]
+                    val maxPossibleDelta = rightIndices.minOf {
+                        weights[it] - minWeight
+                    } * (sumRight / weights[rightIndices.first()])
+                    if (actualDelta > maxPossibleDelta) return@detectDragGestures
+                    weights[leftIndex] = newLeft
+                    for (i in rightIndices) {
+                        val proportion = weights[i] / sumRight
+                        weights[i] -= actualDelta * proportion
+                        if (weights[i] < minWeight) weights[i] = minWeight
                     }
-                    weights[targetIndex] += delta
+                    val total = weights.sum()
+                    if (total != 1f && total > 0f) {
+                        for (i in weights.indices) {
+                            weights[i] /= total
+                        }
+                    }
                 }
-            }, color = Color(0x0D000000)
+            },
+        color = Color(0x0D000000)
     )
 }
 
