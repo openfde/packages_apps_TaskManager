@@ -74,6 +74,9 @@ import kotlinx.coroutines.launch
 import androidx.lifecycle.viewModelScope
 import androidx.compose.runtime.LaunchedEffect
 import com.fde.taskmanager.ui.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.asSharedFlow
 
@@ -91,7 +94,7 @@ class MainActivity : ComponentActivity() {
         val toolbar_compose_view = findViewById<ComposeView>(R.id.toolbar_compose_view)
         val main_frame_compose_view = findViewById<ComposeView>(R.id.main_frame_compose_view)
         val toolbarViewModel by viewModels<ToolbarViewModel>()
-
+        BackgroundTask.startBackgroundTask()
         toolbar_compose_view!!.setContent {
             val isHidden = remember { mutableStateOf(false) }
             val searchBarValueState = remember { mutableStateOf("") }
@@ -129,8 +132,11 @@ class MainActivity : ComponentActivity() {
                         return@collect
                     }
                     navController.navigate(route) {
-                        popUpTo(navController.graph.startDestinationId)
+                        popUpTo(navController.graph.startDestinationId) {
+                            saveState = true
+                        }
                         launchSingleTop = true
+                        restoreState = true
                     }
                 }
             }
@@ -160,6 +166,20 @@ class MainActivity : ComponentActivity() {
                         return@collect
                     }
                     searchBarValueState.value = value
+                }
+            }
+
+            LaunchedEffect(toolbarViewModel) {
+                toolbarViewModel.refreshTaskInfoListEvents.collect { value ->
+                    if(!isServiceAvailable.value) {
+                        launch {
+                            snackbarHostState.showSnackbar(
+                                message = getString(R.string.service_not_available),
+                            )
+                        }
+                        return@collect
+                    }
+                    BackgroundTask.refreshTaskInfoList()
                 }
             }
 
