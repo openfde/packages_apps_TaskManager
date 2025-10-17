@@ -99,7 +99,7 @@ fun HeaderDivider(
             .pointerInput(Unit) {
                 detectDragGestures { change, dragAmount ->
                     change.consume()
-                    val delta = dragAmount.x / headerWidth.toFloat()
+                    val delta = if (headerWidth > 0) dragAmount.x / headerWidth.toFloat() else 0f
                     val leftIndex = targetIndex
                     if (leftIndex >= weights.size - 1) return@detectDragGestures
                     val rightIndices = (leftIndex + 1) until weights.size
