@@ -1,5 +1,6 @@
 package com.fde.taskmanager.ui
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -36,6 +37,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 
 @Composable
 fun FileSystemView(searchBarValue : String) {
@@ -79,14 +81,17 @@ fun FileSystemView(searchBarValue : String) {
 
 @Composable
 fun DiskPartitionsTableHeader(diskHeaderWeights: MutableList<Float>) {
-    val headerWidthState = remember { mutableStateOf(0) }
+    val headerWidthState = remember { mutableStateOf(960.dp) }
+    val density = LocalDensity.current
     HorizontalDivider(modifier = Modifier.fillMaxWidth(), color = Color(0xFFE8E9EB))
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 5.dp, horizontal = 10.dp)
-            .onSizeChanged({
-                headerWidthState.value = it.width
+            .onSizeChanged({ size->
+                val widthDp = with(density){ size.width.toDp() }
+                Log.d("onSizeChanged","width changed to $widthDp")
+                headerWidthState.value = widthDp
             })
     ) {
         val context = LocalContext.current

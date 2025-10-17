@@ -72,6 +72,7 @@ import java.net.URL
 
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.unit.Dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.fde.taskmanager.BackgroundTask
 import com.fde.taskmanager.MainActivity
@@ -85,7 +86,7 @@ import androidx.compose.ui.input.pointer.PointerIcon as PointerIcon2
 fun HeaderDivider(
     targetIndex: Int,
     weights: MutableList<Float>,
-    headerWidth: Int,
+    headerWidth: Dp,
     minWeight: Float = 0.02f
 ) {
     val context = LocalContext.current
@@ -99,7 +100,8 @@ fun HeaderDivider(
             .pointerInput(Unit) {
                 detectDragGestures { change, dragAmount ->
                     change.consume()
-                    val delta = if (headerWidth > 0) dragAmount.x / headerWidth.toFloat() else 0f
+                    val delta = dragAmount.x.toDp() / headerWidth
+                    Log.d("HeaderDivider", "delta: $delta")
                     val leftIndex = targetIndex
                     if (leftIndex >= weights.size - 1) return@detectDragGestures
                     val rightIndices = (leftIndex + 1) until weights.size
@@ -141,15 +143,18 @@ fun TasksTableHeader(
     val cpuSortedReverseState = remember { mutableStateOf(false) }
     val context = LocalContext.current
     val vectorIconSize = 16.dp
-    val headerWidthState = remember { mutableStateOf(0) }
+    val headerWidthState = remember { mutableStateOf(960.dp) }
+    val density = LocalDensity.current
 
     HorizontalDivider(modifier = Modifier.fillMaxWidth(), color = Color(0xFFE8E9EB))
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 5.dp, horizontal = 10.dp)
-            .onSizeChanged({ it ->
-                headerWidthState.value = it.width
+            .onSizeChanged({ size ->
+                val widthDp = with(density){ size.width.toDp() }
+                Log.d("onSizeChanged","width changed to $widthDp")
+                headerWidthState.value = widthDp
             })
     ) {
         Row(
