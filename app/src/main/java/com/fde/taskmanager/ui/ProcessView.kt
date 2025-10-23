@@ -493,18 +493,19 @@ fun ProcessView(displayMode: DisplayMode, searchBarValue: String, toolbarViewMod
 
 fun toStringWithUnit(bytes: Long): String {
     return when {
-        bytes > 1024 * 1024 * 1024 -> "%.1f GB".format(bytes / (1024f * 1024f * 1024f))
-        bytes > 1024 * 1024 -> "%.1f MB".format(bytes / (1024f * 1024f))
-        bytes > 1024 -> "%.1f KB".format(bytes / 1024f)
+        bytes >= 1000 * 1000 * 1000 -> "%.1f GB".format(bytes / (1000f * 1000f * 1000f))
+        bytes >= 1000 * 1000 -> "%.1f MB".format(bytes / (1000f * 1000f))
+        bytes >= 1000 -> "%.1f kB".format(bytes / 1000f)
         else -> "$bytes B"
     }
 }
-
-fun toStringWithSpeedUnit(bytesPerSecond: Float): String {
+// 1024KiB = 1GiB
+// 1000KB  = 1GB
+fun toStringWithSpeedUnit(bytesPerSecond: Float, decimalPlaces: Int = 1): String {
     return when {
-        bytesPerSecond > 1024 * 1024 -> "%.1f MB/s".format(bytesPerSecond / (1024f * 1024f))
-        bytesPerSecond > 1024 -> "%.1f KB/s".format(bytesPerSecond / 1024f)
-        else -> "$bytesPerSecond B/s"
+        bytesPerSecond >= 1000 * 1000 -> "%.${decimalPlaces}f MB/s".format(bytesPerSecond / (1000f * 1000f))
+        bytesPerSecond >= 1000 -> "%.${decimalPlaces}f kB/s".format(bytesPerSecond / 1000f)
+        else -> "%.${decimalPlaces}f B/s".format(bytesPerSecond)
     }
 }
 
