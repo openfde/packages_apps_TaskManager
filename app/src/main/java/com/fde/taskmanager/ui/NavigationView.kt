@@ -49,8 +49,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.TextButton
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.text.font.FontWeight
 import com.fde.taskmanager.MainActivity.ToolbarViewModel
+import kotlinx.coroutines.launch
 
 sealed class AppRoute(val route: String) {
     object Process : AppRoute("process")
@@ -311,14 +313,26 @@ fun WindowButtonsBar(
             })
         }
 
-        SearchBar(
-            text = searchBarValueState.value, onValueChange = { it ->
-                toolbarViewModel.changeSearchBarValue(it)
-                searchBarValueState.value = it
-                if (it != "") {
-                    toolbarViewModel.changeDisplayMode(DisplayMode.SEARCH_FILTERED_PROCESSES)
-                }
+        val isSearchBarHidden = remember { mutableStateOf(false) }
+
+        LaunchedEffect(Unit) {
+            toolbarViewModel.navigationEvents.collect { route ->
+                if(route == AppRoute.Resource.route) isSearchBarHidden.value = true
+                else isSearchBarHidden.value = false
+            }
+        }
+
+        if(!isSearchBarHidden.value) {
+            SearchBar(
+                text = searchBarValueState.value, onValueChange = { it ->
+                    toolbarViewModel.changeSearchBarValue(it)
+                    searchBarValueState.value = it
+                    if (it != "") {
+                        toolbarViewModel.changeDisplayMode(DisplayMode.SEARCH_FILTERED_PROCESSES)
+                    }
             })
+        } else Spacer(modifier = Modifier.width(160.dp))
+
         Image(
             painter = painterResource(id = R.drawable.window_options_button),
             modifier = Modifier

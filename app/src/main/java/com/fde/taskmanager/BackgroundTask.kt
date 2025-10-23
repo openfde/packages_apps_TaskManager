@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlin.collections.filter
 import kotlin.collections.indexOfFirst
+import kotlin.properties.Delegates
 
 object BackgroundTask {
     private var supervisorJob = SupervisorJob()
@@ -67,10 +68,11 @@ object BackgroundTask {
         )
     )
     val diskStatsState = _diskStatsState.asStateFlow()
+    var cpuCount by Delegates.notNull<Int>()
 
     init {
-        val cpuCount = TaskManagerBinder.getEachCPUPercent(10).size
-        _cpuPercentState.value = List(cpuCount) { emptyList() }
+        cpuCount = TaskManagerBinder.getEachCPUPercent(10).size
+        _cpuPercentState.value = List(cpuCount + 1) { emptyList() } // 多1个作平均
     }
 
     fun startBackgroundTask() {
@@ -88,16 +90,17 @@ object BackgroundTask {
             while (true) {
                 try {
                     val eachCPUPercent = TaskManagerBinder.getEachCPUPercent(200)
-                    val updatedCpuPercent = _cpuPercentState.value.mapIndexed { index, percentList ->
-                        val newPercent = eachCPUPercent.getOrNull(index) ?: 0f
-                        val updatedList = if (percentList.size >= 20) {
-                            percentList.drop(1)
-                        } else {
-                            percentList
-                        } + newPercent
-                        updatedList
+                    val currentLists = _cpuPercentState.value
+                    val cpuCount = eachCPUPercent.size
+                    val updatedCpuLists = currentLists.take(cpuCount).mapIndexed { index, list ->
+                        val newPercent = eachCPUPercent[index]
+                        val updated = if (list.size >= 20) list.drop(1) else list
+                        updated + newPercent
                     }
-                    _cpuPercentState.value = updatedCpuPercent
+                    val latestAvg = updatedCpuLists.map { it.lastOrNull() ?: 0f }.average().toFloat()
+                    val avgList = currentLists.getOrNull(cpuCount) ?: emptyList()
+                    val updatedAvgList = (if (avgList.size >= 20) avgList.drop(1) else avgList) + latestAvg
+                    _cpuPercentState.value = updatedCpuLists + listOf(updatedAvgList)
                 } catch (e: Exception) {
                     Log.e("BackgroundTask", "Error updating CPU percent", e)
                 }

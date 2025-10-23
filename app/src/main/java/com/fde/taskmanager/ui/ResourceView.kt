@@ -1,6 +1,7 @@
 package com.fde.taskmanager.ui
 
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
@@ -41,12 +42,14 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.max
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.fde.taskmanager.BackgroundTask
 import com.fde.taskmanager.R
 import com.fde.taskmanager.TaskManagerBinder
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.math.abs
 
 @Composable
 fun FoldableBox(
@@ -223,12 +226,16 @@ fun ResourceView() {
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
 
-    val cpuCount = TaskManagerBinder.getEachCPUPercent(10).size
+    val cpuCount = BackgroundTask.cpuCount
     val allCpuColors = context.resources.getIntArray(R.array.cpu_color_array).map { Color(it) }
-    val cpuColors = if (cpuCount <= allCpuColors.size) {
-        allCpuColors.take(cpuCount)
+    val cpuColors = if (cpuCount+1 <= allCpuColors.size) {
+        allCpuColors.take(cpuCount).map { it.copy(alpha = 0.5f) } + allCpuColors[cpuCount]
     } else {
-        List(cpuCount) { index -> allCpuColors[index % allCpuColors.size] }
+        List(cpuCount+1) { index ->
+            if(index != cpuCount)
+            allCpuColors[index % allCpuColors.size].copy(alpha = 0.5f)
+            else allCpuColors[index % allCpuColors.size]
+        }
     }
     val cpuPercentState = BackgroundTask.cpuPercentState.collectAsStateWithLifecycle()
     val memoryAndSwapList = BackgroundTask.memoryAndSwapList.collectAsStateWithLifecycle()
@@ -245,8 +252,6 @@ fun ResourceView() {
         context.resources.getIntArray(R.array.memory_swap_color_array).map { Color(it) }
     val networkColors = context.resources.getIntArray(R.array.network_color_array).map { Color(it) }
     val diskColors = context.resources.getIntArray(R.array.disk_color_array).map { Color(it) }
-    val currentDiskAnnotationsState = remember { mutableStateListOf<String>("", "") }
-    val delayGap: Long = 1000
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -266,13 +271,43 @@ fun ResourceView() {
             )
             CPUUsagesAnnotationsLine(
                 colors = cpuColors, annotations = cpuPercentState.value.mapIndexed { index, coreValues ->
-                    val latest = coreValues.lastOrNull() ?: 0f
-                    "CPU${index + 1}: %03.1f%%".format(latest)
+                    Log.d("cold","cpuPercentState:$index")
+                    Log.d("cold","size:${cpuPercentState.value.size}")
+                    if(index != (cpuPercentState.value.size - 1)) {
+                        val latest = coreValues.lastOrNull() ?: 0f
+                        "CPU${index + 1}: %03.1f%%".format(latest)
+                    } else {
+                        val latest = coreValues.lastOrNull() ?: 0f
+                        "${context.getString(R.string.average)}:%03.1f%%".format(latest)
+                    }
                 }
             )
         }
+        val memorySwapMax = remember { mutableStateOf(100f) }
+        val memorySwapMin = remember { mutableStateOf(0f) }
+        val memorySwapAxisLabels = remember { mutableStateListOf("0%", "20%", "40%", "60%", "80%", "100%") }
+
+        LaunchedEffect(memoryAndSwapList.value) {
+            val axisValues = listOf(0f, 10f, 20f, 30f, 40f, 50f, 60f, 70f, 80f, 90f, 100f)
+            val total = memoryAndSwapList.value[0]
+            val dataMin = total.minOrNull() ?: 0f
+            val dataMax = total.maxOrNull() ?: 100f
+            val alignedMin = axisValues.filter { it <= dataMin }.maxOrNull() ?: 0f
+            val alignedMax = axisValues.filter { it >= dataMax }.minOrNull() ?: 100f
+            memorySwapMin.value = alignedMin.coerceAtLeast(0f)
+            memorySwapMax.value = alignedMax.coerceAtMost(100f)
+            val labelCount = 6
+            for (index in 0..5) {
+                val value = memorySwapMin.value +
+                (memorySwapMax.value - memorySwapMin.value) *
+                index / (labelCount - 1)
+                memorySwapAxisLabels[index] = "${value.toInt()}%"
+            }
+        }
+
         FoldableBox(context.getString(R.string.memory_and_swap)) {
             SmoothBezierLineChart(
+                yAxisLabels = memorySwapAxisLabels,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(80.dp)
@@ -280,8 +315,8 @@ fun ResourceView() {
                 allValues = memoryAndSwapList.value,
                 colors = memoryAndSwapColors,
                 strokeWidth = 1f,
-                maxValue = 100f,
-                minValue = 0f
+                maxValue = memorySwapMax.value,
+                minValue = memorySwapMin.value
             )
             MemoryAndSwapAnnotationsLine(
                 colors = memoryAndSwapColors,
@@ -308,17 +343,17 @@ fun ResourceView() {
                     .padding(10.dp),
                 allValues = networkDownloadAndUploadState.value,
                 yAxisLabels = listOf(
-                    "0kb/s",
-                    "20kb/s",
-                    "40kb/s",
-                    "60kb/s",
-                    "80kb/s",
-                    "100kb/s",
+                    "0kB/s",
+                    "200kB/s",
+                    "400kB/s",
+                    "600kB/s",
+                    "800kB/s",
+                    "1MB/s",
                 ),
                 colors = networkColors,
                 strokeWidth = 1f,
                 minValue = 0f,
-                maxValue = 100 * 1024f
+                maxValue = 1000 * 1024f
             )
             NetworkAnnotationsLine(
                 colors = networkColors, annotations = listOf(
@@ -397,7 +432,7 @@ fun SmoothBezierLineChart(
                 pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 5f), 0f)
             )
 
-            val textWidth = labelPaint.measureText("${(ratio * 100).toInt()}%")
+            val textWidth = labelPaint.measureText(yAxisLabels[i])
             drawContext.canvas.nativeCanvas.drawText(
                 yAxisLabels[i], size.width - textWidth - 4f, // 右侧对齐，距离右边留4f间距
                 y, labelPaint

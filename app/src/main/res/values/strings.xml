@@ -58,4 +58,5 @@
     <string name="user_name">User Name</string>
     <string name="app_version">Version</string>
     <string name="app_name_title">App Name</string>
+    <string name="average">Average</string>
 </resources>
