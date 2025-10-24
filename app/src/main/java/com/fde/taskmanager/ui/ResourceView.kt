@@ -42,14 +42,9 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.unit.max
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.fde.taskmanager.BackgroundTask
 import com.fde.taskmanager.R
-import com.fde.taskmanager.TaskManagerBinder
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlin.math.abs
 
 @Composable
 fun FoldableBox(
@@ -335,6 +330,39 @@ fun ResourceView() {
                     memoryAndSwap.value.swap.percent/100f)
             )
         }
+
+        val networkAxisMin = remember { mutableStateOf(0f) }
+        val networkAxisMax = remember { mutableStateOf(1000f * 1000f) }
+        val networkAxisLabels = remember { mutableStateListOf("0kB/s", "200kB/s", "400kB/s", "600kB/s", "800kB/s", "1MB/s") }
+
+        LaunchedEffect(networkDownloadAndUploadState.value) {
+            val axisValues = listOf(
+                0f, // 0
+                1000f, // 1kB/s
+                100*1000f, // 100kB/s
+                200*1000f, // 200kB/s
+                400*1000f, // 400kB/s
+                800*1000f, // 800kB/s
+                1000f*1000f, // 1MB/s
+                5*1000f*1000f, // 5MB/s
+                10*1000f*1000f, // 10MB/s
+                20*1000f*1000f, // 20MB/s
+                50*1000f*1000f // 50MB/s
+            )
+            val total = networkDownloadAndUploadState.value[0] + networkDownloadAndUploadState.value[1]
+            val dataMin = total.min()
+            val dataMax = total.max()
+            networkAxisMax.value = axisValues.filter { it >= dataMax }.min()
+            networkAxisMin.value = axisValues.filter { it <= dataMin }.max()
+            val labelCount = 6
+            for (index in 0..5) {
+                val value = networkAxisMin.value +
+                        (networkAxisMax.value - networkAxisMin.value) *
+                        index / (labelCount - 1)
+                networkAxisLabels[index] = toStringWithSpeedUnit(value,0)
+            }
+        }
+
         FoldableBox(context.getString(R.string.network)) {
             SmoothBezierLineChart(
                 modifier = Modifier
@@ -342,18 +370,11 @@ fun ResourceView() {
                     .height(80.dp)
                     .padding(10.dp),
                 allValues = networkDownloadAndUploadState.value,
-                yAxisLabels = listOf(
-                    "0kB/s",
-                    "200kB/s",
-                    "400kB/s",
-                    "600kB/s",
-                    "800kB/s",
-                    "1MB/s",
-                ),
+                yAxisLabels = networkAxisLabels,
                 colors = networkColors,
                 strokeWidth = 1f,
-                minValue = 0f,
-                maxValue = 1000 * 1024f
+                minValue = networkAxisMin.value,
+                maxValue = networkAxisMax.value
             )
             NetworkAnnotationsLine(
                 colors = networkColors, annotations = listOf(
@@ -380,7 +401,7 @@ fun ResourceView() {
                 colors = diskColors,
                 strokeWidth = 1f,
                 minValue = 0f,
-                maxValue = 30 * 1024 * 1024f
+                maxValue = 30 * 1000f * 1000f
             )
             DiskAnnotationsLine(
                 colors = diskColors, annotations = listOf(
