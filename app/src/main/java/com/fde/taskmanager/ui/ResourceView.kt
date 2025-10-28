@@ -388,6 +388,39 @@ fun ResourceView() {
                 )
             )
         }
+
+        val diskAxisMin = remember { mutableStateOf(0f) }
+        val diskAxisMax = remember { mutableStateOf(1000f * 1000f) }
+        val diskAxisLabels = remember { mutableStateListOf("0kB/s", "200kB/s", "400kB/s", "600kB/s", "800kB/s", "1MB/s") }
+
+        LaunchedEffect(diskReadAndWriteList.value) {
+            val axisValues = listOf(
+                0f, // 0
+                1000f, // 1kB/s
+                100*1000f, // 100kB/s
+                200*1000f, // 200kB/s
+                400*1000f, // 400kB/s
+                800*1000f, // 800kB/s
+                1000f*1000f, // 1MB/s
+                5*1000f*1000f, // 5MB/s
+                10*1000f*1000f, // 10MB/s
+                20*1000f*1000f, // 20MB/s
+                50*1000f*1000f // 50MB/s
+            )
+            val total = diskReadAndWriteList.value[0] + diskReadAndWriteList.value[1]
+            val dataMin = total.min()
+            val dataMax = total.max()
+            diskAxisMax.value = axisValues.subList(1,axisValues.size).filter { it >= dataMax }.min()
+            diskAxisMin.value = axisValues.subList(0,axisValues.size-1).filter { it <= dataMin }.max()
+            val labelCount = 6
+            for (index in 0..5) {
+                val value = diskAxisMin.value +
+                        (diskAxisMax.value - diskAxisMin.value) *
+                        index / (labelCount - 1)
+                diskAxisLabels[index] = toStringWithSpeedUnit(value,0)
+            }
+        }
+
         FoldableBox(context.getString(R.string.disk)) {
             SmoothBezierLineChart(
                 modifier = Modifier
@@ -395,13 +428,11 @@ fun ResourceView() {
                     .height(80.dp)
                     .padding(10.dp),
                 allValues = diskReadAndWriteList.value,
-                yAxisLabels = listOf(
-                    "5MB/s", "10MB/s", "15MB/s", "20MB/s", "25MB/s", "30MB/s"
-                ),
+                yAxisLabels = diskAxisLabels,
                 colors = diskColors,
                 strokeWidth = 1f,
-                minValue = 0f,
-                maxValue = 30 * 1000f * 1000f
+                minValue = diskAxisMin.value,
+                maxValue = diskAxisMax.value
             )
             DiskAnnotationsLine(
                 colors = diskColors, annotations = listOf(
