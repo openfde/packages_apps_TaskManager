@@ -352,8 +352,8 @@ fun ResourceView() {
             val total = networkDownloadAndUploadState.value[0] + networkDownloadAndUploadState.value[1]
             val dataMin = total.min()
             val dataMax = total.max()
-            networkAxisMax.value = axisValues.filter { it >= dataMax }.min()
-            networkAxisMin.value = axisValues.filter { it <= dataMin }.max()
+            networkAxisMax.value = axisValues.subList(1,axisValues.size).filter { it >= dataMax }.min()
+            networkAxisMin.value = axisValues.subList(0,axisValues.size-1).filter { it <= dataMin }.max()
             val labelCount = 6
             for (index in 0..5) {
                 val value = networkAxisMin.value +
