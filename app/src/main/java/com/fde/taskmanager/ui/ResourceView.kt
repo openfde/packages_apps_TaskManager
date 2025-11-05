@@ -410,8 +410,8 @@ fun ResourceView() {
             val total = diskReadAndWriteList.value[0] + diskReadAndWriteList.value[1]
             val dataMin = total.min()
             val dataMax = total.max()
-            diskAxisMax.value = axisValues.subList(1,axisValues.size).filter { it >= dataMax }.min()
-            diskAxisMin.value = axisValues.subList(0,axisValues.size-1).filter { it <= dataMin }.max()
+            diskAxisMax.value = axisValues.subList(1,axisValues.size).filter { it >= dataMax }.minOrNull() ?: 0f
+            diskAxisMin.value = axisValues.subList(0,axisValues.size-1).filter { it <= dataMin }.maxOrNull() ?: 0f
             val labelCount = 6
             for (index in 0..5) {
                 val value = diskAxisMin.value +
