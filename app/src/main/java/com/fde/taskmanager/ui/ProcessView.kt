@@ -10,9 +10,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -40,6 +43,7 @@ import kotlinx.coroutines.delay
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
@@ -152,8 +156,8 @@ fun TasksTableHeader(
             .fillMaxWidth()
             .padding(vertical = 5.dp, horizontal = 10.dp)
             .onSizeChanged({ size ->
-                val widthDp = with(density){ size.width.toDp() }
-                Log.d("onSizeChanged","width changed to $widthDp")
+                val widthDp = with(density) { size.width.toDp() }
+                Log.d("onSizeChanged", "width changed to $widthDp")
                 headerWidthState.value = widthDp
             })
     ) {
@@ -210,7 +214,7 @@ fun TasksTableHeader(
                     contentDescription = null,
                 )
             }
-            HeaderDivider(0, weights,headerWidthState.value)
+            HeaderDivider(0, weights, headerWidthState.value)
             Text(
                 text = context.getString(R.string.user),
                 modifier = Modifier
@@ -220,7 +224,7 @@ fun TasksTableHeader(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            HeaderDivider(1, weights,headerWidthState.value)
+            HeaderDivider(1, weights, headerWidthState.value)
             Text(
                 text = context.getString(R.string.virtual_memory),
                 modifier = Modifier
@@ -230,7 +234,7 @@ fun TasksTableHeader(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            HeaderDivider(2,weights,headerWidthState.value)
+            HeaderDivider(2, weights, headerWidthState.value)
             Row(
                 modifier = Modifier
                     .weight(weights[3])
@@ -285,7 +289,7 @@ fun TasksTableHeader(
                 )
             }
 
-            HeaderDivider(3,weights,headerWidthState.value)
+            HeaderDivider(3, weights, headerWidthState.value)
             Row(
                 modifier = Modifier
                     .weight(weights[4])
@@ -334,7 +338,7 @@ fun TasksTableHeader(
                     contentDescription = null
                 )
             }
-            HeaderDivider(4, weights,headerWidthState.value)
+            HeaderDivider(4, weights, headerWidthState.value)
             Row(
                 modifier = Modifier
                     .weight(weights[5])
@@ -388,7 +392,7 @@ fun TasksTableHeader(
                     contentDescription = null
                 )
             }
-            HeaderDivider(5,weights,headerWidthState.value)
+            HeaderDivider(5, weights, headerWidthState.value)
             Text(
                 text = context.getString(R.string.disk_read_storage),
                 modifier = Modifier
@@ -398,7 +402,7 @@ fun TasksTableHeader(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            HeaderDivider(6,weights,headerWidthState.value)
+            HeaderDivider(6, weights, headerWidthState.value)
             Text(
                 text = context.getString(R.string.disk_write_storage),
                 modifier = Modifier
@@ -408,7 +412,7 @@ fun TasksTableHeader(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            HeaderDivider(7,weights,headerWidthState.value)
+            HeaderDivider(7, weights, headerWidthState.value)
             Text(
                 text = context.getString(R.string.disk_read),
                 modifier = Modifier
@@ -418,7 +422,7 @@ fun TasksTableHeader(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            HeaderDivider(8,weights,headerWidthState.value)
+            HeaderDivider(8, weights, headerWidthState.value)
             Text(
                 text = context.getString(R.string.disk_write),
                 modifier = Modifier
@@ -442,12 +446,16 @@ enum class DisplayMode {
 
 enum class SortMode {
     BY_NAME_SEQUENTIAL, BY_NAME_REVERSE, BY_ID_SEQUENTIAL, BY_ID_REVERSE,
-    BY_MEMORY_SEQUENTIAL, BY_MEMORY_REVERSE,BY_CPU_SEQUENTIAL, BY_CPU_REVERSE
+    BY_MEMORY_SEQUENTIAL, BY_MEMORY_REVERSE, BY_CPU_SEQUENTIAL, BY_CPU_REVERSE
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProcessView(displayMode: DisplayMode, searchBarValue: String, toolbarViewModel: MainActivity.ToolbarViewModel) {
+fun ProcessView(
+    displayMode: DisplayMode,
+    searchBarValue: String,
+    toolbarViewModel: MainActivity.ToolbarViewModel
+) {
     val taskInfoList = BackgroundTask.taskInfoList.collectAsStateWithLifecycle()
     val userName = TaskManagerBinder.getUserName()
     val sortModeState = remember { mutableStateOf(SortMode.BY_NAME_SEQUENTIAL) }
@@ -461,33 +469,44 @@ fun ProcessView(displayMode: DisplayMode, searchBarValue: String, toolbarViewMod
     val bitmapsMap = remember { mutableStateMapOf<String, ImageBitmap?>() }
 
     Column(modifier = Modifier.background(Color(0xFFFCFDFF))) {
+        val listState = remember { LazyListState() }
         TasksTableHeader(sortModeState.value, onSortModeChange = {
             sortModeState.value = it
         }, taskHeaderItemWeightsState)
-        LazyColumn {
-            items(
-                when (sortModeState.value) {
-                    SortMode.BY_NAME_SEQUENTIAL -> taskInfoList.value.sortedBy { it.name }
-                    SortMode.BY_NAME_REVERSE -> taskInfoList.value.sortedByDescending { it.name }
-                    SortMode.BY_ID_SEQUENTIAL -> taskInfoList.value.sortedBy { it.pid }
-                    SortMode.BY_ID_REVERSE -> taskInfoList.value.sortedByDescending { it.pid }
-                    SortMode.BY_MEMORY_SEQUENTIAL -> taskInfoList.value.sortedBy { it.rss }
-                    SortMode.BY_MEMORY_REVERSE ->  taskInfoList.value.sortedByDescending{ it.rss }
-                    SortMode.BY_CPU_REVERSE -> taskInfoList.value.sortedByDescending { it.cpuUsage }
-                    SortMode.BY_CPU_SEQUENTIAL -> taskInfoList.value.sortedBy { it.cpuUsage }
-                }, key = { it.pid }) {
-                TaskItem(
-                    it,
-                    displayMode,
-                    userName!!,
-                    searchBarValue,
-                    appResponseState.value,
-                    taskHeaderItemWeightsState,
-                    drawablesMap,
-                    bitmapsMap
-                )
+        Box(modifier = Modifier.fillMaxSize()) {
+            LazyColumn(state = listState) {
+                items(
+                    when (sortModeState.value) {
+                        SortMode.BY_NAME_SEQUENTIAL -> taskInfoList.value.sortedBy { it.name }
+                        SortMode.BY_NAME_REVERSE -> taskInfoList.value.sortedByDescending { it.name }
+                        SortMode.BY_ID_SEQUENTIAL -> taskInfoList.value.sortedBy { it.pid }
+                        SortMode.BY_ID_REVERSE -> taskInfoList.value.sortedByDescending { it.pid }
+                        SortMode.BY_MEMORY_SEQUENTIAL -> taskInfoList.value.sortedBy { it.rss }
+                        SortMode.BY_MEMORY_REVERSE -> taskInfoList.value.sortedByDescending { it.rss }
+                        SortMode.BY_CPU_REVERSE -> taskInfoList.value.sortedByDescending { it.cpuUsage }
+                        SortMode.BY_CPU_SEQUENTIAL -> taskInfoList.value.sortedBy { it.cpuUsage }
+                    }, key = { it.pid }) {
+                    TaskItem(
+                        it,
+                        displayMode,
+                        userName!!,
+                        searchBarValue,
+                        appResponseState.value,
+                        taskHeaderItemWeightsState,
+                        drawablesMap,
+                        bitmapsMap
+                    )
+                }
             }
+            VerticalScrollBar(
+                listState,
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .fillMaxHeight()
+                    .width(16.dp)
+            )
         }
+
     }
 }
 
@@ -499,6 +518,7 @@ fun toStringWithUnit(bytes: Long): String {
         else -> "$bytes B"
     }
 }
+
 // 1024KiB = 1GiB
 // 1000KB  = 1GB
 fun toStringWithSpeedUnit(bytesPerSecond: Float, decimalPlaces: Int = 1): String {
@@ -551,12 +571,12 @@ fun TaskItem(
 
     val iconSize = 24.dp
 
-    val (iconDrawable,iconBitmap, iconType) =
+    val (iconDrawable, iconBitmap, iconType) =
         remember(taskInfo.name, taskInfo.isAndroidApp) {
-            if(taskInfo.isAndroidApp) {
+            if (taskInfo.isAndroidApp) {
                 try {
                     val iconType = IconType.ANDROID_DRAWABLE_ICON
-                    if(!drawablesMap.containsKey(taskInfo.name.toString())) {
+                    if (!drawablesMap.containsKey(taskInfo.name.toString())) {
                         val pm: PackageManager = context.packageManager
                         val iconDrawable = pm.getApplicationIcon(taskInfo.name.toString())
                         drawablesMap.put(taskInfo.name.toString(), iconDrawable)
@@ -567,7 +587,7 @@ fun TaskItem(
                         val iconDrawableCache = drawablesMap.get(taskInfo.name.toString())
                         Triple(iconDrawableCache, null, iconType)
                     }
-                } catch(e: PackageManager.NameNotFoundException) {
+                } catch (e: PackageManager.NameNotFoundException) {
                     drawablesMap.put(taskInfo.name.toString(), null)
                     Triple(null, null, IconType.ANDROID_NULL_ICON)
                 }
@@ -576,7 +596,7 @@ fun TaskItem(
                 if (appResponse == null) {
                     Triple(null, null, IconType.LINUX_NULL_ICON)
                 } else {
-                    if(!bitmapsMap.containsKey(taskInfo.name.toString())) {
+                    if (!bitmapsMap.containsKey(taskInfo.name.toString())) {
                         val appInfoIndex = appResponse.data.data.indexOfFirst {
                             taskInfo.name!!.lowercase().contains(it.Name.lowercase())
                         }
@@ -586,12 +606,13 @@ fun TaskItem(
                         } else {
                             val iconB64String = appResponse.data.data[appInfoIndex].Icon
                             val imageBytes = Base64.decode(iconB64String, Base64.DEFAULT)
-                            val iconBitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
-                                .asImageBitmap()
+                            val iconBitmap =
+                                BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+                                    .asImageBitmap()
                             bitmapsMap.put(taskInfo.name.toString(), iconBitmap)
                             Triple(null, iconBitmap, iconType)
                         }
-                    } else if(bitmapsMap.get(taskInfo.name.toString()) == null) {
+                    } else if (bitmapsMap.get(taskInfo.name.toString()) == null) {
                         Triple(null, null, IconType.LINUX_NULL_ICON)
                     } else {
                         val iconBitmapCache = bitmapsMap.get(taskInfo.name.toString())
@@ -834,7 +855,7 @@ fun TaskItem(
     ) {
         // 属性
         DropdownMenuItem(
-            text = { Text(text= stringResource(R.string.properties)) }, onClick = {
+            text = { Text(text = stringResource(R.string.properties)) }, onClick = {
                 floatingMenuExpanded.value = false
                 floatingPropertiesWindowShow.value = true
             }, modifier = Modifier
@@ -858,7 +879,7 @@ fun TaskItem(
 //        )
         // 更改优先级
         DropdownMenuItem(
-            text = { Text(text= stringResource(R.string.change_priority)) }, onClick = {
+            text = { Text(text = stringResource(R.string.change_priority)) }, onClick = {
                 floatingMenuExpanded.value = false
                 floatingPriorityModificationWindowShow.value = true
             }, modifier = Modifier
@@ -875,7 +896,7 @@ fun TaskItem(
         HorizontalDivider()
         // 停止进程
         DropdownMenuItem(
-            text = { Text(text= stringResource(R.string.stop_process)) }, onClick = {
+            text = { Text(text = stringResource(R.string.stop_process)) }, onClick = {
                 TaskManagerBinder.killTaskByPid(taskInfo.pid)
             }, modifier = Modifier
                 .height(32.dp)
@@ -890,7 +911,7 @@ fun TaskItem(
 //        )
         //终止
         DropdownMenuItem(
-            text = { Text(text= stringResource(R.string.stop)) }, onClick = {
+            text = { Text(text = stringResource(R.string.stop)) }, onClick = {
                 TaskManagerBinder.killTaskByPid(taskInfo.pid)
             }, modifier = Modifier
                 .height(32.dp)
@@ -899,7 +920,7 @@ fun TaskItem(
         HorizontalDivider()
         // 强制终止
         DropdownMenuItem(
-            text = { Text(text= stringResource(R.string.force_stop)) }, onClick = {
+            text = { Text(text = stringResource(R.string.force_stop)) }, onClick = {
                 TaskManagerBinder.killTaskByPid(taskInfo.pid)
             }, modifier = Modifier
                 .height(32.dp)

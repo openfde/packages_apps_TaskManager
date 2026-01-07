@@ -8,11 +8,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
@@ -40,7 +42,7 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 
 @Composable
-fun FileSystemView(searchBarValue : String) {
+fun FileSystemView(searchBarValue: String) {
     val fileSystemUsageState = remember {
         mutableStateListOf<Adapters.DiskPartition>()
     }
@@ -64,17 +66,27 @@ fun FileSystemView(searchBarValue : String) {
     }
 
     Column {
+        val listState = remember { LazyListState() }
         DiskPartitionsTableHeader(diskHeaderWeights)
-        LazyColumn {
-            fileSystemUsageState.mapIndexed { index, diskPartition ->
-                item {
-                    DiskPartitionItem(
-                        diskPartition,
-                        diskPartitionColors[index % diskPartitionColors.size],
-                        diskHeaderWeights,searchBarValue
-                    )
+        Box(modifier = Modifier.fillMaxSize()) {
+            LazyColumn(state = listState) {
+                fileSystemUsageState.mapIndexed { index, diskPartition ->
+                    item {
+                        DiskPartitionItem(
+                            diskPartition,
+                            diskPartitionColors[index % diskPartitionColors.size],
+                            diskHeaderWeights, searchBarValue
+                        )
+                    }
                 }
             }
+            VerticalScrollBar(
+                listState,
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .fillMaxHeight()
+                    .width(16.dp)
+            )
         }
     }
 }
@@ -88,9 +100,9 @@ fun DiskPartitionsTableHeader(diskHeaderWeights: MutableList<Float>) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 5.dp, horizontal = 10.dp)
-            .onSizeChanged({ size->
-                val widthDp = with(density){ size.width.toDp() }
-                Log.d("onSizeChanged","width changed to $widthDp")
+            .onSizeChanged({ size ->
+                val widthDp = with(density) { size.width.toDp() }
+                Log.d("onSizeChanged", "width changed to $widthDp")
                 headerWidthState.value = widthDp
             })
     ) {
@@ -108,7 +120,7 @@ fun DiskPartitionsTableHeader(diskHeaderWeights: MutableList<Float>) {
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            HeaderDivider(0,diskHeaderWeights,headerWidthState.value)
+            HeaderDivider(0, diskHeaderWeights, headerWidthState.value)
             Text(
                 text = context.getString(R.string.catalogue),
                 modifier = Modifier
@@ -118,7 +130,7 @@ fun DiskPartitionsTableHeader(diskHeaderWeights: MutableList<Float>) {
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            HeaderDivider(1,diskHeaderWeights,headerWidthState.value)
+            HeaderDivider(1, diskHeaderWeights, headerWidthState.value)
             Text(
                 text = context.getString(R.string.device),
                 modifier = Modifier
@@ -128,7 +140,7 @@ fun DiskPartitionsTableHeader(diskHeaderWeights: MutableList<Float>) {
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            HeaderDivider(2,diskHeaderWeights,headerWidthState.value)
+            HeaderDivider(2, diskHeaderWeights, headerWidthState.value)
             Text(
                 text = context.getString(R.string.type),
                 modifier = Modifier
@@ -138,7 +150,7 @@ fun DiskPartitionsTableHeader(diskHeaderWeights: MutableList<Float>) {
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            HeaderDivider(3,diskHeaderWeights,headerWidthState.value)
+            HeaderDivider(3, diskHeaderWeights, headerWidthState.value)
             Text(
                 text = context.getString(R.string.total_storage),
                 modifier = Modifier
@@ -148,7 +160,7 @@ fun DiskPartitionsTableHeader(diskHeaderWeights: MutableList<Float>) {
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            HeaderDivider(4,diskHeaderWeights,headerWidthState.value)
+            HeaderDivider(4, diskHeaderWeights, headerWidthState.value)
             Text(
                 text = context.getString(R.string.available_storage),
                 modifier = Modifier
@@ -170,71 +182,72 @@ fun DiskPartitionItem(
     searchBarValue: String
 ) {
     val searchBarValueFiltered = diskPartition.catalogue.contains(searchBarValue)
-    if(searchBarValueFiltered)
-    Row(
-        modifier = Modifier
-            .height(30.dp)
-            .fillMaxWidth()
-            .padding(horizontal = 10.dp)
-            .clickable(onClick = {}),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        val m = listOf<String>(
-            "${diskPartition.used}B",
-            diskPartition.catalogue,
-            diskPartition.device,
-            diskPartition.type,
-            diskPartition.storage,
-            diskPartition.available
-        )
-        diskHeaderWeights.forEachIndexed { index, taskItemWeight ->
-            val proportion1 = diskPartition.percent / 100f
-            val proportion2 = 1 - proportion1
+    if (searchBarValueFiltered)
+        Row(
+            modifier = Modifier
+                .height(30.dp)
+                .fillMaxWidth()
+                .padding(horizontal = 10.dp)
+                .clickable(onClick = {}),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            val m = listOf<String>(
+                "${diskPartition.used}B",
+                diskPartition.catalogue,
+                diskPartition.device,
+                diskPartition.type,
+                diskPartition.storage,
+                diskPartition.available
+            )
+            diskHeaderWeights.forEachIndexed { index, taskItemWeight ->
+                val proportion1 = diskPartition.percent / 100f
+                val proportion2 = 1 - proportion1
 
-            Row(
-                modifier = Modifier
-                    .weight(taskItemWeight)
-                    .padding(start = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = m[index].toString(),
-                    fontSize = 14.sp,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                if (index == 0) {
-                    Box(modifier = Modifier
-                        .width(180.dp)
-                        .height(22.dp)
-                        .clip(RoundedCornerShape(3.dp))
-                        .background(Color(0xffEBEBEB))
-                    ) {
-                        Row {
-                            if(proportion1 != 0f) {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxHeight()
-                                        .weight(proportion1)
-                                        .background(color)
-                                )
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxHeight()
-                                        .weight(proportion2)
-                                        .background(Color(0xffEBEBEB))
-                                )
+                Row(
+                    modifier = Modifier
+                        .weight(taskItemWeight)
+                        .padding(start = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = m[index].toString(),
+                        fontSize = 14.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    if (index == 0) {
+                        Box(
+                            modifier = Modifier
+                                .width(180.dp)
+                                .height(22.dp)
+                                .clip(RoundedCornerShape(3.dp))
+                                .background(Color(0xffEBEBEB))
+                        ) {
+                            Row {
+                                if (proportion1 != 0f) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxHeight()
+                                            .weight(proportion1)
+                                            .background(color)
+                                    )
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxHeight()
+                                            .weight(proportion2)
+                                            .background(Color(0xffEBEBEB))
+                                    )
+                                }
                             }
+                            Text(
+                                "${diskPartition.percent}%",
+                                modifier = Modifier.align(Alignment.Center),
+                                color = Color.White
+                            )
                         }
-                        Text(
-                            "${diskPartition.percent}%",
-                            modifier = Modifier.align(Alignment.Center),
-                            color = Color.White
-                        )
                     }
                 }
             }
         }
-    }
 }
