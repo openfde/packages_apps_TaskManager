@@ -76,6 +76,7 @@ import java.net.URL
 
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.fde.taskmanager.BackgroundTask
@@ -167,17 +168,43 @@ fun TasksTableHeader(
             Row(
                 modifier = Modifier
                     .weight(weights[0])
-                    .padding(end = 8.dp),
+                    .padding(end = 8.dp)
+                    .clickable(onClick = {
+                        when (sortMode) {
+                            SortMode.BY_ID_SEQUENTIAL, SortMode.BY_ID_REVERSE,
+                            SortMode.BY_MEMORY_REVERSE, SortMode.BY_MEMORY_SEQUENTIAL,
+                            SortMode.BY_CPU_SEQUENTIAL, SortMode.BY_CPU_REVERSE -> {
+                                // 进一步看
+                                if (nameSortedReverseState.value) {
+                                    // 名称顺序
+                                    onSortModeChange(SortMode.BY_NAME_REVERSE)
+                                    nameSortedReverseState.value = false
+                                } else {
+                                    onSortModeChange(SortMode.BY_NAME_REVERSE)
+                                    nameSortedReverseState.value = true
+                                }
+                            }
+
+                            SortMode.BY_NAME_SEQUENTIAL -> onSortModeChange(SortMode.BY_NAME_REVERSE)
+                            SortMode.BY_NAME_REVERSE -> onSortModeChange(SortMode.BY_NAME_SEQUENTIAL)
+                        }
+                    }),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text(
-                    text = context.getString(R.string.process_name),
-                    modifier = Modifier.padding(horizontal = 10.dp),
-                    fontSize = 14.sp,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxHeight(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = context.getString(R.string.process_name),
+                        modifier = Modifier.padding(horizontal = 10.dp),
+                        fontSize = 14.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
                 Image(
                     painter = painterResource(id = R.drawable.task_header_down_vector),
                     modifier = Modifier
@@ -190,27 +217,7 @@ fun TasksTableHeader(
                                 SortMode.BY_ID_REVERSE -> 0f
                                 else -> 0f
                             }
-                        }
-                        .clickable(onClick = {
-                            when (sortMode) {
-                                SortMode.BY_ID_SEQUENTIAL, SortMode.BY_ID_REVERSE,
-                                SortMode.BY_MEMORY_REVERSE, SortMode.BY_MEMORY_SEQUENTIAL,
-                                SortMode.BY_CPU_SEQUENTIAL, SortMode.BY_CPU_REVERSE -> {
-                                    // 进一步看
-                                    if (nameSortedReverseState.value) {
-                                        // 名称顺序
-                                        onSortModeChange(SortMode.BY_NAME_REVERSE)
-                                        nameSortedReverseState.value = false
-                                    } else {
-                                        onSortModeChange(SortMode.BY_NAME_REVERSE)
-                                        nameSortedReverseState.value = true
-                                    }
-                                }
-
-                                SortMode.BY_NAME_SEQUENTIAL -> onSortModeChange(SortMode.BY_NAME_REVERSE)
-                                SortMode.BY_NAME_REVERSE -> onSortModeChange(SortMode.BY_NAME_SEQUENTIAL)
-                            }
-                        }),
+                        },
                     contentDescription = null,
                 )
             }
@@ -238,18 +245,39 @@ fun TasksTableHeader(
             Row(
                 modifier = Modifier
                     .weight(weights[3])
-                    .padding(horizontal = 8.dp),
+                    .padding(horizontal = 8.dp)
+                    .clickable(onClick = {
+                        when (sortMode) {
+                            SortMode.BY_NAME_SEQUENTIAL, SortMode.BY_NAME_REVERSE,
+                            SortMode.BY_ID_SEQUENTIAL, SortMode.BY_ID_REVERSE,
+                            SortMode.BY_MEMORY_SEQUENTIAL, SortMode.BY_MEMORY_REVERSE -> {
+                                if (cpuSortedReverseState.value) {
+                                    onSortModeChange(SortMode.BY_CPU_SEQUENTIAL)
+                                    cpuSortedReverseState.value = false
+                                } else {
+                                    onSortModeChange(SortMode.BY_CPU_REVERSE)
+                                    cpuSortedReverseState.value = true
+                                }
+                            }
+                            SortMode.BY_CPU_SEQUENTIAL -> onSortModeChange(SortMode.BY_CPU_REVERSE)
+                            SortMode.BY_CPU_REVERSE -> onSortModeChange(SortMode.BY_CPU_SEQUENTIAL)
+                        }
+                    }),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text(
-                    text = "% CPU",
+                Box(
                     modifier = Modifier
-                        .padding(horizontal = 10.dp),
-                    fontSize = 14.sp,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
+                        .fillMaxHeight(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "% CPU",
+                        fontSize = 14.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
                 Image(
                     painter = painterResource(id = R.drawable.task_header_down_vector),
                     modifier = Modifier
@@ -262,29 +290,11 @@ fun TasksTableHeader(
                                 SortMode.BY_ID_REVERSE,
                                 SortMode.BY_MEMORY_SEQUENTIAL,
                                 SortMode.BY_MEMORY_REVERSE,
-                                SortMode.BY_CPU_SEQUENTIAL -> 0f
+                                SortMode.BY_CPU_SEQUENTIAL -> 180f
 
-                                SortMode.BY_CPU_REVERSE -> 180f
+                                SortMode.BY_CPU_REVERSE -> 0f
                             }
-                        }
-                        .clickable(onClick = {
-                            when (sortMode) {
-                                SortMode.BY_NAME_SEQUENTIAL, SortMode.BY_NAME_REVERSE,
-                                SortMode.BY_ID_SEQUENTIAL, SortMode.BY_ID_REVERSE,
-                                SortMode.BY_MEMORY_SEQUENTIAL, SortMode.BY_MEMORY_REVERSE -> {
-                                    if (cpuSortedReverseState.value) {
-                                        onSortModeChange(SortMode.BY_CPU_SEQUENTIAL)
-                                        cpuSortedReverseState.value = false
-                                    } else {
-                                        onSortModeChange(SortMode.BY_CPU_REVERSE)
-                                        cpuSortedReverseState.value = true
-                                    }
-                                }
-
-                                SortMode.BY_CPU_SEQUENTIAL -> onSortModeChange(SortMode.BY_CPU_REVERSE)
-                                SortMode.BY_CPU_REVERSE -> onSortModeChange(SortMode.BY_CPU_SEQUENTIAL)
-                            }
-                        }),
+                        },
                     contentDescription = null
                 )
             }
@@ -293,17 +303,42 @@ fun TasksTableHeader(
             Row(
                 modifier = Modifier
                     .weight(weights[4])
-                    .padding(horizontal = 8.dp),
+                    .padding(horizontal = 8.dp)
+                    .clickable(onClick = {
+                        when (sortMode) {
+                            SortMode.BY_NAME_SEQUENTIAL, SortMode.BY_NAME_REVERSE,
+                            SortMode.BY_MEMORY_SEQUENTIAL, SortMode.BY_MEMORY_REVERSE,
+                            SortMode.BY_CPU_SEQUENTIAL, SortMode.BY_CPU_REVERSE -> {
+                                if (idSortedReverseState.value) {
+                                    onSortModeChange(SortMode.BY_ID_SEQUENTIAL)
+                                    idSortedReverseState.value = false
+                                } else {
+                                    onSortModeChange(SortMode.BY_ID_REVERSE)
+                                    idSortedReverseState.value = true
+                                }
+                            }
+
+                            SortMode.BY_ID_SEQUENTIAL -> onSortModeChange(SortMode.BY_ID_REVERSE)
+                            SortMode.BY_ID_REVERSE -> onSortModeChange(SortMode.BY_ID_SEQUENTIAL)
+                        }
+                    }),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text(
-                    text = "ID",
-                    modifier = Modifier.padding(horizontal = 10.dp),
-                    fontSize = 14.sp,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxHeight(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "ID",
+                        modifier = Modifier.padding(horizontal = 10.dp),
+                        fontSize = 14.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+
                 Image(
                     painter = painterResource(id = R.drawable.task_header_down_vector),
                     modifier = Modifier
@@ -312,29 +347,11 @@ fun TasksTableHeader(
                             rotationX = when (sortMode) {
                                 SortMode.BY_NAME_SEQUENTIAL -> 0f
                                 SortMode.BY_NAME_REVERSE -> 0f
-                                SortMode.BY_ID_SEQUENTIAL -> 0f
-                                SortMode.BY_ID_REVERSE -> 180f
+                                SortMode.BY_ID_SEQUENTIAL -> 180f
+                                SortMode.BY_ID_REVERSE -> 0f
                                 else -> 0f
                             }
-                        }
-                        .clickable(onClick = {
-                            when (sortMode) {
-                                SortMode.BY_NAME_SEQUENTIAL, SortMode.BY_NAME_REVERSE,
-                                SortMode.BY_MEMORY_SEQUENTIAL, SortMode.BY_MEMORY_REVERSE,
-                                SortMode.BY_CPU_SEQUENTIAL, SortMode.BY_CPU_REVERSE -> {
-                                    if (idSortedReverseState.value) {
-                                        onSortModeChange(SortMode.BY_ID_SEQUENTIAL)
-                                        idSortedReverseState.value = false
-                                    } else {
-                                        onSortModeChange(SortMode.BY_ID_REVERSE)
-                                        idSortedReverseState.value = true
-                                    }
-                                }
-
-                                SortMode.BY_ID_SEQUENTIAL -> onSortModeChange(SortMode.BY_ID_REVERSE)
-                                SortMode.BY_ID_REVERSE -> onSortModeChange(SortMode.BY_ID_SEQUENTIAL)
-                            }
-                        }),
+                        },
                     contentDescription = null
                 )
             }
@@ -342,18 +359,43 @@ fun TasksTableHeader(
             Row(
                 modifier = Modifier
                     .weight(weights[5])
-                    .padding(horizontal = 8.dp),
+                    .padding(horizontal = 8.dp)
+                    .clickable(onClick = {
+                        when (sortMode) {
+                            SortMode.BY_NAME_SEQUENTIAL, SortMode.BY_NAME_REVERSE,
+                            SortMode.BY_ID_SEQUENTIAL, SortMode.BY_ID_REVERSE,
+                            SortMode.BY_CPU_SEQUENTIAL, SortMode.BY_CPU_REVERSE -> {
+                                if (memorySortedReverseState.value) {
+                                    onSortModeChange(SortMode.BY_MEMORY_SEQUENTIAL)
+                                    memorySortedReverseState.value = false
+                                } else {
+                                    onSortModeChange(SortMode.BY_MEMORY_REVERSE)
+                                    memorySortedReverseState.value = true
+                                }
+                            }
+
+                            SortMode.BY_MEMORY_SEQUENTIAL -> onSortModeChange(SortMode.BY_MEMORY_REVERSE)
+                            SortMode.BY_MEMORY_REVERSE -> onSortModeChange(SortMode.BY_MEMORY_SEQUENTIAL)
+                        }
+                    }),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text(
-                    text = context.getString(R.string.memory),
+                Box(
                     modifier = Modifier
-                        .padding(horizontal = 10.dp),
-                    fontSize = 14.sp,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
+                        .fillMaxHeight(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = context.getString(R.string.memory),
+                        modifier = Modifier
+                            .padding(horizontal = 10.dp),
+                        fontSize = 14.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+
                 Image(
                     painter = painterResource(id = R.drawable.task_header_down_vector),
                     modifier = Modifier
@@ -366,29 +408,11 @@ fun TasksTableHeader(
                                 SortMode.BY_ID_REVERSE,
                                 SortMode.BY_MEMORY_SEQUENTIAL,
                                 SortMode.BY_CPU_REVERSE,
-                                SortMode.BY_CPU_SEQUENTIAL -> 0f
+                                SortMode.BY_CPU_SEQUENTIAL -> 180f
 
-                                SortMode.BY_MEMORY_REVERSE -> 180f
+                                SortMode.BY_MEMORY_REVERSE -> 0f
                             }
-                        }
-                        .clickable(onClick = {
-                            when (sortMode) {
-                                SortMode.BY_NAME_SEQUENTIAL, SortMode.BY_NAME_REVERSE,
-                                SortMode.BY_ID_SEQUENTIAL, SortMode.BY_ID_REVERSE,
-                                SortMode.BY_CPU_SEQUENTIAL, SortMode.BY_CPU_REVERSE -> {
-                                    if (memorySortedReverseState.value) {
-                                        onSortModeChange(SortMode.BY_MEMORY_SEQUENTIAL)
-                                        memorySortedReverseState.value = false
-                                    } else {
-                                        onSortModeChange(SortMode.BY_MEMORY_REVERSE)
-                                        memorySortedReverseState.value = true
-                                    }
-                                }
-
-                                SortMode.BY_MEMORY_SEQUENTIAL -> onSortModeChange(SortMode.BY_MEMORY_REVERSE)
-                                SortMode.BY_MEMORY_REVERSE -> onSortModeChange(SortMode.BY_MEMORY_SEQUENTIAL)
-                            }
-                        }),
+                        },
                     contentDescription = null
                 )
             }
@@ -467,9 +491,14 @@ fun ProcessView(
     }
     val drawablesMap = remember { mutableStateMapOf<String, Drawable?>() }
     val bitmapsMap = remember { mutableStateMapOf<String, ImageBitmap?>() }
+    val listState = remember { LazyListState() }
+
+    LaunchedEffect(sortModeState.value) {
+        listState.scrollToItem(0)
+    }
 
     Column(modifier = Modifier.background(Color(0xFFFCFDFF))) {
-        val listState = remember { LazyListState() }
+
         TasksTableHeader(sortModeState.value, onSortModeChange = {
             sortModeState.value = it
         }, taskHeaderItemWeightsState)
