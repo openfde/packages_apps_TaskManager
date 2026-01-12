@@ -23,6 +23,10 @@ import kotlinx.coroutines.launch
 import kotlin.math.max
 import kotlin.ranges.coerceIn
 import kotlin.ranges.rangeTo
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.input.pointer.PointerEventType
+
 
 @Composable
 fun VerticalScrollBar(
@@ -30,10 +34,10 @@ fun VerticalScrollBar(
     modifier: Modifier = Modifier,
 ) {
     val coroutineScope = rememberCoroutineScope()
-
     // 自定义滚动条
     val scrollbarWidth = 16.dp
     val scrollbarColor = Color(0xFF999999)
+    val hoverColor: Color = Color(0x40000000)
     val isDragging = remember { mutableStateOf(false) }
     val dragOffset = remember { mutableStateOf(0f) }
     val containerHeight = remember { mutableStateOf(0f) }
@@ -91,7 +95,7 @@ fun VerticalScrollBar(
             val thumbH = thumbHeight(listState, size.height.toFloat())
             val thumbTop = thumbTopOffset(listState, size.height.toFloat())
             drawRoundRect(
-                color = scrollbarColor,
+                color = if (isDragging.value) hoverColor else scrollbarColor,
                 topLeft = Offset(0f, thumbTop),
                 size = Size(size.width, thumbH),
                 cornerRadius = CornerRadius(0f, 0f)
@@ -104,9 +108,9 @@ fun VerticalScrollBar(
 private fun thumbHeight(listState: LazyListState, containerHeight: Float): Float {
     val totalItems = listState.layoutInfo.totalItemsCount
     val visibleItems = listState.layoutInfo.visibleItemsInfo.size
-    if (totalItems == 0) return 24f
+    if (totalItems == 0) return 48f
     val fractionVisible = visibleItems.toFloat() / totalItems
-    val minHeight = 24f
+    val minHeight = 48f
     return max(minHeight, fractionVisible * containerHeight)
 }
 
