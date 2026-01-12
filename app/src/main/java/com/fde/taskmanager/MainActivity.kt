@@ -61,15 +61,23 @@ import android.app.Instrumentation
 import android.content.Context
 import android.app.ActivityManager
 import android.app.ActivityManager.AppTask
+import android.util.Log
 import androidx.compose.ui.platform.ComposeView
 import androidx.lifecycle.ViewModel
 import androidx.activity.viewModels
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
 import androidx.lifecycle.viewModelScope
 import androidx.compose.runtime.LaunchedEffect
 import com.fde.taskmanager.ui.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.asSharedFlow
 
 
@@ -85,10 +93,8 @@ class MainActivity : ComponentActivity() {
         setContentView(R.layout.base_layout)
         val toolbar_compose_view = findViewById<ComposeView>(R.id.toolbar_compose_view)
         val main_frame_compose_view = findViewById<ComposeView>(R.id.main_frame_compose_view)
-        val navViewModel by viewModels<NavigationViewModel>()
-        val displayModeViewModel by viewModels<DisplayModeViewModel>()
-        val searchBarViewModel by viewModels<SearchBarViewModel>()
-
+        val toolbarViewModel by viewModels<ToolbarViewModel>()
+        BackgroundTask.startBackgroundTask()
         toolbar_compose_view!!.setContent {
             val isHidden = remember { mutableStateOf(false) }
             val searchBarValueState = remember { mutableStateOf("") }
@@ -101,19 +107,8 @@ class MainActivity : ComponentActivity() {
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 LogoBar()
-                NavOuterBox(navViewModel)
-                WindowButtonsBar(
-                    isHidden.value,
-                    onDisplayModeChange = {
-                        // displayModeState.value = it 
-                        displayModeViewModel.changeDisplayMode(it)
-                    },
-                    onSearchBarChange = { 
-                        searchBarValueState.value = it 
-                        searchBarViewModel.changeSearchBarValue(it)
-                    },
-                    searchBarValueState.value
-                )
+                NavOuterBox(toolbarViewModel)
+                WindowButtonsBar(toolbarViewModel)
             }
         }
 
@@ -122,41 +117,105 @@ class MainActivity : ComponentActivity() {
             val displayModeState = remember { mutableStateOf(DisplayMode.ALL_PROCESSES) }
             // `isToolbarHidden` should be synchronized with 
             // `setWindowDecorationStatus` method in MainActivity
-            val isToolbarHidden = false
             val searchBarValueState = remember { mutableStateOf("") }
+            val snackbarHostState = remember { SnackbarHostState() }
+            val isServiceAvailable = remember { mutableStateOf(false) }
 
              LaunchedEffect(Unit) {
-                navViewModel.navigationEvents.collect { route ->
+                 toolbarViewModel.navigationEvents.collect { route ->
+                    if(!isServiceAvailable.value) {
+                        launch {
+                            snackbarHostState.showSnackbar(
+                                message = getString(R.string.service_not_available),
+                            )
+                        }
+                        return@collect
+                    }
                     navController.navigate(route) {
-                        popUpTo(navController.graph.startDestinationId)
+                        popUpTo(navController.graph.startDestinationId) {
+                            saveState = true
+                        }
                         launchSingleTop = true
+                        restoreState = true
                     }
                 }
             }
 
-            LaunchedEffect(displayModeViewModel) {
-                displayModeViewModel.displayModeChangeEvents.collect { displayMode ->
+            LaunchedEffect(toolbarViewModel) {
+                toolbarViewModel.displayModeChangeEvents.collect { displayMode ->
+                    if(!isServiceAvailable.value) {
+                        launch {
+                            snackbarHostState.showSnackbar(
+                                message = getString(R.string.service_not_available),
+                            )
+                        }
+                        return@collect
+                    }
                     displayModeState.value = displayMode
                 }
             }
 
-            LaunchedEffect(searchBarViewModel) {
-                searchBarViewModel.searchBarValueChangeEvents.collect { value ->
+            LaunchedEffect(toolbarViewModel) {
+                toolbarViewModel.searchBarValueChangeEvents.collect { value ->
+                    if(!isServiceAvailable.value) {
+                        launch {
+                            snackbarHostState.showSnackbar(
+                                message = getString(R.string.service_not_available),
+                            )
+                        }
+                        return@collect
+                    }
                     searchBarValueState.value = value
                 }
             }
 
-            NavHost(navController, startDestination = AppRoute.Process.route) {
-                composable(AppRoute.Process.route) {
-                    ProcessView(
-                        displayModeState.value, searchBarValueState.value
-                    )
+            LaunchedEffect(toolbarViewModel) {
+                toolbarViewModel.refreshTaskInfoListEvents.collect { value ->
+                    if(!isServiceAvailable.value) {
+                        launch {
+                            snackbarHostState.showSnackbar(
+                                message = getString(R.string.service_not_available),
+                            )
+                        }
+                        return@collect
+                    }
+                    BackgroundTask.refreshTaskInfoList()
                 }
-                composable(AppRoute.Resource.route) {
-                    ResourceView()
+            }
+
+            LaunchedEffect(Unit) {
+                coroutineScope {
+                    val userName = TaskManagerBinder.getUserName()
+                    if (userName == null) {
+                        isServiceAvailable.value = false
+                        launch {
+                            snackbarHostState.showSnackbar(
+                                message = getString(R.string.service_not_available),
+                            )
+                        }
+                    } else isServiceAvailable.value = true
                 }
-                composable(AppRoute.FileSystem.route) {
-                    FileSystemView()
+            }
+            Scaffold(
+                snackbarHost = {
+                    SnackbarHost(hostState = snackbarHostState)
+                }
+            ) { _ ->
+                if (isServiceAvailable.value) {
+                    NavHost(navController, startDestination = AppRoute.Process.route) {
+                        composable(AppRoute.Process.route) {
+                            ProcessView(
+                                displayModeState.value, searchBarValueState.value,
+                                toolbarViewModel
+                            )
+                        }
+                        composable(AppRoute.Resource.route) {
+                            ResourceView()
+                        }
+                        composable(AppRoute.FileSystem.route) {
+                            FileSystemView(searchBarValueState.value)
+                        }
+                    }
                 }
             }
         }
@@ -166,7 +225,7 @@ class MainActivity : ComponentActivity() {
         super.onDestroy()
     }
 
-    class NavigationViewModel : ViewModel() {
+    class ToolbarViewModel : ViewModel() {
         private val _navigationEvents = MutableSharedFlow<String>()
         val navigationEvents = _navigationEvents.asSharedFlow()
 
@@ -175,9 +234,7 @@ class MainActivity : ComponentActivity() {
                 _navigationEvents.emit(route)
             }
         }
-    }
 
-    class DisplayModeViewModel : ViewModel() {
         private val _displayModeChangeEvents = MutableSharedFlow<DisplayMode>()
         val displayModeChangeEvents = _displayModeChangeEvents.asSharedFlow()
 
@@ -186,15 +243,22 @@ class MainActivity : ComponentActivity() {
                 _displayModeChangeEvents.emit(mode)
             }
         }
-    }
 
-    class SearchBarViewModel : ViewModel() {
         private val _searchBarValueChangeEvents = MutableSharedFlow<String>()
         val searchBarValueChangeEvents = _searchBarValueChangeEvents.asSharedFlow()
 
         fun changeSearchBarValue(value: String) {
             viewModelScope.launch {
                 _searchBarValueChangeEvents.emit(value)
+            }
+        }
+
+        private val _refreshTaskInfoListEvents = MutableSharedFlow<Unit>()
+        val refreshTaskInfoListEvents = _refreshTaskInfoListEvents.asSharedFlow()
+
+        fun refreshTaskInfoList() {
+            viewModelScope.launch {
+                _refreshTaskInfoListEvents.emit(Unit)
             }
         }
     }

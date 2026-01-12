@@ -7,15 +7,19 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -26,11 +30,11 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.Path
@@ -40,12 +44,15 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.fde.taskmanager.BackgroundTask
 import com.fde.taskmanager.R
-import com.fde.taskmanager.TaskManagerBinder
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.math.max
 
 @Composable
 fun FoldableBox(
@@ -126,20 +133,27 @@ fun MemoryAndSwapAnnotationsLine(
             ) {
                 Box(
                     modifier = Modifier
-                        .size(width = 58.dp, height = barHeight)
-                        .background(
-                            color = Color(0x14000000), shape = RoundedCornerShape(3.dp)
-                        )
+                        .width(barWidthTotal)
+                        .height(barHeight)
                         .clip(RoundedCornerShape(3.dp))
+                        .background(Color(0xffEBEBEB))
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(
-                                if (capcities.getOrNull(i) != null) barWidthTotal * capcities[0] else 0.dp,
-                                height = barHeight
+                    Row {
+                        if (capcities[i] != 0f) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxHeight()
+                                    .weight(capcities[i])
+                                    .background(colors[i])
                             )
-                            .background(color = colors[i]),
-                    )
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxHeight()
+                                    .weight(1 - capcities[i])
+                                    .background(Color(0xffEBEBEB))
+                            )
+                        }
+                    }
                 }
                 Spacer(modifier = Modifier.width(4.dp))
                 val annotation = annotations.getOrNull(i)
@@ -216,244 +230,342 @@ fun ResourceView() {
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
 
-    val cpuCount = TaskManagerBinder.getEachCPUPercent(10).size
+    val cpuCount = BackgroundTask.cpuCount
     val allCpuColors = context.resources.getIntArray(R.array.cpu_color_array).map { Color(it) }
-    val cpuColors = if (cpuCount <= allCpuColors.size) {
-        allCpuColors.take(cpuCount)
+    val cpuColors = if (cpuCount + 1 <= allCpuColors.size) {
+        allCpuColors.take(cpuCount).map { it.copy(alpha = 0.5f) } + allCpuColors[cpuCount]
     } else {
-        List(cpuCount) { index -> allCpuColors[index % allCpuColors.size] }
+        List(cpuCount + 1) { index ->
+            if (index != cpuCount)
+                allCpuColors[index % allCpuColors.size].copy(alpha = 0.5f)
+            else allCpuColors[index % allCpuColors.size]
+        }
     }
-    val cpuPercentState = remember {
-        List(cpuCount) { mutableStateListOf<Float>() }.toMutableStateList()
-    }
-    val memoryAndSwapState = remember {
-        List(2) { mutableStateListOf<Float>() }.toMutableStateList()
-    }
-    val networkDownloadAndUploadState = remember {
-        List(2) { mutableStateListOf<Float>() }.toMutableStateList()
-    }
-    val diskReadAndWriteState = remember {
-        List(2) { mutableStateListOf<Float>() }.toMutableStateList()
-    }
+    val cpuPercentState = BackgroundTask.cpuPercentState.collectAsStateWithLifecycle()
+    val memoryAndSwapList = BackgroundTask.memoryAndSwapList.collectAsStateWithLifecycle()
+    val memoryAndSwap = BackgroundTask.memoryAndSwap.collectAsStateWithLifecycle()
+    val networkDownloadAndUploadState =
+        BackgroundTask.networkDownloadAndUploadList.collectAsStateWithLifecycle()
+    val networkStatsState = BackgroundTask.networkStatsState.collectAsStateWithLifecycle()
+//    val diskReadAndWriteState = remember {
+//        List(2) { mutableStateListOf<Float>() }.toMutableStateList()
+//    }
 
+    val diskStatsState = BackgroundTask.diskStatsState.collectAsStateWithLifecycle()
+    val diskReadAndWriteList = BackgroundTask.diskReadAndWriteList.collectAsStateWithLifecycle()
     val memoryAndSwapColors =
         context.resources.getIntArray(R.array.memory_swap_color_array).map { Color(it) }
     val networkColors = context.resources.getIntArray(R.array.network_color_array).map { Color(it) }
     val diskColors = context.resources.getIntArray(R.array.disk_color_array).map { Color(it) }
-    val currentCPUAnnotationsState = remember { mutableStateListOf<String>("", "", "", "") }
-    val currentMemoryAndSwapAnnotationsState = remember { mutableStateListOf<String>("", "") }
-    val currentMemoryAndSwapCapcityState = remember { mutableStateListOf<Float>(0f, 0f) }
-    val currentNetworkAnnotationsState = remember { mutableStateListOf<String>("", "") }
-    val currentDiskAnnotationsState = remember { mutableStateListOf<String>("", "") }
-    val delayGap: Long = 1000
+    val scrollState = rememberScrollState()
+
     Column(
-        modifier = Modifier.fillMaxWidth().verticalScroll((rememberScrollState()))
+        modifier = Modifier
+            .fillMaxWidth()
     ) {
-        FoldableBox("CPU") {
-            LaunchedEffect(Unit) {
-
-                coroutineScope.launch {
-                    while (true) {
-//                1
-                        val eachCPUPercent = TaskManagerBinder.getEachCPUPercent(200) // [0,1,2,3]
-                        currentCPUAnnotationsState.clear()
-                        eachCPUPercent.forEachIndexed { index, it ->
-                            if (cpuPercentState[index].size > 100) cpuPercentState[index].removeFirst()
-                            cpuPercentState[index].add(it)
-                            currentCPUAnnotationsState.add("CPU${index + 1}: %03.1f%%".format(it))
+        Box(modifier = Modifier.fillMaxSize()) {
+            Column(modifier = Modifier
+                .fillMaxSize()
+                .padding(end = 16.dp)
+                .verticalScroll(scrollState)) {
+                FoldableBox("CPU") {
+                    SmoothBezierLineChart(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(80.dp)
+                            .padding(10.dp),
+                        allValues = cpuPercentState.value,
+                        colors = cpuColors,
+                        strokeWidth = 1f,
+                        maxValue = 100f,
+                        minValue = 0f
+                    )
+                    CPUUsagesAnnotationsLine(
+                        colors = cpuColors,
+                        annotations = cpuPercentState.value.mapIndexed { index, coreValues ->
+                            Log.d("cold", "cpuPercentState:$index")
+                            Log.d("cold", "size:${cpuPercentState.value.size}")
+                            if (index != (cpuPercentState.value.size - 1)) {
+                                val latest = coreValues.lastOrNull() ?: 0f
+                                "CPU${index + 1}: %03.1f%%".format(latest)
+                            } else {
+                                val latest = coreValues.lastOrNull() ?: 0f
+                                "${context.getString(R.string.average)}:%03.1f%%".format(latest)
+                            }
                         }
-                        delay(delayGap)
-                    }
+                    )
                 }
-            }
-            SmoothBezierLineChart(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(80.dp)
-                    .padding(10.dp),
-                allValues = cpuPercentState,
-                colors = cpuColors,
-                strokeWidth = 1f,
-                maxValue = 100f,
-                minValue = 0f
-            )
-            CPUUsagesAnnotationsLine(
-                colors = cpuColors, annotations = currentCPUAnnotationsState
-            )
-        }
-        FoldableBox(context.getString(R.string.memory_and_swap)) {
-            LaunchedEffect(Unit) {
-                coroutineScope.launch {
-                    while (true) {
-//                2
-                        val memoryAndMemoryInfo = TaskManagerBinder.getMemoryAndSwap()
-                        currentMemoryAndSwapAnnotationsState.clear()
-                        currentMemoryAndSwapAnnotationsState.add(
-                            "${context.getString(R.string.memory_usage)}: %03.1f%%    %s/%s    ${
-                                context.getString(
-                                    R.string.cache
-                                )
-                            }%s".format(
-                                memoryAndMemoryInfo.memory.percent,
-                                toStringWithUnit(memoryAndMemoryInfo.memory.used),
-                                toStringWithUnit(memoryAndMemoryInfo.memory.total),
-                                toStringWithUnit(memoryAndMemoryInfo.memory.cache)
-                            )
-                        )
-                        currentMemoryAndSwapAnnotationsState.add(
-                            "${context.getString(R.string.swap)}: %03.1f%%    %s/%s".format(
-                                memoryAndMemoryInfo.memory.percent,
-                                toStringWithUnit(memoryAndMemoryInfo.swap.used),
-                                toStringWithUnit(memoryAndMemoryInfo.swap.total)
-                            )
-                        )
-                        currentMemoryAndSwapCapcityState.clear()
-                        currentMemoryAndSwapCapcityState.add(memoryAndMemoryInfo.memory.percent / 100f)
-                        currentMemoryAndSwapCapcityState.add(memoryAndMemoryInfo.swap.percent / 100f)
-                        val memoryList = memoryAndSwapState[0]
-                        val swapList = memoryAndSwapState[1]
-                        if (swapList.size > 100) swapList.removeFirst()
-                        if (memoryList.size > 100) memoryList.removeFirst()
-                        memoryList.add(memoryAndMemoryInfo.memory.percent)
-                        swapList.add(memoryAndMemoryInfo.swap.percent)
-                        delay(delayGap)
-                    }
-                }
-            }
-            SmoothBezierLineChart(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(80.dp)
-                    .padding(10.dp),
-                allValues = memoryAndSwapState,
-                colors = memoryAndSwapColors,
-                strokeWidth = 1f,
-                maxValue = 100f,
-                minValue = 0f
-            )
-            MemoryAndSwapAnnotationsLine(
-                colors = memoryAndSwapColors,
-                annotations = currentMemoryAndSwapAnnotationsState,
-                capcities = currentMemoryAndSwapCapcityState
-            )
-        }
-        FoldableBox(context.getString(R.string.network)) {
+                val memorySwapMax = remember { mutableStateOf(100f) }
+                val memorySwapMin = remember { mutableStateOf(0f) }
+                val memorySwapAxisLabels =
+                    remember { mutableStateListOf("0%", "20%", "40%", "60%", "80%", "100%") }
 
-            LaunchedEffect(Unit) {
-                coroutineScope.launch {
-                    while (true) {
-//                3
-                        val networkDownloadAndUpload =
-                            TaskManagerBinder.getNetworkDownloadAndUpload(200)
-                        val networkDownloadState = networkDownloadAndUploadState[0]
-                        val networkUploadState = networkDownloadAndUploadState[1]
-                        if (networkDownloadState.size > 100) networkDownloadState.removeFirst()
-                        if (networkUploadState.size > 100) networkUploadState.removeFirst()
-                        networkDownloadState.add(networkDownloadAndUpload.download.speed)
-                        networkUploadState.add(networkDownloadAndUpload.upload.speed)
-                        currentNetworkAnnotationsState.clear()
-                        val currentDownloadSpeedString =
-                            toStringWithSpeedUnit(networkDownloadAndUpload.download.speed)
-                        val currentDownloadTotalString =
-                            toStringWithUnit(networkDownloadAndUpload.download.total)
-                        val currentUploadSpeedString =
-                            toStringWithSpeedUnit(networkDownloadAndUpload.upload.speed)
-                        val currentUploadTotalString =
-                            toStringWithUnit(networkDownloadAndUpload.upload.total)
-                        currentNetworkAnnotationsState.add(
-                            "${context.getString(R.string.current_download)}: $currentDownloadSpeedString ${
-                                context.getString(
-                                    R.string.current_download_total
-                                )
-                            }:$currentDownloadTotalString"
-                        )
-                        currentNetworkAnnotationsState.add("${context.getString(R.string.current_upload)}:$currentUploadSpeedString ${R.string.current_upload_total}:$currentUploadTotalString")
-                        delay(delayGap)
+                LaunchedEffect(memoryAndSwapList.value) {
+                    val axisValues = listOf(0f, 10f, 20f, 30f, 40f, 50f, 60f, 70f, 80f, 90f, 100f)
+                    val total = memoryAndSwapList.value[0]
+                    val dataMin = total.minOrNull() ?: 0f
+                    val dataMax = total.maxOrNull() ?: 100f
+                    val alignedMin = axisValues.filter { it <= dataMin }.maxOrNull() ?: 0f
+                    val alignedMax = axisValues.filter { it >= dataMax }.minOrNull() ?: 100f
+                    memorySwapMin.value = alignedMin.coerceAtLeast(0f)
+                    memorySwapMax.value = alignedMax.coerceAtMost(100f)
+                    val labelCount = 6
+                    for (index in 0..5) {
+                        val value = memorySwapMin.value +
+                                (memorySwapMax.value - memorySwapMin.value) *
+                                index / (labelCount - 1)
+                        memorySwapAxisLabels[index] = "${value.toInt()}%"
                     }
                 }
-            }
-            SmoothBezierLineChart(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(80.dp)
-                    .padding(10.dp),
-                allValues = networkDownloadAndUploadState,
-                yAxisLabels = listOf(
-                    "0kb/s",
-                    "20kb/s",
-                    "40kb/s",
-                    "60kb/s",
-                    "80kb/s",
-                    "100kb/s",
-                ),
-                colors = networkColors,
-                strokeWidth = 1f,
-                minValue = 0f,
-                maxValue = 100 * 1024f
-            )
-            NetworkAnnotationsLine(
-                colors = networkColors, annotations = currentNetworkAnnotationsState
-            )
-        }
-        FoldableBox(context.getString(R.string.disk)) {
 
-            LaunchedEffect(Unit) {
-                coroutineScope.launch {
-                    while (true) {
-//                4
-                        val diskReadAndWrite = TaskManagerBinder.getDiskReadAndWrite(100)
-                        val diskReadState = diskReadAndWriteState[0]
-                        val diskWriteState = diskReadAndWriteState[1]
-                        if (diskReadState.size > 100) diskReadState.removeFirst()
-                        if (diskWriteState.size > 100) diskWriteState.removeFirst()
-                        diskReadState.add(diskReadAndWrite.read.speed)
-                        diskWriteState.add(diskReadAndWrite.write.speed)
-                        currentDiskAnnotationsState.clear()
-                        val currentDiskReadSpeedString =
-                            toStringWithSpeedUnit(diskReadAndWrite.read.speed)
-                        val currentDiskReadTotalString =
-                            toStringWithUnit(diskReadAndWrite.read.total)
-                        val currentDiskWriteSpeedString =
-                            toStringWithSpeedUnit(diskReadAndWrite.write.speed)
-                        val currentDiskWriteTotalString =
-                            toStringWithUnit(diskReadAndWrite.write.total)
-                        currentDiskAnnotationsState.add(
-                            "${context.getString(R.string.current_read_disk)}: $currentDiskReadSpeedString ${
-                                context.getString(
-                                    R.string.current_read_disk_total
-                                )
-                            }:$currentDiskReadTotalString"
+                FoldableBox(context.getString(R.string.memory_and_swap)) {
+                    SmoothBezierLineChart(
+                        yAxisLabels = memorySwapAxisLabels,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(80.dp)
+                            .padding(10.dp),
+                        allValues = memoryAndSwapList.value,
+                        colors = memoryAndSwapColors,
+                        strokeWidth = 1f,
+                        maxValue = memorySwapMax.value,
+                        minValue = memorySwapMin.value
+                    )
+                    MemoryAndSwapAnnotationsLine(
+                        colors = memoryAndSwapColors,
+                        annotations = listOf(
+                            ("${context.getString(R.string.memory_usage)}:" +
+                                    " %03.1f%%    %s/%s    ${context.getString(R.string.cache)}%s").format(
+                                memoryAndSwap.value.memory.percent,
+                                toStringWithUnit(memoryAndSwap.value.memory.used),
+                                toStringWithUnit(memoryAndSwap.value.memory.total),
+                                toStringWithUnit(memoryAndSwap.value.memory.cache)
+                            ), "${context.getString(R.string.swap)}: %03.1f%%    %s/%s".format(
+                                memoryAndSwap.value.swap.percent,
+                                toStringWithUnit(memoryAndSwap.value.swap.used),
+                                toStringWithUnit(memoryAndSwap.value.swap.total)
+                            )
+                        ),
+                        capcities = listOf(
+                            memoryAndSwap.value.memory.percent / 100f,
+                            memoryAndSwap.value.swap.percent / 100f
                         )
-                        currentDiskAnnotationsState.add(
-                            "${context.getString(R.string.current_write_disk)}: $currentDiskWriteSpeedString ${
-                                context.getString(
-                                    R.string.current_write_disk_total
-                                )
-                            }:$currentDiskWriteTotalString"
-                        )
-                        delay(delayGap)
+                    )
+                }
+
+                val networkAxisMin = remember { mutableStateOf(0f) }
+                val networkAxisMax = remember { mutableStateOf(1000f * 1000f) }
+                val networkAxisLabels = remember {
+                    mutableStateListOf(
+                        "0kB/s",
+                        "200kB/s",
+                        "400kB/s",
+                        "600kB/s",
+                        "800kB/s",
+                        "1MB/s"
+                    )
+                }
+
+                LaunchedEffect(networkDownloadAndUploadState.value) {
+                    val axisValues = listOf(
+                        0f, // 0
+                        1000f, // 1kB/s
+                        100 * 1000f, // 100kB/s
+                        200 * 1000f, // 200kB/s
+                        400 * 1000f, // 400kB/s
+                        800 * 1000f, // 800kB/s
+                        1000f * 1000f, // 1MB/s
+                        5 * 1000f * 1000f, // 5MB/s
+                        10 * 1000f * 1000f, // 10MB/s
+                        20 * 1000f * 1000f, // 20MB/s
+                        50 * 1000f * 1000f // 50MB/s
+                    )
+                    val total =
+                        networkDownloadAndUploadState.value[0] + networkDownloadAndUploadState.value[1]
+                    val dataMin = total.min()
+                    val dataMax = total.max()
+                    networkAxisMax.value =
+                        axisValues.subList(1, axisValues.size).filter { it >= dataMax }.min()
+                    networkAxisMin.value =
+                        axisValues.subList(0, axisValues.size - 1).filter { it <= dataMin }.max()
+                    val labelCount = 6
+                    for (index in 0..5) {
+                        val value = networkAxisMin.value +
+                                (networkAxisMax.value - networkAxisMin.value) *
+                                index / (labelCount - 1)
+                        networkAxisLabels[index] = toStringWithSpeedUnit(value, 0)
                     }
                 }
+
+                FoldableBox(context.getString(R.string.network)) {
+                    SmoothBezierLineChart(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(80.dp)
+                            .padding(10.dp),
+                        allValues = networkDownloadAndUploadState.value,
+                        yAxisLabels = networkAxisLabels,
+                        colors = networkColors,
+                        strokeWidth = 1f,
+                        minValue = networkAxisMin.value,
+                        maxValue = networkAxisMax.value
+                    )
+                    NetworkAnnotationsLine(
+                        colors = networkColors, annotations = listOf(
+                            "${context.getString(R.string.current_download)}:" +
+                                    " ${toStringWithSpeedUnit(networkStatsState.value.download.speed)} ${
+                                        context.getString(R.string.current_download_total)
+                                    }:${toStringWithUnit(networkStatsState.value.download.total)}",
+                            "${context.getString(R.string.current_upload)}:" +
+                                    "${toStringWithSpeedUnit(networkStatsState.value.upload.speed)} " +
+                                    "${context.getString(R.string.current_upload_total)}:${
+                                        toStringWithUnit(
+                                            networkStatsState.value.upload.total
+                                        )
+                                    }"
+                        )
+                    )
+                }
+
+                val diskAxisMin = remember { mutableStateOf(0f) }
+                val diskAxisMax = remember { mutableStateOf(1000f * 1000f) }
+                val diskAxisLabels = remember {
+                    mutableStateListOf(
+                        "0kB/s",
+                        "200kB/s",
+                        "400kB/s",
+                        "600kB/s",
+                        "800kB/s",
+                        "1MB/s"
+                    )
+                }
+
+                LaunchedEffect(diskReadAndWriteList.value) {
+                    val axisValues = listOf(
+                        0f, // 0
+                        1000f, // 1kB/s
+                        100 * 1000f, // 100kB/s
+                        200 * 1000f, // 200kB/s
+                        400 * 1000f, // 400kB/s
+                        800 * 1000f, // 800kB/s
+                        1000f * 1000f, // 1MB/s
+                        5 * 1000f * 1000f, // 5MB/s
+                        10 * 1000f * 1000f, // 10MB/s
+                        20 * 1000f * 1000f, // 20MB/s
+                        50 * 1000f * 1000f // 50MB/s
+                    )
+                    val total = diskReadAndWriteList.value[0] + diskReadAndWriteList.value[1]
+                    val dataMin = total.min()
+                    val dataMax = total.max()
+                    diskAxisMax.value =
+                        axisValues.subList(1, axisValues.size).filter { it >= dataMax }.minOrNull()
+                            ?: 0f
+                    diskAxisMin.value =
+                        axisValues.subList(0, axisValues.size - 1).filter { it <= dataMin }
+                            .maxOrNull() ?: 0f
+                    val labelCount = 6
+                    for (index in 0..5) {
+                        val value = diskAxisMin.value +
+                                (diskAxisMax.value - diskAxisMin.value) *
+                                index / (labelCount - 1)
+                        diskAxisLabels[index] = toStringWithSpeedUnit(value, 0)
+                    }
+                }
+
+                FoldableBox(context.getString(R.string.disk)) {
+                    SmoothBezierLineChart(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(80.dp)
+                            .padding(10.dp),
+                        allValues = diskReadAndWriteList.value,
+                        yAxisLabels = diskAxisLabels,
+                        colors = diskColors,
+                        strokeWidth = 1f,
+                        minValue = diskAxisMin.value,
+                        maxValue = diskAxisMax.value
+                    )
+                    DiskAnnotationsLine(
+                        colors = diskColors, annotations = listOf(
+                            "${context.getString(R.string.current_read_disk)}: " +
+                                    "${toStringWithSpeedUnit(diskStatsState.value.read.speed)} " +
+                                    "${
+                                        context.getString(R.string.current_read_disk_total)
+                                    }:${toStringWithUnit(diskStatsState.value.read.total)}",
+                            "${context.getString(R.string.current_write_disk)}: " +
+                                    "${toStringWithSpeedUnit(diskStatsState.value.write.speed)} " +
+                                    "${
+                                        context.getString(R.string.current_write_disk_total)
+                                    }:${toStringWithUnit(diskStatsState.value.write.total)}"
+                        )
+                    )
+                }
             }
-            SmoothBezierLineChart(
+
+            // 自定义滚动条
+            val scrollbarWidth = 16.dp
+            val scrollbarColor = Color(0xFF999999)
+            val hoverColor: Color = Color(0x40000000)
+            val scrollbarMargin = 0.dp
+
+            val isDragging = remember { mutableStateOf(false) }
+            val dragOffset = remember { mutableStateOf(0f) }
+
+            val containerHeight = remember { mutableStateOf(0f) }
+            val contentHeight = remember { mutableStateOf(0f) }
+
+            Canvas(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(80.dp)
-                    .padding(10.dp),
-                allValues = diskReadAndWriteState,
-                yAxisLabels = listOf(
-                    "0MB/s", "20MB/s", "40MB/s", "60MB/s", "80MB/s", "100MB/s"
-                ),
-                colors = diskColors,
-                strokeWidth = 1f,
-                minValue = 0f,
-                maxValue = 100 * 1024 * 1024f
-            )
-            DiskAnnotationsLine(
-                colors = diskColors, annotations = currentDiskAnnotationsState
-            )
+                    .fillMaxHeight()
+                    .width(scrollbarWidth)
+                    .align(Alignment.TopEnd)
+                    .padding(start = scrollbarMargin)
+                    .pointerInput(Unit) {
+                        detectDragGestures(
+                            onDragStart = { offset ->
+                                val scrollFraction =
+                                    scrollState.value.toFloat() / max(1f, scrollState.maxValue.toFloat())
+                                val thumbTop = scrollFraction * (size.height - thumbHeight(containerHeight.value, contentHeight.value))
+                                val thumbBottom = thumbTop + thumbHeight(containerHeight.value, contentHeight.value)
+                                if (offset.y in thumbTop..thumbBottom) {
+                                    isDragging.value = true
+                                    dragOffset.value = offset.y - thumbTop
+                                }
+                            },
+                            onDrag = { change, dragAmount ->
+                                if (isDragging.value) {
+                                    val newThumbTop = change.position.y - dragOffset.value
+                                    val fraction = newThumbTop / max(1f, containerHeight.value - thumbHeight(containerHeight.value, contentHeight.value))
+                                    coroutineScope.launch {
+                                        scrollState.scrollTo((fraction * scrollState.maxValue).toInt())
+                                    }
+
+                                }
+                            },
+                            onDragEnd = { isDragging.value = false },
+                            onDragCancel = { isDragging.value = false }
+                        )
+                    }
+                    .onSizeChanged { containerHeight.value = it.height.toFloat() }
+            ) {
+                contentHeight.value = scrollState.maxValue + size.height
+                val thumbH = thumbHeight(size.height.toFloat(), contentHeight.value)
+                val thumbTop = (scrollState.value.toFloat() / max(1f, scrollState.maxValue.toFloat())) * (size.height - thumbH)
+
+                drawRoundRect(
+                    color = if (isDragging.value) hoverColor else scrollbarColor,
+                    topLeft = androidx.compose.ui.geometry.Offset(0f, thumbTop),
+                    size = Size(size.width, thumbH),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(0f, 0f)
+                )
+            }
         }
     }
+}
+
+private fun thumbHeight(containerHeight: Float, contentHeight: Float): Float {
+    val minHeight = 48f
+    return max(minHeight, containerHeight / contentHeight * containerHeight)
 }
 
 @Composable
@@ -490,7 +602,7 @@ fun SmoothBezierLineChart(
                 pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 5f), 0f)
             )
 
-            val textWidth = labelPaint.measureText("${(ratio * 100).toInt()}%")
+            val textWidth = labelPaint.measureText(yAxisLabels[i])
             drawContext.canvas.nativeCanvas.drawText(
                 yAxisLabels[i], size.width - textWidth - 4f, // 右侧对齐，距离右边留4f间距
                 y, labelPaint
@@ -507,6 +619,8 @@ fun SmoothBezierLineChart(
 
             val xStep = width / (values.size - 1f)
             val points = values.mapIndexed { i, v ->
+                var v = if (v > maxValue) maxValue else v
+                v = if (v < minValue) minValue else v
                 Offset(
                     x = i * xStep, y = height - (v - minValue) / range * height
                 )

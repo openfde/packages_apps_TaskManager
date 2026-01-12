@@ -31,6 +31,7 @@ android_app {
     srcs: [
         "app/src/main/java/**/*.kt",
         "app/src/main/java/**/*.java",
+        "app/src/main/java/**/*.aidl",
         "app/src/main/aidl/android/openfde/ITaskManager.aidl"
     ],
     resource_dirs: [
@@ -39,7 +40,12 @@ android_app {
     static_libs: [
         "androidx.core_core-ktx", 
         "androidx.lifecycle_lifecycle-runtime-ktx",
+		"androidx.lifecycle_lifecycle-viewmodel-ktx",
+		"kotlinx-coroutines-core",
+		"androidx.lifecycle_lifecycle-viewmodel-compose",
         "androidx.activity_activity-compose",
+		"androidx.lifecycle_lifecycle-runtime-compose",
+		"kotlinx-coroutines-android",
         "androidx.compose.ui_ui",
         "androidx.compose.ui_ui-graphics",
         "androidx.compose.ui_ui-tooling-preview",

@@ -1,5 +1,6 @@
 package com.fde.taskmanager.ui
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -7,18 +8,20 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
-import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -34,10 +37,12 @@ import com.fde.taskmanager.R
 import com.fde.taskmanager.TaskManagerBinder
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import android.util.Log
+import androidx.compose.runtime.toMutableStateList
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 
 @Composable
-fun FileSystemView() {
+fun FileSystemView(searchBarValue: String) {
     val fileSystemUsageState = remember {
         mutableStateListOf<Adapters.DiskPartition>()
     }
@@ -45,9 +50,11 @@ fun FileSystemView() {
     val context = LocalContext.current
     val diskPartitionColors =
         context.resources.getIntArray(R.array.disk_partition_colors).map { Color(it) }
-    val diskHeaderWeights = listOf<Float>(
-        166f, 266f, 199f, 199f, 166f, 166f,
-    ).map { it / 1000f }
+    val diskHeaderWeightsMini = listOf<Float>(0.14f, 0.23f, 0.17f, 0.17f, 0.14f, 0.14f)
+    val diskHeaderWeights = remember {
+        diskHeaderWeightsMini.toMutableStateList()
+    }
+
 
     LaunchedEffect(Unit) {
         coroutineScope.launch {
@@ -59,28 +66,45 @@ fun FileSystemView() {
     }
 
     Column {
+        val listState = remember { LazyListState() }
         DiskPartitionsTableHeader(diskHeaderWeights)
-        LazyColumn {
-            fileSystemUsageState.mapIndexed { index, diskPartition ->
-                item {
-                    DiskPartitionItem(
-                        diskPartition,
-                        diskPartitionColors[index % diskPartitionColors.size],
-                        diskHeaderWeights
-                    )
+        Box(modifier = Modifier.fillMaxSize()) {
+            LazyColumn(state = listState) {
+                fileSystemUsageState.mapIndexed { index, diskPartition ->
+                    item {
+                        DiskPartitionItem(
+                            diskPartition,
+                            diskPartitionColors[index % diskPartitionColors.size],
+                            diskHeaderWeights, searchBarValue
+                        )
+                    }
                 }
             }
+            VerticalScrollBar(
+                listState,
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .fillMaxHeight()
+                    .width(16.dp)
+            )
         }
     }
 }
 
 @Composable
-fun DiskPartitionsTableHeader(diskHeaderWeights: List<Float>) {
+fun DiskPartitionsTableHeader(diskHeaderWeights: MutableList<Float>) {
+    val headerWidthState = remember { mutableStateOf(960.dp) }
+    val density = LocalDensity.current
     HorizontalDivider(modifier = Modifier.fillMaxWidth(), color = Color(0xFFE8E9EB))
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 5.dp, horizontal = 10.dp)
+            .onSizeChanged({ size ->
+                val widthDp = with(density) { size.width.toDp() }
+                Log.d("onSizeChanged", "width changed to $widthDp")
+                headerWidthState.value = widthDp
+            })
     ) {
         val context = LocalContext.current
 
@@ -96,9 +120,7 @@ fun DiskPartitionsTableHeader(diskHeaderWeights: List<Float>) {
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            VerticalDivider(
-                modifier = Modifier.height(18.dp), color = Color(0x0D000000)
-            )
+            HeaderDivider(0, diskHeaderWeights, headerWidthState.value)
             Text(
                 text = context.getString(R.string.catalogue),
                 modifier = Modifier
@@ -108,9 +130,7 @@ fun DiskPartitionsTableHeader(diskHeaderWeights: List<Float>) {
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            VerticalDivider(
-                modifier = Modifier.height(18.dp), color = Color(0x0D000000)
-            )
+            HeaderDivider(1, diskHeaderWeights, headerWidthState.value)
             Text(
                 text = context.getString(R.string.device),
                 modifier = Modifier
@@ -120,9 +140,7 @@ fun DiskPartitionsTableHeader(diskHeaderWeights: List<Float>) {
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            VerticalDivider(
-                modifier = Modifier.height(18.dp), color = Color(0x0D000000)
-            )
+            HeaderDivider(2, diskHeaderWeights, headerWidthState.value)
             Text(
                 text = context.getString(R.string.type),
                 modifier = Modifier
@@ -132,9 +150,7 @@ fun DiskPartitionsTableHeader(diskHeaderWeights: List<Float>) {
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            VerticalDivider(
-                modifier = Modifier.height(18.dp), color = Color(0x0D000000)
-            )
+            HeaderDivider(3, diskHeaderWeights, headerWidthState.value)
             Text(
                 text = context.getString(R.string.total_storage),
                 modifier = Modifier
@@ -144,9 +160,7 @@ fun DiskPartitionsTableHeader(diskHeaderWeights: List<Float>) {
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            VerticalDivider(
-                modifier = Modifier.height(18.dp), color = Color(0x0D000000)
-            )
+            HeaderDivider(4, diskHeaderWeights, headerWidthState.value)
             Text(
                 text = context.getString(R.string.available_storage),
                 modifier = Modifier
@@ -163,64 +177,77 @@ fun DiskPartitionsTableHeader(diskHeaderWeights: List<Float>) {
 
 @Composable
 fun DiskPartitionItem(
-    diskPartition: Adapters.DiskPartition, color: Color, diskHeaderWeights: List<Float>
+    diskPartition: Adapters.DiskPartition,
+    color: Color, diskHeaderWeights: List<Float>,
+    searchBarValue: String
 ) {
-    Row(
-        modifier = Modifier
-            .height(30.dp)
-            .fillMaxWidth()
-            .padding(horizontal = 10.dp)
-            .clickable(onClick = {}),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        LaunchedEffect(Unit) {
-            Log.d("TaskManager","DiskPartition view is launched")
-        }
-        val m = listOf<String>(
-            "${diskPartition.used}B",
-            diskPartition.catalogue,
-            diskPartition.device,
-            diskPartition.type,
-            diskPartition.storage,
-            diskPartition.available
-        )
-        diskHeaderWeights.forEachIndexed { index, taskItemWeight ->
-            Row(
-                modifier = Modifier
-                    .weight(taskItemWeight)
-                    .padding(start = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = m[index].toString(),
-                    fontSize = 14.sp,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                if (index == 0) {
-                    Box(
-                        modifier = Modifier
-                            .width(180.dp)
-                            .height(22.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(Color(0xffEBEBEB))
-                    ) {
+    val searchBarValueFiltered = diskPartition.catalogue.contains(searchBarValue)
+    if (searchBarValueFiltered)
+        Row(
+            modifier = Modifier
+                .height(30.dp)
+                .fillMaxWidth()
+                .padding(horizontal = 10.dp)
+                .clickable(onClick = {}),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            val m = listOf<String>(
+                "${diskPartition.used}B",
+                diskPartition.catalogue,
+                diskPartition.device,
+                diskPartition.type,
+                diskPartition.storage,
+                diskPartition.available
+            )
+            diskHeaderWeights.forEachIndexed { index, taskItemWeight ->
+                val proportion1 = diskPartition.percent / 100f
+                val proportion2 = 1 - proportion1
+
+                Row(
+                    modifier = Modifier
+                        .weight(taskItemWeight)
+                        .padding(start = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = m[index].toString(),
+                        fontSize = 14.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    if (index == 0) {
                         Box(
                             modifier = Modifier
-                                .width((180 * diskPartition.percent / 100f).dp)
-                                .fillMaxHeight()
-                                .background(color)
-                                .clip(RoundedCornerShape(8.dp))
-                        )
-                        Text(
-                            "${diskPartition.percent}%",
-                            modifier = Modifier.align(Alignment.Center),
-                            color = Color.White
-                        )
+                                .width(180.dp)
+                                .height(22.dp)
+                                .clip(RoundedCornerShape(3.dp))
+                                .background(Color(0xffEBEBEB))
+                        ) {
+                            Row {
+                                if (proportion1 != 0f) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxHeight()
+                                            .weight(proportion1)
+                                            .background(color)
+                                    )
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxHeight()
+                                            .weight(proportion2)
+                                            .background(Color(0xffEBEBEB))
+                                    )
+                                }
+                            }
+                            Text(
+                                "${diskPartition.percent}%",
+                                modifier = Modifier.align(Alignment.Center),
+                                color = Color.White
+                            )
+                        }
                     }
                 }
             }
         }
-    }
 }
