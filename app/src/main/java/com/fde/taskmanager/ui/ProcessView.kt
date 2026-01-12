@@ -28,7 +28,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -36,10 +35,8 @@ import androidx.compose.ui.unit.sp
 import com.fde.taskmanager.Adapters
 import com.fde.taskmanager.R
 import com.fde.taskmanager.TaskManagerBinder
-import kotlinx.coroutines.launch
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
-import kotlinx.coroutines.delay
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.foundation.lazy.LazyColumn
@@ -53,6 +50,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Slider
 import androidx.compose.material3.TextButton
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.ui.Alignment
@@ -71,19 +69,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.DpOffset
 import androidx.core.graphics.drawable.toBitmap
 
-import java.net.HttpURLConnection
-import java.net.URL
-
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.fde.taskmanager.BackgroundTask
 import com.fde.taskmanager.MainActivity
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.cancel
-import kotlin.math.abs
 import android.view.PointerIcon as PointerIcon1
 import androidx.compose.ui.input.pointer.PointerIcon as PointerIcon2
 
@@ -203,6 +194,11 @@ fun TasksTableHeader(
                         fontSize = 14.sp,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
+                        fontWeight = when(sortMode){
+                            SortMode.BY_NAME_SEQUENTIAL ,
+                            SortMode.BY_NAME_REVERSE -> FontWeight.Bold
+                            else -> FontWeight.Normal
+                        }
                     )
                 }
                 Image(
@@ -211,10 +207,7 @@ fun TasksTableHeader(
                         .size(vectorIconSize)
                         .graphicsLayer {
                             rotationX = when (sortMode) {
-                                SortMode.BY_NAME_SEQUENTIAL -> 0f
-                                SortMode.BY_NAME_REVERSE -> 180f
-                                SortMode.BY_ID_SEQUENTIAL -> 0f
-                                SortMode.BY_ID_REVERSE -> 0f
+                                SortMode.BY_NAME_SEQUENTIAL -> 180f
                                 else -> 0f
                             }
                         },
@@ -275,7 +268,12 @@ fun TasksTableHeader(
                         text = "% CPU",
                         fontSize = 14.sp,
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        overflow = TextOverflow.Ellipsis,
+                        fontWeight = when(sortMode){
+                        SortMode.BY_CPU_SEQUENTIAL ,
+                        SortMode.BY_CPU_REVERSE -> FontWeight.Bold
+                        else -> FontWeight.Normal
+                        }
                     )
                 }
                 Image(
@@ -284,15 +282,8 @@ fun TasksTableHeader(
                         .size(vectorIconSize)
                         .graphicsLayer {
                             rotationX = when (sortMode) {
-                                SortMode.BY_NAME_SEQUENTIAL,
-                                SortMode.BY_NAME_REVERSE,
-                                SortMode.BY_ID_SEQUENTIAL,
-                                SortMode.BY_ID_REVERSE,
-                                SortMode.BY_MEMORY_SEQUENTIAL,
-                                SortMode.BY_MEMORY_REVERSE,
                                 SortMode.BY_CPU_SEQUENTIAL -> 180f
-
-                                SortMode.BY_CPU_REVERSE -> 0f
+                                else -> 0f
                             }
                         },
                     contentDescription = null
@@ -336,6 +327,11 @@ fun TasksTableHeader(
                         fontSize = 14.sp,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
+                        fontWeight = when(sortMode){
+                            SortMode.BY_ID_SEQUENTIAL ,
+                            SortMode.BY_ID_REVERSE -> FontWeight.Bold
+                            else -> FontWeight.Normal
+                        }
                     )
                 }
 
@@ -345,10 +341,7 @@ fun TasksTableHeader(
                         .size(vectorIconSize)
                         .graphicsLayer {
                             rotationX = when (sortMode) {
-                                SortMode.BY_NAME_SEQUENTIAL -> 0f
-                                SortMode.BY_NAME_REVERSE -> 0f
                                 SortMode.BY_ID_SEQUENTIAL -> 180f
-                                SortMode.BY_ID_REVERSE -> 0f
                                 else -> 0f
                             }
                         },
@@ -393,6 +386,11 @@ fun TasksTableHeader(
                         fontSize = 14.sp,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
+                        fontWeight = when(sortMode){
+                            SortMode.BY_MEMORY_SEQUENTIAL ,
+                            SortMode.BY_MEMORY_REVERSE -> FontWeight.Bold
+                            else -> FontWeight.Normal
+                        }
                     )
                 }
 
@@ -402,15 +400,8 @@ fun TasksTableHeader(
                         .size(vectorIconSize)
                         .graphicsLayer {
                             rotationX = when (sortMode) {
-                                SortMode.BY_NAME_SEQUENTIAL,
-                                SortMode.BY_NAME_REVERSE,
-                                SortMode.BY_ID_SEQUENTIAL,
-                                SortMode.BY_ID_REVERSE,
-                                SortMode.BY_MEMORY_SEQUENTIAL,
-                                SortMode.BY_CPU_REVERSE,
-                                SortMode.BY_CPU_SEQUENTIAL -> 180f
-
-                                SortMode.BY_MEMORY_REVERSE -> 0f
+                                SortMode.BY_MEMORY_SEQUENTIAL-> 180f
+                                else -> 0f
                             }
                         },
                     contentDescription = null
@@ -523,7 +514,8 @@ fun ProcessView(
                         appResponseState.value,
                         taskHeaderItemWeightsState,
                         drawablesMap,
-                        bitmapsMap
+                        bitmapsMap,
+                        sortModeState
                     )
                 }
             }
@@ -589,7 +581,8 @@ fun TaskItem(
     appResponse: Adapters.AppsResponse?,
     weights: MutableList<Float>,
     drawablesMap: MutableMap<String, Drawable?>,
-    bitmapsMap: MutableMap<String, ImageBitmap?>
+    bitmapsMap: MutableMap<String, ImageBitmap?>,
+    sortMode: MutableState<SortMode>
 ) {
     val context = LocalContext.current
     val floatingMenuPosition = remember { mutableStateOf(Offset.Zero) }
