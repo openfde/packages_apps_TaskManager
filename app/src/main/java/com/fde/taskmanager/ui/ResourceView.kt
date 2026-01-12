@@ -505,6 +505,7 @@ fun ResourceView() {
             // 自定义滚动条
             val scrollbarWidth = 16.dp
             val scrollbarColor = Color(0xFF999999)
+            val hoverColor: Color = Color(0x40000000)
             val scrollbarMargin = 0.dp
 
             val isDragging = remember { mutableStateOf(false) }
@@ -552,7 +553,7 @@ fun ResourceView() {
                 val thumbTop = (scrollState.value.toFloat() / max(1f, scrollState.maxValue.toFloat())) * (size.height - thumbH)
 
                 drawRoundRect(
-                    color = scrollbarColor,
+                    color = if (isDragging.value) hoverColor else scrollbarColor,
                     topLeft = androidx.compose.ui.geometry.Offset(0f, thumbTop),
                     size = Size(size.width, thumbH),
                     cornerRadius = androidx.compose.ui.geometry.CornerRadius(0f, 0f)
@@ -563,7 +564,7 @@ fun ResourceView() {
 }
 
 private fun thumbHeight(containerHeight: Float, contentHeight: Float): Float {
-    val minHeight = 24f
+    val minHeight = 48f
     return max(minHeight, containerHeight / contentHeight * containerHeight)
 }
 
