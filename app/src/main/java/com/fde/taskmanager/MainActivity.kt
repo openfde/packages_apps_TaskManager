@@ -2,83 +2,43 @@ package com.fde.taskmanager
 
 import android.os.Build
 import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import android.view.Window
-import com.fde.taskmanager.R
-
+import androidx.activity.ComponentActivity
+import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.size
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
-
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Surface
-import androidx.compose.material3.VerticalDivider
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.DpOffset
-import androidx.navigation.NavController
-import android.content.Intent
-import android.view.KeyEvent
-import android.app.Instrumentation
-import android.content.Context
-import android.app.ActivityManager
-import android.app.ActivityManager.AppTask
-import android.util.Log
-import androidx.compose.ui.platform.ComposeView
-import androidx.lifecycle.ViewModel
-import androidx.activity.viewModels
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.launch
-import androidx.lifecycle.viewModelScope
 import androidx.compose.runtime.LaunchedEffect
-import com.fde.taskmanager.ui.*
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.fde.taskmanager.ui.AppRoute
+import com.fde.taskmanager.ui.DisplayMode
+import com.fde.taskmanager.ui.FileSystemView
+import com.fde.taskmanager.ui.LogoBar
+import com.fde.taskmanager.ui.NavOuterBox
+import com.fde.taskmanager.ui.ProcessView
+import com.fde.taskmanager.ui.ResourceView
+import com.fde.taskmanager.ui.WindowButtonsBar
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.launch
 
 
 class MainActivity : ComponentActivity() {
@@ -96,8 +56,15 @@ class MainActivity : ComponentActivity() {
         val toolbarViewModel by viewModels<ToolbarViewModel>()
         BackgroundTask.startBackgroundTask()
         toolbar_compose_view!!.setContent {
-            val isHidden = remember { mutableStateOf(false) }
+            var isHidden = remember { mutableStateOf(true) }
             val searchBarValueState = remember { mutableStateOf("") }
+
+            LaunchedEffect(Unit) {
+                toolbarViewModel.navigationEvents.collect { route ->
+                    isHidden.value = route == AppRoute.Process.route
+                }
+            }
+
             Row(
                 modifier = Modifier
                     .height(50.dp)
@@ -108,7 +75,7 @@ class MainActivity : ComponentActivity() {
             ) {
                 LogoBar()
                 NavOuterBox(toolbarViewModel)
-                WindowButtonsBar(toolbarViewModel)
+                WindowButtonsBar(toolbarViewModel, isHidden)
             }
         }
 
@@ -121,9 +88,9 @@ class MainActivity : ComponentActivity() {
             val snackbarHostState = remember { SnackbarHostState() }
             val isServiceAvailable = remember { mutableStateOf(false) }
 
-             LaunchedEffect(Unit) {
-                 toolbarViewModel.navigationEvents.collect { route ->
-                    if(!isServiceAvailable.value) {
+            LaunchedEffect(Unit) {
+                toolbarViewModel.navigationEvents.collect { route ->
+                    if (!isServiceAvailable.value) {
                         launch {
                             snackbarHostState.showSnackbar(
                                 message = getString(R.string.service_not_available),
@@ -143,7 +110,7 @@ class MainActivity : ComponentActivity() {
 
             LaunchedEffect(toolbarViewModel) {
                 toolbarViewModel.displayModeChangeEvents.collect { displayMode ->
-                    if(!isServiceAvailable.value) {
+                    if (!isServiceAvailable.value) {
                         launch {
                             snackbarHostState.showSnackbar(
                                 message = getString(R.string.service_not_available),
@@ -157,7 +124,7 @@ class MainActivity : ComponentActivity() {
 
             LaunchedEffect(toolbarViewModel) {
                 toolbarViewModel.searchBarValueChangeEvents.collect { value ->
-                    if(!isServiceAvailable.value) {
+                    if (!isServiceAvailable.value) {
                         launch {
                             snackbarHostState.showSnackbar(
                                 message = getString(R.string.service_not_available),
@@ -171,7 +138,7 @@ class MainActivity : ComponentActivity() {
 
             LaunchedEffect(toolbarViewModel) {
                 toolbarViewModel.refreshTaskInfoListEvents.collect { value ->
-                    if(!isServiceAvailable.value) {
+                    if (!isServiceAvailable.value) {
                         launch {
                             snackbarHostState.showSnackbar(
                                 message = getString(R.string.service_not_available),
