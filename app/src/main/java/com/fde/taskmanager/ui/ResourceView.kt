@@ -503,7 +503,8 @@ fun ResourceView() {
             }
 
             // 自定义滚动条
-            val scrollbarWidth = 16.dp
+            val scrollbarWidth = 8.dp
+            val scrollbarRadius = 8f
             val scrollbarColor = Color(0xFF999999)
             val hoverColor: Color = Color(0x40000000)
             val scrollbarMargin = 0.dp
@@ -556,7 +557,7 @@ fun ResourceView() {
                     color = if (isDragging.value) hoverColor else scrollbarColor,
                     topLeft = androidx.compose.ui.geometry.Offset(0f, thumbTop),
                     size = Size(size.width, thumbH),
-                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(0f, 0f)
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(scrollbarRadius, scrollbarRadius)
                 )
             }
         }

@@ -35,7 +35,8 @@ fun VerticalScrollBar(
 ) {
     val coroutineScope = rememberCoroutineScope()
     // 自定义滚动条
-    val scrollbarWidth = 16.dp
+    val scrollbarWidth = 8.dp
+    val scrollbarRadius = 8f
     val scrollbarColor = Color(0xFF999999)
     val hoverColor: Color = Color(0x40000000)
     val isDragging = remember { mutableStateOf(false) }
@@ -98,7 +99,7 @@ fun VerticalScrollBar(
                 color = if (isDragging.value) hoverColor else scrollbarColor,
                 topLeft = Offset(0f, thumbTop),
                 size = Size(size.width, thumbH),
-                cornerRadius = CornerRadius(0f, 0f)
+                cornerRadius = CornerRadius(scrollbarRadius, scrollbarRadius)
             )
         }
     }
