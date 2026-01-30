@@ -39,6 +39,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
+import android.openfde.AppTaskControllerProxy
 
 
 class MainActivity : ComponentActivity() {
@@ -49,7 +50,7 @@ class MainActivity : ComponentActivity() {
         // is imported when using Soong to compile under the 
         // Android source tree and keep in sync with 
         // `isTitleBarHidden` in `NavigationView`
-        setWindowDecorationStatus(Window.WINDOW_DECORATION_FORCE_HIDE);
+//        setWindowDecorationStatus(Window.WINDOW_DECORATION_FORCE_HIDE);
         setContentView(R.layout.base_layout)
         val toolbar_compose_view = findViewById<ComposeView>(R.id.toolbar_compose_view)
         val main_frame_compose_view = findViewById<ComposeView>(R.id.main_frame_compose_view)
@@ -186,6 +187,7 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+       val taskController = TaskController()
     }
 
     override fun onDestroy() {
