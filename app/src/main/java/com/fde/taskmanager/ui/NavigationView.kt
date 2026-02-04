@@ -148,8 +148,11 @@ private fun simulateKeyPress(keyCode: Int) {
 fun WindowButtonsBar(
     toolbarViewModel: ToolbarViewModel,
     isButtonHidden: MutableState<Boolean>,
-    appTaskController: AppTaskControllerProxy
+    appTaskController: AppTaskControllerProxy,
+    windowingMode: MutableState<Int>?,
+    isSystemBarVisible: MutableState<Boolean>?
 ) {
+
     val windowOptionsDropdownMenuOffset = remember {
         mutableStateOf<Offset>(Offset.Zero)
     }
@@ -176,7 +179,7 @@ fun WindowButtonsBar(
     Row(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.padding(start = 12.dp, end = 8.dp)
+        modifier = Modifier.padding(start = 12.dp, end = 0.dp)
     ) {
         WindowOptionsDisplayProcessSubDropdownMenu(
             expanded = windowOptionsDropdownSubMenuShow.value,
@@ -336,7 +339,8 @@ fun WindowButtonsBar(
         Image(
             painter = painterResource(id = R.drawable.window_options_button),
             modifier = Modifier
-                .size(28.dp)
+                .size(26.dp)
+                .padding(end = 8.dp)
                 .clickable(
                     onClick = {})
                 .pointerInput(Unit) {
@@ -355,9 +359,16 @@ fun WindowButtonsBar(
         )
 
             // fullscreen
+            val iconFullId =
+            if (isSystemBarVisible?.value == true) {
+                R.drawable.window_full_screen_button
+            } else {
+                R.drawable.window_exit_full_screen_button
+            }
             Image(
-                painter = painterResource(id = R.drawable.window_full_screen_button),
-                modifier = Modifier.size(28.dp).clickable {
+                painter = painterResource(id = iconFullId),
+                modifier = Modifier.size(26.dp)
+                    .padding(end = 8.dp).clickable {
                     appTaskController.enterOrExitFullscreen();
 //                   simulateKeyPress(KeyEvent.KEYCODE_F11);
                 },
@@ -366,16 +377,24 @@ fun WindowButtonsBar(
             // minimize
             Image(
                 painter = painterResource(id = R.drawable.window_mini_button),
-                modifier = Modifier.size(28.dp).clickable {
+                modifier = Modifier.size(26.dp)
+                    .padding(end = 8.dp).clickable {
                     appTaskController.minimize();
 //                    simulateKeyPress(KeyEvent.KEYCODE_F9)
                 },
                 contentDescription = null
             )
             // normal/maximize
+            val iconResId =
+            if (windowingMode?.value == 5) {
+                R.drawable.window_normal_button
+            } else {
+                R.drawable.window_maximize_button
+            }
             Image(
-                painter = painterResource(id = R.drawable.window_normal_button),
-                modifier = Modifier.size(28.dp).clickable {
+                painter = painterResource(id = iconResId),
+                modifier = Modifier.size(26.dp)
+                    .padding(end = 8.dp).clickable {
                     appTaskController.maximizeOrNot();
 //                    val intent = Intent("com.fde.fullscreen.ENABLE_OR_DISABLE")
 //                    if(isFullScreen.value)
@@ -390,7 +409,8 @@ fun WindowButtonsBar(
             // close
             Image(
                 painter = painterResource(id = R.drawable.window_close_button),
-                modifier = Modifier.size(28.dp).clickable {
+                modifier = Modifier.size(18.dp)
+                    .padding(end = 0.dp).clickable {
                     appTaskController.closeTask();
 //                    val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
 //                    val tasks = activityManager.appTasks
