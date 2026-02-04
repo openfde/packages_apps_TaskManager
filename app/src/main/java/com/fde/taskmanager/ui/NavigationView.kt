@@ -1,10 +1,7 @@
 package com.fde.taskmanager.ui
 
-import android.app.ActivityManager
 import android.app.Instrumentation
-import android.content.Context
-import android.content.Intent
-import android.view.KeyEvent
+import android.openfde.AppTaskControllerProxy
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -150,7 +147,8 @@ private fun simulateKeyPress(keyCode: Int) {
 @Composable
 fun WindowButtonsBar(
     toolbarViewModel: ToolbarViewModel,
-    isButtonHidden: MutableState<Boolean>
+    isButtonHidden: MutableState<Boolean>,
+    appTaskController: AppTaskControllerProxy
 ) {
     val windowOptionsDropdownMenuOffset = remember {
         mutableStateOf<Offset>(Offset.Zero)
@@ -358,9 +356,10 @@ fun WindowButtonsBar(
 
             // fullscreen
             Image(
-                painter = painterResource(id = R.drawable.window_max_button),
+                painter = painterResource(id = R.drawable.window_full_screen_button),
                 modifier = Modifier.size(28.dp).clickable {
-                   simulateKeyPress(KeyEvent.KEYCODE_F11);
+                    appTaskController.enterOrExitFullscreen();
+//                   simulateKeyPress(KeyEvent.KEYCODE_F11);
                 },
                 contentDescription = null
             )
@@ -368,7 +367,8 @@ fun WindowButtonsBar(
             Image(
                 painter = painterResource(id = R.drawable.window_mini_button),
                 modifier = Modifier.size(28.dp).clickable {
-                    simulateKeyPress(KeyEvent.KEYCODE_F9)
+                    appTaskController.minimize();
+//                    simulateKeyPress(KeyEvent.KEYCODE_F9)
                 },
                 contentDescription = null
             )
@@ -376,13 +376,14 @@ fun WindowButtonsBar(
             Image(
                 painter = painterResource(id = R.drawable.window_normal_button),
                 modifier = Modifier.size(28.dp).clickable {
-                    val intent = Intent("com.fde.fullscreen.ENABLE_OR_DISABLE")
-                    if(isFullScreen.value)
-                        intent.putExtra("mode", 0)
-                    else
-                        intent.putExtra("mode", 1)
-                    isFullScreen.value = !(isFullScreen.value)
-                    context.sendBroadcast(intent)
+                    appTaskController.maximizeOrNot();
+//                    val intent = Intent("com.fde.fullscreen.ENABLE_OR_DISABLE")
+//                    if(isFullScreen.value)
+//                        intent.putExtra("mode", 0)
+//                    else
+//                        intent.putExtra("mode", 1)
+//                    isFullScreen.value = !(isFullScreen.value)
+//                    context.sendBroadcast(intent)
                 },
                 contentDescription = null
             )
@@ -390,11 +391,12 @@ fun WindowButtonsBar(
             Image(
                 painter = painterResource(id = R.drawable.window_close_button),
                 modifier = Modifier.size(28.dp).clickable {
-                    val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-                    val tasks = activityManager.appTasks
-                    if (tasks.isNotEmpty()){
-                        tasks[0].finishAndRemoveTask()
-                    }
+                    appTaskController.closeTask();
+//                    val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+//                    val tasks = activityManager.appTasks
+//                    if (tasks.isNotEmpty()){
+//                        tasks[0].finishAndRemoveTask()
+//                    }
                 },
                 contentDescription = null
             )

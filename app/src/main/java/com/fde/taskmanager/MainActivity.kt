@@ -1,8 +1,11 @@
 package com.fde.taskmanager
 
+import android.app.Activity
+import android.openfde.AppTaskControllerProxy
+import android.openfde.AppTaskStatusListener
 import android.os.Build
 import android.os.Bundle
-import android.view.Window
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
@@ -39,10 +42,11 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
-import android.openfde.AppTaskControllerProxy
+import java.lang.ref.WeakReference
 
 
 class MainActivity : ComponentActivity() {
+    var appTaskController : AppTaskControllerProxy? = null
     @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -50,11 +54,26 @@ class MainActivity : ComponentActivity() {
         // is imported when using Soong to compile under the 
         // Android source tree and keep in sync with 
         // `isTitleBarHidden` in `NavigationView`
-//        setWindowDecorationStatus(Window.WINDOW_DECORATION_FORCE_HIDE);
+        setWindowDecorationStatus(Window.WINDOW_DECORATION_FORCE_HIDE);
         setContentView(R.layout.base_layout)
         val toolbar_compose_view = findViewById<ComposeView>(R.id.toolbar_compose_view)
         val main_frame_compose_view = findViewById<ComposeView>(R.id.main_frame_compose_view)
         val toolbarViewModel by viewModels<ToolbarViewModel>()
+        appTaskController = AppTaskControllerProxy.create()
+        appTaskController?.initCustomCaption(
+            WeakReference(this),
+            false,
+            object : AppTaskStatusListener {
+                override fun onStatusChanged(
+                    windowingMode: Int,
+                    isSystemBarVisible: Boolean
+                ) {
+                  
+                }
+
+            }
+        )
+
         BackgroundTask.startBackgroundTask()
         toolbar_compose_view!!.setContent {
             var isHidden = remember { mutableStateOf(true) }
@@ -76,7 +95,7 @@ class MainActivity : ComponentActivity() {
             ) {
                 LogoBar()
                 NavOuterBox(toolbarViewModel)
-                WindowButtonsBar(toolbarViewModel, isHidden)
+                WindowButtonsBar(toolbarViewModel, isHidden,appTaskController!!)
             }
         }
 
