@@ -1,7 +1,10 @@
 package com.fde.taskmanager
 
+import android.openfde.AppTaskControllerProxy
+import android.openfde.AppTaskStatusListener
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.view.Window
 import androidx.activity.ComponentActivity
 import androidx.activity.viewModels
@@ -15,6 +18,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -39,9 +44,12 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
-
+import java.lang.ref.WeakReference
 
 class MainActivity : ComponentActivity() {
+    var appTaskController : AppTaskControllerProxy? = null
+    lateinit var mWindowingMode: MutableState<Int>
+    lateinit var mIsSystemBarVisible: MutableState<Boolean>
     @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -54,6 +62,26 @@ class MainActivity : ComponentActivity() {
         val toolbar_compose_view = findViewById<ComposeView>(R.id.toolbar_compose_view)
         val main_frame_compose_view = findViewById<ComposeView>(R.id.main_frame_compose_view)
         val toolbarViewModel by viewModels<ToolbarViewModel>()
+        mWindowingMode = mutableIntStateOf(
+            5
+        )
+        mIsSystemBarVisible = mutableStateOf(true)
+        appTaskController = AppTaskControllerProxy.create()
+        appTaskController?.initCustomCaption(
+            WeakReference(this),
+            false,
+            object : AppTaskStatusListener {
+                override fun onStatusChanged(
+                    windowingMode: Int,
+                    isSystemBarVisible: Boolean
+                ) {
+                    mWindowingMode.value = windowingMode
+                    mIsSystemBarVisible.value  =isSystemBarVisible
+                }
+
+            }
+        )
+
         BackgroundTask.startBackgroundTask()
         toolbar_compose_view!!.setContent {
             var isHidden = remember { mutableStateOf(true) }
@@ -75,7 +103,9 @@ class MainActivity : ComponentActivity() {
             ) {
                 LogoBar()
                 NavOuterBox(toolbarViewModel)
-                WindowButtonsBar(toolbarViewModel, isHidden)
+                WindowButtonsBar(toolbarViewModel, isHidden,appTaskController!!,
+                    mWindowingMode , mIsSystemBarVisible
+                )
             }
         }
 
@@ -186,6 +216,7 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+       val taskController = TaskController()
     }
 
     override fun onDestroy() {

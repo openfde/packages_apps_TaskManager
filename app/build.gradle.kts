@@ -12,15 +12,21 @@ android {
 
     signingConfigs {
         create("release") {
-            storeFile = file("my-upload-key.jks")
-            storePassword = "feiteng123"
-            keyAlias = "my-key-alias"
-            keyPassword = "feiteng123"
+            storeFile = file("plugin.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+        getByName("debug") {
+            storeFile = file("plugin.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
         }
     }
 
     defaultConfig {
-        applicationId = "com.fde.taskmanager"
+        applicationId = "com.fde.taskmanager.debug"
         minSdk = 34
         targetSdk = 36
         versionCode = 60
@@ -31,11 +37,14 @@ android {
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("release")
+            signingConfig = signingConfigs.getByName("debug")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+        }
+        debug {
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
     compileOptions {
@@ -49,6 +58,18 @@ android {
     buildFeatures {
         compose = true
         aidl = true
+    }
+}
+
+gradle.projectsEvaluated {
+    tasks.withType<JavaCompile>().configureEach {
+        val extraJar = File("libs/openfde_sdk.jar")
+
+        // 安全处理 bootstrapClasspath（可能为 null）
+        val currentBootstrap = options.bootstrapClasspath?.files ?: emptySet()
+        val newBootstrap = listOf(extraJar) + currentBootstrap
+
+        options.bootstrapClasspath = files(newBootstrap)
     }
 }
 
@@ -76,5 +97,6 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4")
     implementation("com.google.code.gson:gson:2.13.1")
     implementation("androidx.coordinatorlayout:coordinatorlayout:1.2.0")
+    compileOnly(files("libs/openfde_sdk.jar"))
 
 }
