@@ -65,7 +65,7 @@ class MainActivity : ComponentActivity() {
         mWindowingMode = mutableIntStateOf(
             5
         )
-        mIsSystemBarVisible = mutableStateOf(false)
+        mIsSystemBarVisible = mutableStateOf(true)
         appTaskController = AppTaskControllerProxy.create()
         appTaskController?.initCustomCaption(
             WeakReference(this),
