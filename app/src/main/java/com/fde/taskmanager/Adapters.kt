@@ -101,7 +101,16 @@ object Adapters {
     }
 
     public fun DiskStatsAdapt(diskStatsString: String): DiskStats =
-        gson.fromJson(diskStatsString, diskStatsType)
+        gson.fromJson(diskStatsString ?: "{\n" +
+        "  \"read\" : {\n" +
+        "    \"speed\" : 0.0,\n" +
+        "    \"total\" : 0\n" +
+        "  },\n" +
+        "  \"write\" : {\n" +
+        "    \"speed\" : 0.0,\n" +
+        "    \"total\" : 0\n" +
+        "  }\n" +
+        "}", diskStatsType)
 
     // 在 Adapters 对象中添加以下内容
     private val diskPartitionType = object : TypeToken<List<DiskPartition>>() {}.type
