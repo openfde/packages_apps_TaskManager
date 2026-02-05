@@ -71,8 +71,9 @@ object TaskManagerBinder {
         return networkStatsInfo
     }
 
-    public fun getDiskReadAndWrite(interval: Int): Adapters.DiskStats {
+    public fun getDiskReadAndWrite(interval: Int): Adapters.DiskStats? {
         val diskStats = taskManager?.getDiskReadAndWrite(interval)
+        if(diskStats == null) return  null ;
         val diskStatsInfo = Adapters.DiskStatsAdapt(diskStats.toString())
         return diskStatsInfo
     }

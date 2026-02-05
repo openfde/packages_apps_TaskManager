@@ -145,16 +145,18 @@ object BackgroundTask {
         scope.launch {
             while(true) {
                 val diskStats = TaskManagerBinder.getDiskReadAndWrite(200)
-                _diskStatsState.value = diskStats
-                val read = _diskReadAndWriteList.value[0].toMutableStateList().apply {
-                    if(size >= 20) removeAt(0)
-                    add(_diskStatsState.value.read.speed)
-                }.toList()
-                val write =_diskReadAndWriteList.value[1].toMutableStateList().apply {
-                    if(size >= 20) removeAt(0)
-                    add(_diskStatsState.value.write.speed)
-                }.toList()
-                _diskReadAndWriteList.value = listOf(read,write)
+                if(diskStats != null) {
+                    _diskStatsState.value = diskStats
+                    val read = _diskReadAndWriteList.value[0].toMutableStateList().apply {
+                        if (size >= 20) removeAt(0)
+                        add(_diskStatsState.value.read.speed)
+                    }.toList()
+                    val write = _diskReadAndWriteList.value[1].toMutableStateList().apply {
+                        if (size >= 20) removeAt(0)
+                        add(_diskStatsState.value.write.speed)
+                    }.toList()
+                    _diskReadAndWriteList.value = listOf(read, write)
+                }
             }
         }
     }
