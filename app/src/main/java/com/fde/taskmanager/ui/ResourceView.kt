@@ -454,22 +454,26 @@ fun ResourceView() {
                         20 * 1000f * 1000f, // 20MB/s
                         50 * 1000f * 1000f // 50MB/s
                     )
-                    val total = diskReadAndWriteList.value[0] + diskReadAndWriteList.value[1]
-                    val dataMin = total.min()
-                    val dataMax = total.max()
-                    diskAxisMax.value =
-                        axisValues.subList(1, axisValues.size).filter { it >= dataMax }.minOrNull()
-                            ?: 0f
-                    diskAxisMin.value =
-                        axisValues.subList(0, axisValues.size - 1).filter { it <= dataMin }
-                            .maxOrNull() ?: 0f
-                    val labelCount = 6
-                    for (index in 0..5) {
-                        val value = diskAxisMin.value +
-                                (diskAxisMax.value - diskAxisMin.value) *
-                                index / (labelCount - 1)
-                        diskAxisLabels[index] = toStringWithSpeedUnit(value, 0)
-                    }
+                   try {
+                       val total = diskReadAndWriteList.value[0] + diskReadAndWriteList.value[1]
+                       val dataMin = total.min()
+                       val dataMax = total.max()
+                       diskAxisMax.value =
+                           axisValues.subList(1, axisValues.size).filter { it >= dataMax }.minOrNull()
+                               ?: 0f
+                       diskAxisMin.value =
+                           axisValues.subList(0, axisValues.size - 1).filter { it <= dataMin }
+                               .maxOrNull() ?: 0f
+                       val labelCount = 6
+                       for (index in 0..5) {
+                           val value = diskAxisMin.value +
+                                   (diskAxisMax.value - diskAxisMin.value) *
+                                   index / (labelCount - 1)
+                           diskAxisLabels[index] = toStringWithSpeedUnit(value, 0)
+                       }
+                   }catch (e: Exception){
+                       e.printStackTrace()
+                   }
                 }
 
                 FoldableBox(context.getString(R.string.disk)) {
