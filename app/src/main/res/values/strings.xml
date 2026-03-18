@@ -59,4 +59,6 @@
     <string name="app_version">Version</string>
     <string name="app_name_title">App Name</string>
     <string name="average">Average</string>
+    <string name="simple">simple</string>
+    <string name="normal">normal</string>
 </resources>

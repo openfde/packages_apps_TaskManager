@@ -2,6 +2,7 @@ package com.fde.taskmanager.ui
 
 import android.app.Instrumentation
 import android.openfde.AppTaskControllerProxy
+import android.provider.Settings
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -44,6 +45,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -63,7 +65,8 @@ fun SearchBar(
 ) {
     Row(
         modifier = Modifier
-            .size(width = 160.dp, height = 32.dp)
+            .padding(end = 8.dp)
+            .size(width = 160.dp, height = 30.dp)
             .background(
                 color = Color(0x0D000000), // 设置背景颜色为 #0d000000
                 shape = RoundedCornerShape(6.dp)
@@ -148,6 +151,7 @@ private fun simulateKeyPress(keyCode: Int) {
 fun WindowButtonsBar(
     toolbarViewModel: ToolbarViewModel,
     isButtonHidden: MutableState<Boolean>,
+    isButtonSimple: MutableState<Boolean>,
     appTaskController: AppTaskControllerProxy,
     windowingMode: MutableState<Int>?,
     isSystemBarVisible: MutableState<Boolean>?
@@ -179,7 +183,7 @@ fun WindowButtonsBar(
     Row(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.padding(start = 12.dp, end = 0.dp)
+        modifier = Modifier.padding(start = 12.dp, end = 12.dp)
     ) {
         WindowOptionsDisplayProcessSubDropdownMenu(
             expanded = windowOptionsDropdownSubMenuShow.value,
@@ -203,11 +207,13 @@ fun WindowButtonsBar(
         ) {
             if(isButtonHidden.value) {DropdownMenuItem(
                 text = { Text(stringResource(R.string.menu_refresh)) }, onClick = {
+                    windowOptionsDropdownMenuShow.value = false
                     toolbarViewModel.refreshTaskInfoList()
             }, modifier = Modifier
                     .height(32.dp)
                     .width(192.dp)
             )
+
             DropdownMenuItem(modifier = Modifier.pointerInput(Unit) {
                 awaitPointerEventScope {
                     while (true) {
@@ -260,6 +266,16 @@ fun WindowButtonsBar(
 //                    .height(32.dp)
 //                    .width(192.dp)
 //            )
+            val isSimple = Settings.Global.getInt(context.contentResolver, "isSimple", 0);
+            if(isButtonSimple.value) {DropdownMenuItem(
+                text = { Text(stringResource(if(isSimple == 0) R.string.normal  else R.string.simple)) }, onClick = {
+                    windowOptionsDropdownMenuShow.value = false
+                    Settings.Global.putInt(context.contentResolver, "isSimple",(if (isSimple == 0) 1 else 0))
+                }, modifier = Modifier
+                    .height(32.dp)
+                    .width(192.dp)
+            )}
+
 //            关于
             DropdownMenuItem(
                 text = { Text(stringResource(R.string.menu_about)) }, onClick = {
@@ -282,24 +298,36 @@ fun WindowButtonsBar(
                 Column {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center,
+                        horizontalArrangement = Arrangement.Start,
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Image(
                             painter = painterResource(id = R.drawable.ic_launcher_foreground),
-                            modifier = Modifier.size(64.dp),
+                            modifier = Modifier.size(64.dp).padding(start = 0.dp) ,
                             contentDescription = null
                         )
                     }
-                    Row {
-                        Text("${context.getString(R.string.app_name_title)}:")
-                        Spacer(modifier = Modifier.weight(1f))
-                        Text(packageName.toString())
+                    Row(modifier = Modifier.fillMaxWidth().padding(start = 5.dp) ){
+                        Text("${context.getString(R.string.app_name_title)}:",
+                            color = Color.Black,
+                            modifier = Modifier
+                                .width(100.dp).height(32.dp),
+                            textAlign = TextAlign.Start)
+                        Text(packageName.toString(),
+                            modifier = Modifier
+                                .weight(1f).height(32.dp),
+                            textAlign = TextAlign.Start)
                     }
-                    Row {
-                        Text("${context.getString(R.string.app_version)}:")
-                        Spacer(modifier = Modifier.weight(1f))
-                        Text(versionName.toString())
+                    Row(modifier = Modifier.fillMaxWidth().padding(start = 5.dp)) {
+                        Text("${context.getString(R.string.app_version)}:",
+                            color = Color.Black,
+                            modifier = Modifier
+                                .width(100.dp).height(32.dp),
+                            textAlign = TextAlign.Start)
+                        Text(versionName.toString(),
+                            modifier = Modifier
+                                .weight(1f).height(32.dp),
+                            textAlign = TextAlign.Start)
                     }
                 }
             }, confirmButton = {}, dismissButton = {

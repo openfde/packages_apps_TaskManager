@@ -1,5 +1,7 @@
 package com.fde.taskmanager
 
+import android.content.Context
+import android.provider.Settings
 import android.util.Log
 import androidx.compose.runtime.toMutableStateList
 import kotlinx.coroutines.CoroutineScope
@@ -22,7 +24,9 @@ object BackgroundTask {
     val taskInfoList: StateFlow<List<Adapters.TaskInfo>> = _taskInfoList.asStateFlow()
 
     private var _cpuPercentState: MutableStateFlow<List<List<Float>>> = MutableStateFlow(emptyList())
+    private var _cpuAllDataState: MutableStateFlow<List<List<Float>>> = MutableStateFlow(emptyList())
     val cpuPercentState: StateFlow<List<List<Float>>> = _cpuPercentState.asStateFlow()
+    val cpuAllState: StateFlow<List<List<Float>>> = _cpuAllDataState.asStateFlow()
 
     private var _memoryAndSwapList: MutableStateFlow<List<List<Float>>> = MutableStateFlow(listOf(emptyList(),emptyList()))
     val memoryAndSwapList: StateFlow<List<List<Float>>> = _memoryAndSwapList.asStateFlow()
@@ -73,14 +77,15 @@ object BackgroundTask {
     init {
         cpuCount = TaskManagerBinder.getEachCPUPercent(10).size
         _cpuPercentState.value = List(cpuCount + 1) { emptyList() } // 多1个作平均
+        _cpuAllDataState.value = List(cpuCount + 1) { emptyList() } // 多1个作平均
     }
 
-    fun startBackgroundTask() {
+    fun startBackgroundTask(context: Context) {
         startProcessViewBackgroundTask()
-        startResourceViewBackgroundTask()
+        startResourceViewBackgroundTask(context)
     }
 
-    fun startResourceViewBackgroundTask() {
+    fun startResourceViewBackgroundTask(context: Context) {
         if (supervisorJob.isCancelled) {
             supervisorJob = SupervisorJob()
             scope = CoroutineScope(Dispatchers.Default + supervisorJob)
@@ -90,7 +95,7 @@ object BackgroundTask {
             while (true) {
                 try {
                     val eachCPUPercent = TaskManagerBinder.getEachCPUPercent(200)
-                    val currentLists = _cpuPercentState.value
+                    val currentLists = _cpuAllDataState.value
                     val cpuCount = eachCPUPercent.size
                     val updatedCpuLists = currentLists.take(cpuCount).mapIndexed { index, list ->
                         val newPercent = eachCPUPercent[index]
@@ -100,7 +105,13 @@ object BackgroundTask {
                     val latestAvg = updatedCpuLists.map { it.lastOrNull() ?: 0f }.average().toFloat()
                     val avgList = currentLists.getOrNull(cpuCount) ?: emptyList()
                     val updatedAvgList = (if (avgList.size >= 20) avgList.drop(1) else avgList) + latestAvg
-                    _cpuPercentState.value = updatedCpuLists + listOf(updatedAvgList)
+//                    _cpuPercentState.value = updatedCpuLists + listOf(updatedAvgList)
+//                    Log.d("BackgroundTask", "CPU percent updated: $updatedCpuLists")
+                    _cpuAllDataState.value = updatedCpuLists + listOf(updatedAvgList)
+                    val isSimple = Settings.Global.getInt( context?.contentResolver, "isSimple", 0);
+
+                    _cpuPercentState.value = if (isSimple == 0) listOf(_cpuAllDataState.value.get(8)) else (updatedCpuLists + listOf(updatedAvgList))
+                    Log.d("BackgroundTask", "CPU percent updated: ${_cpuAllDataState.value}")
                 } catch (e: Exception) {
                     Log.e("BackgroundTask", "Error updating CPU percent", e)
                 }
@@ -194,15 +205,15 @@ object BackgroundTask {
                 } catch (e: Exception) {
                     Log.e("BackgroundTask", "Error updating task list", e)
                 }
-                delay(500)
+//                delay(500)
             }
         }
     }
 
-    fun refreshTaskInfoList() {
+    fun refreshTaskInfoList(context: Context) {
         cancelAllTasks()
         _taskInfoList.value = emptyList()
-        startBackgroundTask()
+        startBackgroundTask(context)
     }
 
     fun cancelAllTasks() {

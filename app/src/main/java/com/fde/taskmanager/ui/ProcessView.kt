@@ -42,6 +42,7 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
@@ -473,7 +474,7 @@ fun ProcessView(
 ) {
     val taskInfoList = BackgroundTask.taskInfoList.collectAsStateWithLifecycle()
     val userName = TaskManagerBinder.getUserName()
-    val sortModeState = remember { mutableStateOf(SortMode.BY_NAME_SEQUENTIAL) }
+    val sortModeState = remember { mutableStateOf(SortMode.BY_MEMORY_REVERSE) }
     val appResponseState = remember { mutableStateOf<Adapters.AppsResponse?>(null) }
     val taskHeaderItemWeightsState = remember {
         mutableStateListOf<Float>(
@@ -495,8 +496,8 @@ fun ProcessView(
         }, taskHeaderItemWeightsState)
         Box(modifier = Modifier.fillMaxSize()) {
             LazyColumn(state = listState) {
-                items(
-                    when (sortModeState.value) {
+                itemsIndexed(
+                    items = when (sortModeState.value) {
                         SortMode.BY_NAME_SEQUENTIAL -> taskInfoList.value.sortedBy { it.name }
                         SortMode.BY_NAME_REVERSE -> taskInfoList.value.sortedByDescending { it.name }
                         SortMode.BY_ID_SEQUENTIAL -> taskInfoList.value.sortedBy { it.pid }
@@ -505,17 +506,24 @@ fun ProcessView(
                         SortMode.BY_MEMORY_REVERSE -> taskInfoList.value.sortedByDescending { it.rss }
                         SortMode.BY_CPU_REVERSE -> taskInfoList.value.sortedByDescending { it.cpuUsage }
                         SortMode.BY_CPU_SEQUENTIAL -> taskInfoList.value.sortedBy { it.cpuUsage }
-                    }, key = { it.pid }) {
+                    },
+                    key = { _, item -> item.pid }
+                ) { index, task->
                     TaskItem(
-                        it,
-                        displayMode,
-                        userName!!,
-                        searchBarValue,
-                        appResponseState.value,
-                        taskHeaderItemWeightsState,
-                        drawablesMap,
-                        bitmapsMap,
-                        sortModeState
+                        taskInfo = task,
+                        displayMode = displayMode,
+                        userName = userName!!,
+                        searchBarValue = searchBarValue,
+                        appResponse = appResponseState.value,
+                        weights = taskHeaderItemWeightsState,
+                        drawablesMap = drawablesMap,
+                        bitmapsMap = bitmapsMap,
+                        index = index,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(
+                                if (index % 2 == 0) Color.Blue else Color(0xFFFF0000) // 偶数白色，奇数灰色
+                            )
                     )
                 }
             }
@@ -582,7 +590,8 @@ fun TaskItem(
     weights: MutableList<Float>,
     drawablesMap: MutableMap<String, Drawable?>,
     bitmapsMap: MutableMap<String, ImageBitmap?>,
-    sortMode: MutableState<SortMode>
+    index: Int,
+    modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
     val floatingMenuPosition = remember { mutableStateOf(Offset.Zero) }
@@ -773,6 +782,7 @@ fun TaskItem(
                 .fillMaxWidth()
                 .padding(horizontal = 8.dp)
                 .clickable(onClick = {})
+                .background(if (index % 2 == 0) Color.White else Color(0xFFF5F5F5))
                 .onGloballyPositioned { coordinates ->
                     globalPositionState.value = coordinates.positionInRoot()
                 }
