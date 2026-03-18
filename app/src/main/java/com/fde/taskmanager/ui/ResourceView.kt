@@ -1,6 +1,8 @@
 package com.fde.taskmanager.ui
 
+import android.content.SharedPreferences
 import android.os.Build
+import android.provider.Settings
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Canvas
@@ -8,6 +10,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -35,6 +38,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.Path
@@ -51,12 +55,15 @@ import androidx.compose.ui.res.painterResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.fde.taskmanager.BackgroundTask
 import com.fde.taskmanager.R
+import com.fde.taskmanager.SPUtils
 import kotlinx.coroutines.launch
 import kotlin.math.max
 
 @Composable
 fun FoldableBox(
-    title: String, content: @Composable () -> Unit
+    title: String,
+    chart: @Composable () -> Unit,
+    annotation: @Composable () -> Unit
 ) {
     val expanded = remember { mutableStateOf(true) }
     Row(
@@ -80,8 +87,12 @@ fun FoldableBox(
         )
         Spacer(modifier = Modifier.width(8.dp))
         Text(title)
+        Spacer(modifier = Modifier.weight(1f))
+        annotation()
     }
-    if (expanded.value) content()
+    if (expanded.value) {
+        chart()
+    }
 }
 
 @Composable
@@ -93,7 +104,8 @@ fun CPUUsagesAnnotationsLine(
         modifier = Modifier
             .padding(10.dp)
             .fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.End
     ) {
         for (i in colors.indices) {
             Row(
@@ -125,7 +137,8 @@ fun MemoryAndSwapAnnotationsLine(
         modifier = Modifier
             .padding(10.dp)
             .fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.End
     ) {
         for (i in colors.indices) {
             Row(
@@ -173,7 +186,8 @@ fun NetworkAnnotationsLine(
         modifier = Modifier
             .padding(10.dp)
             .fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.End
     ) {
         val iconIDs = listOf<Int>(R.drawable.download_icon, R.drawable.upload_icon)
         for (i in colors.indices) {
@@ -203,7 +217,8 @@ fun DiskAnnotationsLine(
         modifier = Modifier
             .padding(10.dp)
             .fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.End
     ) {
         val iconIDs = listOf<Int>(R.drawable.disk_read_icon, R.drawable.disk_write_icon)
         for (i in colors.indices) {
@@ -230,14 +245,16 @@ fun ResourceView() {
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
 
-    val cpuCount = BackgroundTask.cpuCount
-    val allCpuColors = context.resources.getIntArray(R.array.cpu_color_array).map { Color(it) }
+
+    val isSimple = SPUtils.getUserInfo(context, "isSimple");
+    val cpuCount = if(isSimple == 0) 0 else BackgroundTask.cpuCount
+    val allCpuColors =  if(isSimple == 0) context.resources.getIntArray(R.array.cpu_simple_color_array).map { Color(it) } else context.resources.getIntArray(R.array.cpu_color_array).map { Color(it) }
     val cpuColors = if (cpuCount + 1 <= allCpuColors.size) {
-        allCpuColors.take(cpuCount).map { it.copy(alpha = 0.5f) } + allCpuColors[cpuCount]
+        allCpuColors.take(cpuCount).map { it.copy(alpha = 1f) } + allCpuColors[cpuCount]
     } else {
         List(cpuCount + 1) { index ->
             if (index != cpuCount)
-                allCpuColors[index % allCpuColors.size].copy(alpha = 0.5f)
+                allCpuColors[index % allCpuColors.size].copy(alpha = 1f)
             else allCpuColors[index % allCpuColors.size]
         }
     }
@@ -268,33 +285,30 @@ fun ResourceView() {
                 .fillMaxSize()
                 .padding(end = 16.dp)
                 .verticalScroll(scrollState)) {
-                FoldableBox("CPU") {
-                    SmoothBezierLineChart(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(80.dp)
-                            .padding(10.dp),
-                        allValues = cpuPercentState.value,
-                        colors = cpuColors,
-                        strokeWidth = 1f,
-                        maxValue = 100f,
-                        minValue = 0f
-                    )
-                    CPUUsagesAnnotationsLine(
-                        colors = cpuColors,
-                        annotations = cpuPercentState.value.mapIndexed { index, coreValues ->
-                            Log.d("cold", "cpuPercentState:$index")
-                            Log.d("cold", "size:${cpuPercentState.value.size}")
-                            if (index != (cpuPercentState.value.size - 1)) {
-                                val latest = coreValues.lastOrNull() ?: 0f
-                                "CPU${index + 1}: %03.1f%%".format(latest)
-                            } else {
-                                val latest = coreValues.lastOrNull() ?: 0f
-                                "${context.getString(R.string.average)}:%03.1f%%".format(latest)
-                            }
+                FoldableBox("CPU", chart = {SmoothBezierLineChart(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(120.dp)
+                        .padding(10.dp),
+                    allValues = cpuPercentState.value,
+                    colors = cpuColors,
+                    strokeWidth = 1f,
+                    maxValue = 100f,
+                    minValue = 0f
+                )}, annotation = {CPUUsagesAnnotationsLine(
+                    colors = cpuColors,
+                    annotations = cpuPercentState.value.mapIndexed { index, coreValues ->
+//                        Log.d("cold", "cpuPercentState:$index")
+//                        Log.d("cold", "size:${cpuPercentState.value.size}")
+                        if (index != (cpuPercentState.value.size - 1)) {
+                            val latest = coreValues.lastOrNull() ?: 0f
+                            "CPU${index + 1}: %03.1f%%".format(latest)
+                        } else {
+                            val latest = coreValues.lastOrNull() ?: 0f
+                            "${context.getString(R.string.average)}:%03.1f%%".format(latest)
                         }
-                    )
-                }
+                    }
+                )})
                 val memorySwapMax = remember { mutableStateOf(100f) }
                 val memorySwapMin = remember { mutableStateOf(0f) }
                 val memorySwapAxisLabels =
@@ -318,40 +332,40 @@ fun ResourceView() {
                     }
                 }
 
-                FoldableBox(context.getString(R.string.memory_and_swap)) {
-                    SmoothBezierLineChart(
-                        yAxisLabels = memorySwapAxisLabels,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(80.dp)
-                            .padding(10.dp),
-                        allValues = memoryAndSwapList.value,
-                        colors = memoryAndSwapColors,
-                        strokeWidth = 1f,
-                        maxValue = memorySwapMax.value,
-                        minValue = memorySwapMin.value
-                    )
-                    MemoryAndSwapAnnotationsLine(
-                        colors = memoryAndSwapColors,
-                        annotations = listOf(
-                            ("${context.getString(R.string.memory_usage)}:" +
-                                    " %03.1f%%    %s/%s    ${context.getString(R.string.cache)}%s").format(
-                                memoryAndSwap.value.memory.percent,
-                                toStringWithUnit(memoryAndSwap.value.memory.used),
-                                toStringWithUnit(memoryAndSwap.value.memory.total),
-                                toStringWithUnit(memoryAndSwap.value.memory.cache)
-                            ), "${context.getString(R.string.swap)}: %03.1f%%    %s/%s".format(
-                                memoryAndSwap.value.swap.percent,
-                                toStringWithUnit(memoryAndSwap.value.swap.used),
-                                toStringWithUnit(memoryAndSwap.value.swap.total)
+                FoldableBox(title = context.getString(R.string.memory_and_swap), chart = { SmoothBezierLineChart(
+                    yAxisLabels = memorySwapAxisLabels,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(120.dp)
+                        .padding(10.dp),
+                    allValues = memoryAndSwapList.value,
+                    colors = memoryAndSwapColors,
+                    strokeWidth = 1f,
+                    maxValue = memorySwapMax.value,
+                    minValue = memorySwapMin.value
+                )},
+                    annotation = {
+                        MemoryAndSwapAnnotationsLine(
+                            colors = memoryAndSwapColors,
+                            annotations = listOf(
+                                ("${context.getString(R.string.memory_usage)}:" +
+                                        " %03.1f%%    %s/%s    ${context.getString(R.string.cache)}%s").format(
+                                    memoryAndSwap.value.memory.percent,
+                                    toStringWithUnit(memoryAndSwap.value.memory.used),
+                                    toStringWithUnit(memoryAndSwap.value.memory.total),
+                                    toStringWithUnit(memoryAndSwap.value.memory.cache)
+                                ), "${context.getString(R.string.swap)}: %03.1f%%    %s/%s".format(
+                                    memoryAndSwap.value.swap.percent,
+                                    toStringWithUnit(memoryAndSwap.value.swap.used),
+                                    toStringWithUnit(memoryAndSwap.value.swap.total)
+                                )
+                            ),
+                            capcities = listOf(
+                                memoryAndSwap.value.memory.percent / 100f,
+                                memoryAndSwap.value.swap.percent / 100f
                             )
-                        ),
-                        capcities = listOf(
-                            memoryAndSwap.value.memory.percent / 100f,
-                            memoryAndSwap.value.swap.percent / 100f
                         )
-                    )
-                }
+                    })
 
                 val networkAxisMin = remember { mutableStateOf(0f) }
                 val networkAxisMax = remember { mutableStateOf(1000f * 1000f) }
@@ -397,36 +411,32 @@ fun ResourceView() {
                     }
                 }
 
-                FoldableBox(context.getString(R.string.network)) {
-                    SmoothBezierLineChart(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(80.dp)
-                            .padding(10.dp),
-                        allValues = networkDownloadAndUploadState.value,
-                        yAxisLabels = networkAxisLabels,
-                        colors = networkColors,
-                        strokeWidth = 1f,
-                        minValue = networkAxisMin.value,
-                        maxValue = networkAxisMax.value
+                FoldableBox(context.getString(R.string.network), chart = { SmoothBezierLineChart(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(120.dp)
+                        .padding(10.dp),
+                    allValues = networkDownloadAndUploadState.value,
+                    yAxisLabels = networkAxisLabels,
+                    colors = networkColors,
+                    strokeWidth = 1f,
+                    minValue = networkAxisMin.value,
+                    maxValue = networkAxisMax.value
+                )}, annotation = {NetworkAnnotationsLine(
+                    colors = networkColors, annotations = listOf(
+                        "${context.getString(R.string.current_download)}:" +
+                                " ${toStringWithSpeedUnit(networkStatsState.value.download.speed)} ${
+                                    context.getString(R.string.current_download_total)
+                                }:${toStringWithUnit(networkStatsState.value.download.total)}",
+                        "${context.getString(R.string.current_upload)}:" +
+                                "${toStringWithSpeedUnit(networkStatsState.value.upload.speed)} " +
+                                "${context.getString(R.string.current_upload_total)}:${
+                                    toStringWithUnit(
+                                        networkStatsState.value.upload.total
+                                    )
+                                }"
                     )
-                    NetworkAnnotationsLine(
-                        colors = networkColors, annotations = listOf(
-                            "${context.getString(R.string.current_download)}:" +
-                                    " ${toStringWithSpeedUnit(networkStatsState.value.download.speed)} ${
-                                        context.getString(R.string.current_download_total)
-                                    }:${toStringWithUnit(networkStatsState.value.download.total)}",
-                            "${context.getString(R.string.current_upload)}:" +
-                                    "${toStringWithSpeedUnit(networkStatsState.value.upload.speed)} " +
-                                    "${context.getString(R.string.current_upload_total)}:${
-                                        toStringWithUnit(
-                                            networkStatsState.value.upload.total
-                                        )
-                                    }"
-                        )
-                    )
-                }
-
+                )})
                 val diskAxisMin = remember { mutableStateOf(0f) }
                 val diskAxisMax = remember { mutableStateOf(1000f * 1000f) }
                 val diskAxisLabels = remember {
@@ -476,34 +486,31 @@ fun ResourceView() {
                    }
                 }
 
-                FoldableBox(context.getString(R.string.disk)) {
-                    SmoothBezierLineChart(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(80.dp)
-                            .padding(10.dp),
-                        allValues = diskReadAndWriteList.value,
-                        yAxisLabels = diskAxisLabels,
-                        colors = diskColors,
-                        strokeWidth = 1f,
-                        minValue = diskAxisMin.value,
-                        maxValue = diskAxisMax.value
+                FoldableBox(context.getString(R.string.disk), chart = {SmoothBezierLineChart(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(120.dp)
+                        .padding(10.dp),
+                    allValues = diskReadAndWriteList.value,
+                    yAxisLabels = diskAxisLabels,
+                    colors = diskColors,
+                    strokeWidth = 1f,
+                    minValue = diskAxisMin.value,
+                    maxValue = diskAxisMax.value
+                )},annotation = { DiskAnnotationsLine(
+                    colors = diskColors, annotations = listOf(
+                        "${context.getString(R.string.current_read_disk)}: " +
+                                "${toStringWithSpeedUnit(diskStatsState.value.read.speed)} " +
+                                "${
+                                    context.getString(R.string.current_read_disk_total)
+                                }:${toStringWithUnit(diskStatsState.value.read.total)}",
+                        "${context.getString(R.string.current_write_disk)}: " +
+                                "${toStringWithSpeedUnit(diskStatsState.value.write.speed)} " +
+                                "${
+                                    context.getString(R.string.current_write_disk_total)
+                                }:${toStringWithUnit(diskStatsState.value.write.total)}"
                     )
-                    DiskAnnotationsLine(
-                        colors = diskColors, annotations = listOf(
-                            "${context.getString(R.string.current_read_disk)}: " +
-                                    "${toStringWithSpeedUnit(diskStatsState.value.read.speed)} " +
-                                    "${
-                                        context.getString(R.string.current_read_disk_total)
-                                    }:${toStringWithUnit(diskStatsState.value.read.total)}",
-                            "${context.getString(R.string.current_write_disk)}: " +
-                                    "${toStringWithSpeedUnit(diskStatsState.value.write.speed)} " +
-                                    "${
-                                        context.getString(R.string.current_write_disk_total)
-                                    }:${toStringWithUnit(diskStatsState.value.write.total)}"
-                        )
-                    )
-                }
+                )})
             }
 
             // 自定义滚动条
@@ -573,6 +580,10 @@ private fun thumbHeight(containerHeight: Float, contentHeight: Float): Float {
     return max(minHeight, containerHeight / contentHeight * containerHeight)
 }
 
+
+/**
+ * Line Chart
+ */
 @Composable
 fun SmoothBezierLineChart(
     modifier: Modifier = Modifier,
@@ -655,3 +666,111 @@ fun SmoothBezierLineChart(
     }
 }
 
+
+/**
+ * Area Chart
+ */
+@Composable
+fun SmoothBezierAreaChart(
+    modifier: Modifier = Modifier,
+    allValues: List<List<Float>>,
+    colors: List<Color> = listOf(
+        Color(0xff8979FF),
+        Color(0xffF5776E),
+        Color(0xffFFAE4C),
+        Color(0xff3CC3DF)
+    ),
+    yAxisLabels: List<String> = listOf("0%", "20%", "40%", "60%", "80%", "100%"),
+    strokeWidth: Float = 4f, minValue: Float? = null, maxValue: Float? = null
+) {
+    Canvas(modifier = modifier) {
+        val referenceLineCount = 6
+        val referenceLineColor = Color(0x3300001A)
+        val labelPaint = Paint().asFrameworkPaint().apply {
+            isAntiAlias = true
+            textSize = 10f
+            color = android.graphics.Color.argb(0xff, 0x47, 0x47, 0x47)
+        }
+
+        // 绘制参考线
+        repeat(yAxisLabels.size) { i ->
+            val ratio = i / (referenceLineCount - 1f)
+            val y = size.height - ratio * size.height
+            drawLine(
+                color = referenceLineColor,
+                start = Offset(0f, y),
+                end = Offset(size.width, y),
+                strokeWidth = 0.5f,
+                pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 5f), 0f)
+            )
+            val textWidth = labelPaint.measureText(yAxisLabels[i])
+            drawContext.canvas.nativeCanvas.drawText(
+                yAxisLabels[i], size.width - textWidth - 4f,
+                y, labelPaint
+            )
+        }
+
+        val lineBrushes = colors.map { SolidColor(it) }
+
+        allValues.forEachIndexed { index, values ->
+            if (values.size < 2) return@forEachIndexed
+
+            val width = size.width
+            val height = size.height
+            val minV = minValue ?: values.minOrNull() ?: 0f
+            val maxV = maxValue ?: values.maxOrNull() ?: 0f
+            val range = maxV - minV
+
+            val xStep = width / (values.size - 1f)
+            val points = values.mapIndexed { i, v ->
+                val vClamped = v.coerceIn(minV, maxV)
+                Offset(x = i * xStep, y = height - (vClamped - minV) / range * height)
+            }
+
+            // ---- 构建面积 Path ----
+            val path = Path().apply {
+                moveTo(points.first().x, height)  // 底部起点
+                lineTo(points.first().x, points.first().y) // 移动到折线起点
+
+                // 绘制贝塞尔曲线
+                for (i in 0 until points.size - 1) {
+                    val p0 = points[i]
+                    val p3 = points[i + 1]
+                    val cp1 = Offset(p0.x + (p3.x - p0.x) / 2f, p0.y)
+                    val cp2 = Offset(p0.x + (p3.x - p0.x) / 2f, p3.y)
+                    cubicTo(cp1.x, cp1.y, cp2.x, cp2.y, p3.x, p3.y)
+                }
+
+                lineTo(points.last().x, height) // 回到底部闭合
+                close()
+            }
+
+            // 填充面积
+            drawPath(
+                path = path,
+                brush = Brush.verticalGradient(
+                    colors = listOf(colors[index % colors.size].copy(alpha = 0.4f), Color.Transparent),
+                    startY = 0f,
+                    endY = height
+                )
+            )
+
+            // 可选：再画折线边界
+            val linePath = Path().apply {
+                moveTo(points.first().x, points.first().y)
+                for (i in 0 until points.size - 1) {
+                    val p0 = points[i]
+                    val p3 = points[i + 1]
+                    val cp1 = Offset(p0.x + (p3.x - p0.x) / 2f, p0.y)
+                    val cp2 = Offset(p0.x + (p3.x - p0.x) / 2f, p3.y)
+                    cubicTo(cp1.x, cp1.y, cp2.x, cp2.y, p3.x, p3.y)
+                }
+            }
+            drawPath(
+                path = linePath,
+                brush = lineBrushes[index % colors.size],
+                style = Stroke(width = 2f, cap = StrokeCap.Round)
+            )
+        }
+    }
+}

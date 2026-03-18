@@ -57,4 +57,6 @@
     <string name="app_version">版本号</string>
     <string name="app_name_title">应用名称</string>
     <string name="average">平均</string>
+    <string name="simple">精简</string>
+    <string name="normal">全部</string>
 </resources>

@@ -1,5 +1,6 @@
 package com.fde.taskmanager
 
+import android.content.Context
 import android.openfde.AppTaskControllerProxy
 import android.openfde.AppTaskStatusListener
 import android.os.Build
@@ -50,9 +51,11 @@ class MainActivity : ComponentActivity() {
     var appTaskController : AppTaskControllerProxy? = null
     lateinit var mWindowingMode: MutableState<Int>
     lateinit var mIsSystemBarVisible: MutableState<Boolean>
+    var context: Context = this
     @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        context  = this
         // This method is only available when `SystemUISharedLib` 
         // is imported when using Soong to compile under the 
         // Android source tree and keep in sync with 
@@ -82,14 +85,16 @@ class MainActivity : ComponentActivity() {
             }
         )
 
-        BackgroundTask.startBackgroundTask()
+        BackgroundTask.startBackgroundTask(context =  this)
         toolbar_compose_view!!.setContent {
             var isHidden = remember { mutableStateOf(true) }
+            var isSimple = remember { mutableStateOf(false) }
             val searchBarValueState = remember { mutableStateOf("") }
 
             LaunchedEffect(Unit) {
                 toolbarViewModel.navigationEvents.collect { route ->
                     isHidden.value = route == AppRoute.Process.route
+                    isSimple.value = route == AppRoute.Resource.route
                 }
             }
 
@@ -103,7 +108,7 @@ class MainActivity : ComponentActivity() {
             ) {
                 LogoBar()
                 NavOuterBox(toolbarViewModel)
-                WindowButtonsBar(toolbarViewModel, isHidden,appTaskController!!,
+                WindowButtonsBar(toolbarViewModel, isHidden,isSimple,appTaskController!!,
                     mWindowingMode , mIsSystemBarVisible
                 )
             }
@@ -129,9 +134,13 @@ class MainActivity : ComponentActivity() {
                         return@collect
                     }
                     navController.navigate(route) {
-                        popUpTo(navController.graph.startDestinationId) {
-                            saveState = true
+                        if (navController.navigatorProvider != null) {
+                            // safe
+                            popUpTo(navController.graph.startDestinationId) {
+                                saveState = true
+                            }
                         }
+
                         launchSingleTop = true
                         restoreState = true
                     }
@@ -176,7 +185,7 @@ class MainActivity : ComponentActivity() {
                         }
                         return@collect
                     }
-                    BackgroundTask.refreshTaskInfoList()
+                    BackgroundTask.refreshTaskInfoList(context)
                 }
             }
 

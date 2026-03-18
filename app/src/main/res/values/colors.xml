@@ -10,6 +10,9 @@
         <item>#ffF9960C</item>
         <item>#ff009999</item>
     </array>
+    <array name="cpu_simple_color_array">
+        <item>#ff8979FF</item>
+    </array>
     <array name="memory_swap_color_array">
         <item>#ffEB6363</item>
         <item>#ff318BF3</item>
