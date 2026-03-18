@@ -108,8 +108,7 @@ object BackgroundTask {
 //                    _cpuPercentState.value = updatedCpuLists + listOf(updatedAvgList)
 //                    Log.d("BackgroundTask", "CPU percent updated: $updatedCpuLists")
                     _cpuAllDataState.value = updatedCpuLists + listOf(updatedAvgList)
-                    val isSimple = Settings.Global.getInt( context?.contentResolver, "isSimple", 0);
-
+                    val isSimple = SPUtils.getUserInfo(context, "isSimple")
                     _cpuPercentState.value = if (isSimple == 0) listOf(_cpuAllDataState.value.get(8)) else (updatedCpuLists + listOf(updatedAvgList))
                     Log.d("BackgroundTask", "CPU percent updated: ${_cpuAllDataState.value}")
                 } catch (e: Exception) {

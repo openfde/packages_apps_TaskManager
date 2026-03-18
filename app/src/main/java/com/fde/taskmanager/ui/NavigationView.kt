@@ -51,6 +51,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.fde.taskmanager.MainActivity.ToolbarViewModel
 import com.fde.taskmanager.R
+import com.fde.taskmanager.SPUtils
 
 
 sealed class AppRoute(val route: String) {
@@ -266,11 +267,11 @@ fun WindowButtonsBar(
 //                    .height(32.dp)
 //                    .width(192.dp)
 //            )
-            val isSimple = Settings.Global.getInt(context.contentResolver, "isSimple", 0);
+            val isSimple = SPUtils.getUserInfo(context, "isSimple");
             if(isButtonSimple.value) {DropdownMenuItem(
                 text = { Text(stringResource(if(isSimple == 0) R.string.normal  else R.string.simple)) }, onClick = {
                     windowOptionsDropdownMenuShow.value = false
-                    Settings.Global.putInt(context.contentResolver, "isSimple",(if (isSimple == 0) 1 else 0))
+                    SPUtils.putUserInfo(context, "isSimple",(if (isSimple == 0) 1 else 0))
                 }, modifier = Modifier
                     .height(32.dp)
                     .width(192.dp)

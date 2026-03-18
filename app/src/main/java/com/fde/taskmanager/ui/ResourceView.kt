@@ -55,6 +55,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.fde.taskmanager.BackgroundTask
 import com.fde.taskmanager.R
+import com.fde.taskmanager.SPUtils
 import kotlinx.coroutines.launch
 import kotlin.math.max
 
@@ -245,7 +246,7 @@ fun ResourceView() {
     val context = LocalContext.current
 
 
-    val isSimple = Settings.Global.getInt( context?.contentResolver, "isSimple", 0);
+    val isSimple = SPUtils.getUserInfo(context, "isSimple");
     val cpuCount = if(isSimple == 0) 0 else BackgroundTask.cpuCount
     val allCpuColors =  if(isSimple == 0) context.resources.getIntArray(R.array.cpu_simple_color_array).map { Color(it) } else context.resources.getIntArray(R.array.cpu_color_array).map { Color(it) }
     val cpuColors = if (cpuCount + 1 <= allCpuColors.size) {
