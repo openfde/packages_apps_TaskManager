@@ -3,6 +3,9 @@ package com.fde.taskmanager.ui
 import android.app.Instrumentation
 import android.openfde.AppTaskControllerProxy
 import android.provider.Settings
+import android.view.LayoutInflater
+import android.view.View
+import android.widget.ImageView
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -49,6 +52,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
 import com.fde.taskmanager.MainActivity.ToolbarViewModel
 import com.fde.taskmanager.R
 import com.fde.taskmanager.SPUtils
@@ -108,7 +112,7 @@ fun WindowOptionsDisplayProcessSubDropdownMenu(
         onDismissRequest()
     }, offset = with(LocalDensity.current) {
         DpOffset(
-            x = offset.x.toDp() - 192.dp, y = offset.y.toDp()
+            x = offset.x.toDp() - 120.dp, y = offset.y.toDp()
         )
     }, modifier = Modifier.clip(RoundedCornerShape(8.dp))
     ) {
@@ -117,21 +121,21 @@ fun WindowOptionsDisplayProcessSubDropdownMenu(
             onDisplayModeChange(DisplayMode.ALL_PROCESSES)
         }, modifier = Modifier
                 .height(32.dp)
-                .width(192.dp)
+                .width(120.dp)
         )
         DropdownMenuItem(
             text = { Text(stringResource(R.string.submenu_active_processes)) }, onClick = {
             onDisplayModeChange(DisplayMode.ACTIVE_PROCESSES)
         }, modifier = Modifier
                 .height(32.dp)
-                .width(192.dp)
+                .width(120.dp)
         )
         DropdownMenuItem(
             text = { Text(stringResource(R.string.submenu_my_processes)) }, onClick = {
             onDisplayModeChange(DisplayMode.MY_PROCESSES)
         }, modifier = Modifier
                 .height(32.dp)
-                .width(192.dp)
+                .width(120.dp)
         )
     }
 }
@@ -158,6 +162,7 @@ fun WindowButtonsBar(
     isSystemBarVisible: MutableState<Boolean>?
 ) {
 
+
     val windowOptionsDropdownMenuOffset = remember {
         mutableStateOf<Offset>(Offset.Zero)
     }
@@ -182,9 +187,9 @@ fun WindowButtonsBar(
     }
 
     Row(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(0.dp),
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.padding(start = 12.dp, end = 12.dp)
+        modifier = Modifier.padding(start = 12.dp, end = 0.dp)
     ) {
         WindowOptionsDisplayProcessSubDropdownMenu(
             expanded = windowOptionsDropdownSubMenuShow.value,
@@ -212,7 +217,7 @@ fun WindowButtonsBar(
                     toolbarViewModel.refreshTaskInfoList()
             }, modifier = Modifier
                     .height(32.dp)
-                    .width(192.dp)
+                    .width(120.dp)
             )
 
             DropdownMenuItem(modifier = Modifier.pointerInput(Unit) {
@@ -234,7 +239,7 @@ fun WindowButtonsBar(
 //
 //            }, modifier = Modifier
 //                    .height(32.dp)
-//                    .width(192.dp)
+//                    .width(120.dp)
 //            )
 
 //            搜索打开的文件
@@ -242,7 +247,7 @@ fun WindowButtonsBar(
 //                text = { Text(stringResource(R.string.menu_search_open_files)) }, onClick = {
 //            }, modifier = Modifier
 //                    .height(32.dp)
-//                    .width(192.dp)
+//                    .width(120.dp)
 //            )
 //            HorizontalDivider()
 //            偏好设置
@@ -251,21 +256,21 @@ fun WindowButtonsBar(
 //
 //            }, modifier = Modifier
 //                    .height(32.dp)
-//                    .width(192.dp)
+//                    .width(120.dp)
 //            )
 //            帮助
 //            DropdownMenuItem(
 //                text = { Text(stringResource(R.string.menu_help)) }, onClick = {
 //            }, modifier = Modifier
 //                    .height(32.dp)
-//                    .width(192.dp)
+//                    .width(120.dp)
 //            )
 //            快捷键
 //            DropdownMenuItem(
 //                text = { Text(stringResource(R.string.menu_shortcuts)) }, onClick = {
 //            }, modifier = Modifier
 //                    .height(32.dp)
-//                    .width(192.dp)
+//                    .width(120.dp)
 //            )
             val isSimple = SPUtils.getUserInfo(context, "isSimple");
             if(isButtonSimple.value) {DropdownMenuItem(
@@ -273,8 +278,9 @@ fun WindowButtonsBar(
                     windowOptionsDropdownMenuShow.value = false
                     SPUtils.putUserInfo(context, "isSimple",(if (isSimple == 0) 1 else 0))
                 }, modifier = Modifier
+                    .size(120.dp, 32.dp)
                     .height(32.dp)
-                    .width(192.dp)
+                    .width(120.dp)
             )}
 
 //            关于
@@ -283,7 +289,7 @@ fun WindowButtonsBar(
                     isAboutShow.value = true
             }, modifier = Modifier
                     .height(32.dp)
-                    .width(192.dp)
+                    .width(120.dp)
             )
         }
 
@@ -365,90 +371,55 @@ fun WindowButtonsBar(
             })
         } else Spacer(modifier = Modifier.width(160.dp))
 
-        Image(
-            painter = painterResource(id = R.drawable.window_options_button),
-            modifier = Modifier
-                .size(26.dp)
-                .padding(end = 8.dp)
-                .clickable(
-                    onClick = {})
-                .pointerInput(Unit) {
-                    awaitPointerEventScope {
-                        while (true) {
-                            val event = awaitPointerEvent()
-                            if (event.type == PointerEventType.Press) {
-                                windowOptionsDropdownMenuOffset.value =
-                                    event.changes.first().position
-                                windowOptionsDropdownMenuShow.value = true
-                            }
-                        }
-                    }
-                },
-            contentDescription = null,
-        )
+        AndroidView<View>(modifier = Modifier.width(196.dp),
+        factory = { context ->
+            LayoutInflater.from(context)
+                .inflate(com.fde.baselib.R.layout.layout_custom_title_right, null, false)
+        },
+        update = { view ->
+            val imgClose = view.findViewById<ImageView>(com.fde.baselib.R.id.imgClose)
+            imgClose.setOnClickListener {
+                appTaskController.closeTask();
+            }
 
-            // fullscreen
-            val iconFullId =
-            if (isSystemBarVisible?.value == true) {
-                R.drawable.window_full_screen_button
-            } else {
-                R.drawable.window_exit_full_screen_button
+            val imgFullscreen = view.findViewById<ImageView>(com.fde.baselib.R.id.imgFullscreen)
+            imgFullscreen.setOnClickListener {
+                appTaskController.enterOrExitFullscreen();
             }
-            Image(
-                painter = painterResource(id = iconFullId),
-                modifier = Modifier.size(26.dp)
-                    .padding(end = 8.dp).clickable {
-                    appTaskController.enterOrExitFullscreen();
-//                   simulateKeyPress(KeyEvent.KEYCODE_F11);
-                },
-                contentDescription = null
-            )
-            // minimize
-            Image(
-                painter = painterResource(id = R.drawable.window_mini_button),
-                modifier = Modifier.size(26.dp)
-                    .padding(end = 8.dp).clickable {
-                    appTaskController.minimize();
-//                    simulateKeyPress(KeyEvent.KEYCODE_F9)
-                },
-                contentDescription = null
-            )
-            // normal/maximize
-            val iconResId =
-            if (windowingMode?.value == 5) {
-                R.drawable.window_normal_button
-            } else {
-                R.drawable.window_maximize_button
+
+            val imgMinimize = view.findViewById<ImageView>(com.fde.baselib.R.id.imgMinimize)
+            imgMinimize.setOnClickListener {
+                appTaskController.minimize();
             }
-            Image(
-                painter = painterResource(id = iconResId),
-                modifier = Modifier.size(26.dp)
-                    .padding(end = 8.dp).clickable {
-                    appTaskController.maximizeOrNot();
-//                    val intent = Intent("com.fde.fullscreen.ENABLE_OR_DISABLE")
-//                    if(isFullScreen.value)
-//                        intent.putExtra("mode", 0)
-//                    else
-//                        intent.putExtra("mode", 1)
-//                    isFullScreen.value = !(isFullScreen.value)
-//                    context.sendBroadcast(intent)
-                },
-                contentDescription = null
-            )
-            // close
-            Image(
-                painter = painterResource(id = R.drawable.window_close_button),
-                modifier = Modifier.size(18.dp)
-                    .padding(end = 0.dp).clickable {
-                    appTaskController.closeTask();
-//                    val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-//                    val tasks = activityManager.appTasks
-//                    if (tasks.isNotEmpty()){
-//                        tasks[0].finishAndRemoveTask()
-//                    }
-                },
-                contentDescription = null
-            )
+
+            val imgMaximize = view.findViewById<ImageView>(com.fde.baselib.R.id.imgMaximize)
+            imgMaximize.setOnClickListener {
+                appTaskController.maximizeOrNot();
+            }
+
+            val imgImport = view.findViewById<ImageView>(com.fde.baselib.R.id.imgImport)
+            imgImport.setVisibility(View.VISIBLE)
+            imgImport.setOnClickListener {
+               windowOptionsDropdownMenuShow.value = true
+
+            }
+
+
+            if (isSystemBarVisible?.value == true){
+                imgFullscreen.setImageResource(com.fde.baselib.R.drawable.icon_fullscreen);
+            }else{
+                imgFullscreen.setImageResource(com.fde.baselib.R.drawable.icon_exitfullscreen);
+            }
+
+            if(windowingMode?.value == 5){
+                imgMaximize.setImageResource(com.fde.baselib.R.drawable.icon_maximize);
+            }else{
+                imgMaximize.setImageResource(com.fde.baselib.R.drawable.icon_exitmaximize);
+            }
+
+        }
+    )
+
     }
 }
 
