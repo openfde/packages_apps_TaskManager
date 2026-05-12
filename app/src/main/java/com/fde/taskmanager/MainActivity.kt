@@ -7,6 +7,7 @@ import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.Window
+import android.widget.Toolbar
 import androidx.activity.ComponentActivity
 import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -64,6 +66,10 @@ class MainActivity : ComponentActivity() {
         setContentView(R.layout.base_layout)
         val toolbar_compose_view = findViewById<ComposeView>(R.id.toolbar_compose_view)
         val main_frame_compose_view = findViewById<ComposeView>(R.id.main_frame_compose_view)
+
+        val toolbar = findViewById<Toolbar>(R.id.toolBar)
+        toolbar?.setContentInsetsAbsolute(0, 0)
+        toolbar?.setPadding(0, 0, 0, 0)
         val toolbarViewModel by viewModels<ToolbarViewModel>()
         mWindowingMode = mutableIntStateOf(
             5

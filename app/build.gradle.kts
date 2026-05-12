@@ -98,5 +98,6 @@ dependencies {
     implementation("com.google.code.gson:gson:2.13.1")
     implementation("androidx.coordinatorlayout:coordinatorlayout:1.2.0")
     compileOnly(files("libs/openfde_sdk.jar"))
+    implementation(files("libs/baselib.aar"))
 
 }

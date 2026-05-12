@@ -3,6 +3,11 @@ android_library_import {
     aars: ["app/libs/navigation-compose-2.9.3.aar"],
 }
 
+android_library_import {
+    name: "baselibcompa",
+    aars: ["app/libs/baselib.aar"],
+}
+
 java_import {
     name: "com.google.code.gson_gson",
     jars: ["app/libs/gson-2.13.1.jar"],
@@ -52,6 +57,7 @@ android_app {
         "androidx.compose.material3_material3",
         "androidx.compose.runtime_runtime",
         "androidx.navigation_navigation-compose",
+        "baselibcompa",
         "org.jetbrains.kotlinx_kotlinx-coroutines-core",
         "org.jetbrains.kotlinx_kotlinx-coroutines-android",
         "com.google.code.gson_gson",
