@@ -378,43 +378,43 @@ fun WindowButtonsBar(
         },
         update = { view ->
             val imgClose = view.findViewById<ImageView>(com.fde.baselib.R.id.imgClose)
-            imgClose.setOnClickListener {
+            imgClose?.setOnClickListener {
                 appTaskController.closeTask();
             }
 
             val imgFullscreen = view.findViewById<ImageView>(com.fde.baselib.R.id.imgFullscreen)
-            imgFullscreen.setOnClickListener {
+            imgFullscreen?.setOnClickListener {
                 appTaskController.enterOrExitFullscreen();
             }
 
             val imgMinimize = view.findViewById<ImageView>(com.fde.baselib.R.id.imgMinimize)
-            imgMinimize.setOnClickListener {
+            imgMinimize?.setOnClickListener {
                 appTaskController.minimize();
             }
 
             val imgMaximize = view.findViewById<ImageView>(com.fde.baselib.R.id.imgMaximize)
-            imgMaximize.setOnClickListener {
+            imgMaximize?.setOnClickListener {
                 appTaskController.maximizeOrNot();
             }
 
             val imgImport = view.findViewById<ImageView>(com.fde.baselib.R.id.imgImport)
-            imgImport.setVisibility(View.VISIBLE)
-            imgImport.setOnClickListener {
+            imgImport?.setVisibility(View.VISIBLE)
+            imgImport?.setOnClickListener {
                windowOptionsDropdownMenuShow.value = true
 
             }
 
 
             if (isSystemBarVisible?.value == true){
-                imgFullscreen.setImageResource(com.fde.baselib.R.drawable.icon_fullscreen);
+                imgFullscreen?.setImageResource(com.fde.baselib.R.drawable.icon_fullscreen);
             }else{
-                imgFullscreen.setImageResource(com.fde.baselib.R.drawable.icon_exitfullscreen);
+                imgFullscreen?.setImageResource(com.fde.baselib.R.drawable.icon_exitfullscreen);
             }
 
             if(windowingMode?.value == 5){
-                imgMaximize.setImageResource(com.fde.baselib.R.drawable.icon_maximize);
+                imgMaximize?.setImageResource(com.fde.baselib.R.drawable.icon_maximize);
             }else{
-                imgMaximize.setImageResource(com.fde.baselib.R.drawable.icon_exitmaximize);
+                imgMaximize?.setImageResource(com.fde.baselib.R.drawable.icon_exitmaximize);
             }
 
         }
