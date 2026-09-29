@@ -7,14 +7,17 @@ import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.Window
+import android.view.WindowInsetsController
 import androidx.activity.ComponentActivity
 import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -48,7 +51,6 @@ import kotlinx.coroutines.launch
 import java.lang.ref.WeakReference
 
 class MainActivity : ComponentActivity() {
-    var appTaskController : AppTaskControllerProxy? = null
     lateinit var mWindowingMode: MutableState<Int>
     lateinit var mIsSystemBarVisible: MutableState<Boolean>
     var context: Context = this
@@ -69,21 +71,6 @@ class MainActivity : ComponentActivity() {
             5
         )
         mIsSystemBarVisible = mutableStateOf(true)
-        appTaskController = AppTaskControllerProxy.create()
-        appTaskController?.initCustomCaption(
-            WeakReference(this),
-            true,
-            object : AppTaskStatusListener {
-                override fun onStatusChanged(
-                    windowingMode: Int,
-                    isSystemBarVisible: Boolean
-                ) {
-                    mWindowingMode.value = windowingMode
-                    mIsSystemBarVisible.value  =isSystemBarVisible
-                }
-
-            }
-        )
 
         BackgroundTask.startBackgroundTask(context =  this)
         toolbar_compose_view!!.setContent {
@@ -98,19 +85,32 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-            Row(
+            Box(
                 modifier = Modifier
                     .height(50.dp)
                     .fillMaxWidth()
-                    .background(Color(0xFFF7F7F7)),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                    .background(Color(0xFFF7F7F7))
             ) {
-                LogoBar()
-                NavOuterBox(toolbarViewModel)
-                WindowButtonsBar(toolbarViewModel, isHidden,isSimple,appTaskController!!,
-                    mWindowingMode , mIsSystemBarVisible
-                )
+                Box(
+                    modifier = Modifier.align(Alignment.Center)
+                    .padding(end = 160.dp)
+                ) {
+                    NavOuterBox(toolbarViewModel)
+                }
+
+                Box(
+                    modifier = Modifier
+                        .padding(end = 160.dp)
+                        .align(Alignment.CenterEnd)
+                ) {
+                    WindowButtonsBar(
+                        toolbarViewModel,
+                        isHidden,
+                        isSimple,
+                        mWindowingMode,
+                        mIsSystemBarVisible
+                    )
+                }
             }
         }
 
@@ -225,7 +225,15 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
-       val taskController = TaskController()
+        setupTransparentCaptionBar()
+    }
+
+
+    private fun setupTransparentCaptionBar() {
+        window.insetsController?.setSystemBarsAppearance(
+            WindowInsetsController.APPEARANCE_TRANSPARENT_CAPTION_BAR_BACKGROUND,
+            WindowInsetsController.APPEARANCE_TRANSPARENT_CAPTION_BAR_BACKGROUND
+        )
     }
 
     override fun onDestroy() {

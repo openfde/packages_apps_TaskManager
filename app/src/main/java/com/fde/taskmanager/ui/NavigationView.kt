@@ -153,7 +153,6 @@ fun WindowButtonsBar(
     toolbarViewModel: ToolbarViewModel,
     isButtonHidden: MutableState<Boolean>,
     isButtonSimple: MutableState<Boolean>,
-    appTaskController: AppTaskControllerProxy,
     windowingMode: MutableState<Int>?,
     isSystemBarVisible: MutableState<Boolean>?
 ) {
@@ -387,68 +386,64 @@ fun WindowButtonsBar(
             contentDescription = null,
         )
 
-            // fullscreen
-            val iconFullId =
-            if (isSystemBarVisible?.value == true) {
-                R.drawable.window_full_screen_button
-            } else {
-                R.drawable.window_exit_full_screen_button
-            }
-            Image(
-                painter = painterResource(id = iconFullId),
-                modifier = Modifier.size(26.dp)
-                    .padding(end = 8.dp).clickable {
-                    appTaskController.enterOrExitFullscreen();
-//                   simulateKeyPress(KeyEvent.KEYCODE_F11);
-                },
-                contentDescription = null
-            )
-            // minimize
-            Image(
-                painter = painterResource(id = R.drawable.window_mini_button),
-                modifier = Modifier.size(26.dp)
-                    .padding(end = 8.dp).clickable {
-                    appTaskController.minimize();
-//                    simulateKeyPress(KeyEvent.KEYCODE_F9)
-                },
-                contentDescription = null
-            )
-            // normal/maximize
-            val iconResId =
-            if (windowingMode?.value == 5) {
-                R.drawable.window_normal_button
-            } else {
-                R.drawable.window_maximize_button
-            }
-            Image(
-                painter = painterResource(id = iconResId),
-                modifier = Modifier.size(26.dp)
-                    .padding(end = 8.dp).clickable {
-                    appTaskController.maximizeOrNot();
-//                    val intent = Intent("com.fde.fullscreen.ENABLE_OR_DISABLE")
-//                    if(isFullScreen.value)
-//                        intent.putExtra("mode", 0)
-//                    else
-//                        intent.putExtra("mode", 1)
-//                    isFullScreen.value = !(isFullScreen.value)
-//                    context.sendBroadcast(intent)
-                },
-                contentDescription = null
-            )
-            // close
-            Image(
-                painter = painterResource(id = R.drawable.window_close_button),
-                modifier = Modifier.size(18.dp)
-                    .padding(end = 0.dp).clickable {
-                    appTaskController.closeTask();
-//                    val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-//                    val tasks = activityManager.appTasks
-//                    if (tasks.isNotEmpty()){
-//                        tasks[0].finishAndRemoveTask()
-//                    }
-                },
-                contentDescription = null
-            )
+//            // fullscreen
+//            val iconFullId =
+//            if (isSystemBarVisible?.value == true) {
+//                R.drawable.window_full_screen_button
+//            } else {
+//                R.drawable.window_exit_full_screen_button
+//            }
+//            Image(
+//                painter = painterResource(id = iconFullId),
+//                modifier = Modifier.size(26.dp)
+//                    .padding(end = 8.dp).clickable {
+////                   simulateKeyPress(KeyEvent.KEYCODE_F11);
+//                },
+//                contentDescription = null
+//            )
+//            // minimize
+//            Image(
+//                painter = painterResource(id = R.drawable.window_mini_button),
+//                modifier = Modifier.size(26.dp)
+//                    .padding(end = 8.dp).clickable {
+////                    simulateKeyPress(KeyEvent.KEYCODE_F9)
+//                },
+//                contentDescription = null
+//            )
+//            // normal/maximize
+//            val iconResId =
+//            if (windowingMode?.value == 5) {
+//                R.drawable.window_normal_button
+//            } else {
+//                R.drawable.window_maximize_button
+//            }
+//            Image(
+//                painter = painterResource(id = iconResId),
+//                modifier = Modifier.size(26.dp)
+//                    .padding(end = 8.dp).clickable {
+////                    val intent = Intent("com.fde.fullscreen.ENABLE_OR_DISABLE")
+////                    if(isFullScreen.value)
+////                        intent.putExtra("mode", 0)
+////                    else
+////                        intent.putExtra("mode", 1)
+////                    isFullScreen.value = !(isFullScreen.value)
+////                    context.sendBroadcast(intent)
+//                },
+//                contentDescription = null
+//            )
+//            // close
+//            Image(
+//                painter = painterResource(id = R.drawable.window_close_button),
+//                modifier = Modifier.size(18.dp)
+//                    .padding(end = 0.dp).clickable {
+////                    val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+////                    val tasks = activityManager.appTasks
+////                    if (tasks.isNotEmpty()){
+////                        tasks[0].finishAndRemoveTask()
+////                    }
+//                },
+//                contentDescription = null
+//            )
     }
 }
 
