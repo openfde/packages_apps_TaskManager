@@ -229,13 +229,13 @@ fun DiskPartitionItem(
                                     Box(
                                         modifier = Modifier
                                             .fillMaxHeight()
-                                            .weight(proportion1)
+                                            .weight(if (proportion1 > 0f) proportion1 else 1f)
                                             .background(color)
                                     )
                                     Box(
                                         modifier = Modifier
                                             .fillMaxHeight()
-                                            .weight(proportion2)
+                                            .weight(if (proportion2 > 0f) proportion2 else 1f)
                                             .background(Color(0xffEBEBEB))
                                     )
                                 }

@@ -1,58 +1,57 @@
 package com.fde.taskmanager.ui
 
+import android.app.Instrumentation
+import android.provider.Settings
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.size
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.fde.taskmanager.R
-
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.VerticalDivider
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.DpOffset
-import android.content.Intent
-import android.view.KeyEvent
-import android.app.Instrumentation
-import android.content.Context
-import android.app.ActivityManager
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.DpOffset
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.fde.taskmanager.MainActivity.ToolbarViewModel
-import kotlinx.coroutines.launch
+import com.fde.taskmanager.R
+import com.fde.taskmanager.SPUtils
+
 
 sealed class AppRoute(val route: String) {
     object Process : AppRoute("process")
@@ -66,7 +65,8 @@ fun SearchBar(
 ) {
     Row(
         modifier = Modifier
-            .size(width = 160.dp, height = 32.dp)
+            .padding(end = 8.dp)
+            .size(width = 160.dp, height = 30.dp)
             .background(
                 color = Color(0x0D000000), // 设置背景颜色为 #0d000000
                 shape = RoundedCornerShape(6.dp)
@@ -149,8 +149,13 @@ private fun simulateKeyPress(keyCode: Int) {
 
 @Composable
 fun WindowButtonsBar(
-    toolbarViewModel: ToolbarViewModel
+    toolbarViewModel: ToolbarViewModel,
+    isButtonHidden: MutableState<Boolean>,
+    isButtonSimple: MutableState<Boolean>,
+    windowingMode: MutableState<Int>?,
+    isSystemBarVisible: MutableState<Boolean>?
 ) {
+
     val windowOptionsDropdownMenuOffset = remember {
         mutableStateOf<Offset>(Offset.Zero)
     }
@@ -177,7 +182,7 @@ fun WindowButtonsBar(
     Row(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.padding(start = 12.dp, end = 8.dp)
+        modifier = Modifier.padding(start = 12.dp, end = 12.dp)
     ) {
         WindowOptionsDisplayProcessSubDropdownMenu(
             expanded = windowOptionsDropdownSubMenuShow.value,
@@ -199,13 +204,15 @@ fun WindowButtonsBar(
             },
             modifier = Modifier.clip(RoundedCornerShape(8.dp))
         ) {
-            DropdownMenuItem(
+            if(isButtonHidden.value) {DropdownMenuItem(
                 text = { Text(stringResource(R.string.menu_refresh)) }, onClick = {
+                    windowOptionsDropdownMenuShow.value = false
                     toolbarViewModel.refreshTaskInfoList()
             }, modifier = Modifier
                     .height(32.dp)
                     .width(192.dp)
             )
+
             DropdownMenuItem(modifier = Modifier.pointerInput(Unit) {
                 awaitPointerEventScope {
                     while (true) {
@@ -217,7 +224,7 @@ fun WindowButtonsBar(
                         }
                     }
                 }
-            }, onClick = {}, text = { Text(stringResource(R.string.menu_process_display)) })
+            }, onClick = {}, text = { Text(stringResource(R.string.menu_process_display)) })}
 //            HorizontalDivider()
 //            显示依赖项
 //            DropdownMenuItem(
@@ -258,6 +265,16 @@ fun WindowButtonsBar(
 //                    .height(32.dp)
 //                    .width(192.dp)
 //            )
+            val isSimple = SPUtils.getUserInfo(context, "isSimple");
+            if(isButtonSimple.value) {DropdownMenuItem(
+                text = { Text(stringResource(if(isSimple == 0) R.string.normal  else R.string.simple)) }, onClick = {
+                    windowOptionsDropdownMenuShow.value = false
+                    SPUtils.putUserInfo(context, "isSimple",(if (isSimple == 0) 1 else 0))
+                }, modifier = Modifier
+                    .height(32.dp)
+                    .width(192.dp)
+            )}
+
 //            关于
             DropdownMenuItem(
                 text = { Text(stringResource(R.string.menu_about)) }, onClick = {
@@ -280,24 +297,36 @@ fun WindowButtonsBar(
                 Column {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center,
+                        horizontalArrangement = Arrangement.Start,
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Image(
                             painter = painterResource(id = R.drawable.ic_launcher_foreground),
-                            modifier = Modifier.size(64.dp),
+                            modifier = Modifier.size(64.dp).padding(start = 0.dp) ,
                             contentDescription = null
                         )
                     }
-                    Row {
-                        Text("${context.getString(R.string.app_name_title)}:")
-                        Spacer(modifier = Modifier.weight(1f))
-                        Text(packageName.toString())
+                    Row(modifier = Modifier.fillMaxWidth().padding(start = 5.dp) ){
+                        Text("${context.getString(R.string.app_name_title)}:",
+                            color = Color.Black,
+                            modifier = Modifier
+                                .width(100.dp).height(32.dp),
+                            textAlign = TextAlign.Start)
+                        Text(packageName.toString(),
+                            modifier = Modifier
+                                .weight(1f).height(32.dp),
+                            textAlign = TextAlign.Start)
                     }
-                    Row {
-                        Text("${context.getString(R.string.app_version)}:")
-                        Spacer(modifier = Modifier.weight(1f))
-                        Text(versionName.toString())
+                    Row(modifier = Modifier.fillMaxWidth().padding(start = 5.dp)) {
+                        Text("${context.getString(R.string.app_version)}:",
+                            color = Color.Black,
+                            modifier = Modifier
+                                .width(100.dp).height(32.dp),
+                            textAlign = TextAlign.Start)
+                        Text(versionName.toString(),
+                            modifier = Modifier
+                                .weight(1f).height(32.dp),
+                            textAlign = TextAlign.Start)
                     }
                 }
             }, confirmButton = {}, dismissButton = {
@@ -314,6 +343,7 @@ fun WindowButtonsBar(
         }
 
         val isSearchBarHidden = remember { mutableStateOf(false) }
+
 
         LaunchedEffect(Unit) {
             toolbarViewModel.navigationEvents.collect { route ->
@@ -336,7 +366,8 @@ fun WindowButtonsBar(
         Image(
             painter = painterResource(id = R.drawable.window_options_button),
             modifier = Modifier
-                .size(28.dp)
+                .size(26.dp)
+                .padding(end = 8.dp)
                 .clickable(
                     onClick = {})
                 .pointerInput(Unit) {
@@ -354,48 +385,64 @@ fun WindowButtonsBar(
             contentDescription = null,
         )
 
-            // fullscreen
-            Image(
-                painter = painterResource(id = R.drawable.window_max_button),
-                modifier = Modifier.size(28.dp).clickable {
-                   simulateKeyPress(KeyEvent.KEYCODE_F11);
-                },
-                contentDescription = null
-            )
-            // minimize
-            Image(
-                painter = painterResource(id = R.drawable.window_mini_button),
-                modifier = Modifier.size(28.dp).clickable {
-                    simulateKeyPress(KeyEvent.KEYCODE_F9)
-                },
-                contentDescription = null
-            )
-            // normal/maximize
-            Image(
-                painter = painterResource(id = R.drawable.window_normal_button),
-                modifier = Modifier.size(28.dp).clickable {
-                    val intent = Intent("com.fde.fullscreen.ENABLE_OR_DISABLE")
-                    if(isFullScreen.value)
-                        intent.putExtra("mode", 0)
-                    else
-                        intent.putExtra("mode", 1)
-                    isFullScreen.value = !(isFullScreen.value)
-                    context.sendBroadcast(intent)
-                },
-                contentDescription = null
-            )
-            // close
-            Image(
-                painter = painterResource(id = R.drawable.window_close_button),
-                modifier = Modifier.size(28.dp).clickable {
-                    val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-                    val tasks = activityManager.appTasks
-                    if (tasks.isNotEmpty()){
-                        tasks[0].finishAndRemoveTask()
-                    }
-                },
-                contentDescription = null
-            )
+//            // fullscreen
+//            val iconFullId =
+//            if (isSystemBarVisible?.value == true) {
+//                R.drawable.window_full_screen_button
+//            } else {
+//                R.drawable.window_exit_full_screen_button
+//            }
+//            Image(
+//                painter = painterResource(id = iconFullId),
+//                modifier = Modifier.size(26.dp)
+//                    .padding(end = 8.dp).clickable {
+////                   simulateKeyPress(KeyEvent.KEYCODE_F11);
+//                },
+//                contentDescription = null
+//            )
+//            // minimize
+//            Image(
+//                painter = painterResource(id = R.drawable.window_mini_button),
+//                modifier = Modifier.size(26.dp)
+//                    .padding(end = 8.dp).clickable {
+////                    simulateKeyPress(KeyEvent.KEYCODE_F9)
+//                },
+//                contentDescription = null
+//            )
+//            // normal/maximize
+//            val iconResId =
+//            if (windowingMode?.value == 5) {
+//                R.drawable.window_normal_button
+//            } else {
+//                R.drawable.window_maximize_button
+//            }
+//            Image(
+//                painter = painterResource(id = iconResId),
+//                modifier = Modifier.size(26.dp)
+//                    .padding(end = 8.dp).clickable {
+////                    val intent = Intent("com.fde.fullscreen.ENABLE_OR_DISABLE")
+////                    if(isFullScreen.value)
+////                        intent.putExtra("mode", 0)
+////                    else
+////                        intent.putExtra("mode", 1)
+////                    isFullScreen.value = !(isFullScreen.value)
+////                    context.sendBroadcast(intent)
+//                },
+//                contentDescription = null
+//            )
+//            // close
+//            Image(
+//                painter = painterResource(id = R.drawable.window_close_button),
+//                modifier = Modifier.size(18.dp)
+//                    .padding(end = 0.dp).clickable {
+////                    val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+////                    val tasks = activityManager.appTasks
+////                    if (tasks.isNotEmpty()){
+////                        tasks[0].finishAndRemoveTask()
+////                    }
+//                },
+//                contentDescription = null
+//            )
     }
 }
 

@@ -9,7 +9,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import kotlin.collections.List
 
 object TaskManagerBinder {
-    private val taskBinder: IBinder? = try {
+    private var taskBinder: IBinder? = try {
         Class.forName("android.os.ServiceManager")
             .getMethod("getService", String::class.java)
             .invoke(null, "openfdetaskmanager") as IBinder?
@@ -17,6 +17,7 @@ object TaskManagerBinder {
         e.printStackTrace()
         null
     }
+
 
     private val taskManager = taskBinder?.let { ITaskManager.Stub.asInterface(it) }
 
@@ -54,6 +55,19 @@ object TaskManagerBinder {
     }
 
     public fun getEachCPUPercent(interval: Int): List<Float> {
+        if(taskBinder == null){
+            taskBinder = try {
+                Class.forName("android.os.ServiceManager")
+                    .getMethod("getService", String::class.java)
+                    .invoke(null, "openfdetaskmanager") as IBinder?
+            } catch (e: Exception) {
+                e.printStackTrace()
+                null
+            }
+        }
+        if(taskManager ==null ){
+//            taskBinder  = taskBinder?.let { ITaskManager.Stub.asInterface(it) }
+        }
         val eachCPUPercent = taskManager?.getEachCPUPercent(interval)
         val cpuPercent = Adapters.CPUPercentAdapt(eachCPUPercent.toString())
         return cpuPercent
@@ -71,8 +85,9 @@ object TaskManagerBinder {
         return networkStatsInfo
     }
 
-    public fun getDiskReadAndWrite(interval: Int): Adapters.DiskStats {
+    public fun getDiskReadAndWrite(interval: Int): Adapters.DiskStats? {
         val diskStats = taskManager?.getDiskReadAndWrite(interval)
+        if(diskStats == null) return  null ;
         val diskStatsInfo = Adapters.DiskStatsAdapt(diskStats.toString())
         return diskStatsInfo
     }
