@@ -29,8 +29,8 @@ android {
         applicationId = "com.fde.taskmanager.debug"
         minSdk = 34
         targetSdk = 36
-        versionCode = 60
-        versionName = "6.0"
+        versionCode = 170
+        versionName = "17.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

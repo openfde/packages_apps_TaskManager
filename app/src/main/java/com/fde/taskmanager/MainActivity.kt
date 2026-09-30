@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableIntStateOf
@@ -29,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.compose.NavHost
@@ -89,9 +91,20 @@ class MainActivity : ComponentActivity() {
                     .fillMaxWidth()
                     .background(Color(0xFFF7F7F7))
             ) {
+                // 左侧标题
+                Text(
+                    text = context.getString(R.string.app_name),
+                    modifier = Modifier
+                        .align(Alignment.CenterStart)
+                        .padding(start = 36.dp),
+                    fontSize = 14.sp,
+                    color = Color.Black
+                )
+
                 Box(
-                    modifier = Modifier.align(Alignment.Center)
-                    .padding(end = 160.dp)
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .padding(end = 160.dp)
                 ) {
                     NavOuterBox(toolbarViewModel)
                 }
